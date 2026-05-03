@@ -12,7 +12,20 @@ This server does **not** execute ELF600 simulations — it provides curated docu
 
 ## Features
 
-Single tool: **`elf_usage(topic)`** returns documentation on:
+**4 tools** providing both curated topic-based docs and raw access to all 1141 ELF600 help HTM files:
+
+| Tool | Purpose |
+|---|---|
+| `elf_usage(topic)` | 26 curated topics — high-level recipes |
+| `elf_help_index(prefix)` | List all 1141 bundled help files (filterable by directory) |
+| `elf_help_search(query, top_k, prefix)` | Substring search across all help text (AND multi-keyword) |
+| `elf_help_get(path, max_chars)` | Get full extracted text of a specific HTM |
+
+The bundled `help_dump.json` is generated from `C:/ELF600/help/` Shift_JIS HTM files via `scripts/crawl_help.py` (1141 files, ~1.18M characters, decoded + HTML-stripped).
+
+### Curated topics (`elf_usage`)
+
+Returns documentation on:
 
 - **File formats**: `.mai` (analysis input), `.mei` (mesh script), `.meg` (compiled mesh)
 - **Solvers**: MAGIC (magnetostatic, transient, AC), ELFIN (electrostatic), BEAM (particle tracking)
