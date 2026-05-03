@@ -254,11 +254,11 @@ def elf_help_get(path: str, max_chars: int = 30000) -> str:
 @mcp.tool()
 def elf_wiki_index() -> str:
     """
-    List 67 ELF600 vendor wiki pages (https://elf.co.jp/) bundled with this server.
+    List 146 ELF600 vendor wiki pages (https://elf.co.jp/) bundled with this server.
 
-    Crawled from PukiWiki at elf.co.jp, filtered to meaningful content
-    (technical articles, analysis methods, case studies, FAQ, product info).
-    Excludes session-key / placeholder pages.
+    Full crawl of all PukiWiki pages discoverable via cmd=list, including
+    technical articles, case studies, FAQ, product info, download portals,
+    and version-specific pages.
 
     Returns:
         Tab-separated: NAME<TAB>CHARS<TAB>URL per line.
@@ -271,7 +271,7 @@ def elf_wiki_index() -> str:
 @mcp.tool()
 def elf_wiki_search(query: str, top_k: int = 10) -> str:
     """
-    Substring-search across all 67 bundled ELF vendor wiki pages.
+    Substring-search across all 146 bundled ELF vendor wiki pages.
 
     Multiple keywords (space-separated) require ALL to match (AND).
 

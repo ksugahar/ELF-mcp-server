@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mcp-server-elf"
-version = "1.30.0"
-description = "MCP server for ELF600 electromagnetic field analysis: 26 curated topics + 1141 help files + 332 example .mai/.mei + 67 vendor wiki pages + Python ctypes API (elftypes.py / magtypes.py with 83 functions each) + bin/ configs/error definitions — all searchable."
+version = "1.31.0"
+description = "MCP server for ELF600 electromagnetic field analysis: 26 curated topics + 1141 help files + 332 example .mai/.mei + 146 vendor wiki pages (full coverage) + Python ctypes API (elftypes.py / magtypes.py with 83 functions each) + bin/ configs/error definitions — all searchable."
 readme = "README.md"
 license = {text = "BSD-3-Clause"}
 requires-python = ">=3.10"

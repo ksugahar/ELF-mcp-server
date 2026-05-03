@@ -213,11 +213,20 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=str(Path(__file__).parent.parent / "src" / "mcp_server_elf" / "wiki_dump.json"))
     ap.add_argument("--sleep", type=float, default=0.5, help="Seconds between requests (be polite)")
-    ap.add_argument("--pages", nargs="*", default=CURATED_PAGES, help="Page names to crawl")
+    ap.add_argument("--pages", nargs="*", default=None, help="Page names to crawl (overrides --pagelist)")
+    ap.add_argument("--pagelist", default=None, help="File with one page name per line")
+    ap.add_argument("--no-skip", action="store_true", help="Disable skip filter (crawl ALL given pages)")
     args = ap.parse_args()
 
-    pages = [p for p in args.pages if not should_skip(p)]
-    print(f"Crawling {len(pages)} curated wiki pages from elf.co.jp ...")
+    if args.pages:
+        raw_pages = args.pages
+    elif args.pagelist:
+        raw_pages = [ln.strip() for ln in Path(args.pagelist).read_text(encoding="utf-8").splitlines() if ln.strip()]
+    else:
+        raw_pages = CURATED_PAGES
+
+    pages = raw_pages if args.no_skip else [p for p in raw_pages if not should_skip(p)]
+    print(f"Crawling {len(pages)} pages from elf.co.jp (skip filter: {'OFF' if args.no_skip else 'ON'}) ...")
 
     dump = {}
     for i, name in enumerate(pages, 1):
