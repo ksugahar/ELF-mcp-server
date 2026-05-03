@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mcp-server-elf"
-version = "1.29.0"
-description = "MCP server for ELF600 electromagnetic field analysis: 26 curated topics + 1141 help files + 332 example .mai/.mei input files (all searchable) — .mai/.mei/.meg formats, eddy current (MAB/MAT/MBB), AC SOL MOMC, IPM motor workflow."
+version = "1.30.0"
+description = "MCP server for ELF600 electromagnetic field analysis: 26 curated topics + 1141 help files + 332 example .mai/.mei + 67 vendor wiki pages + Python ctypes API (elftypes.py / magtypes.py with 83 functions each) + bin/ configs/error definitions — all searchable."
 readme = "README.md"
 license = {text = "BSD-3-Clause"}
 requires-python = ">=3.10"
@@ -41,6 +41,8 @@ packages = ["src/mcp_server_elf"]
 [tool.hatch.build.targets.wheel.force-include]
 "src/mcp_server_elf/help_dump.json" = "mcp_server_elf/help_dump.json"
 "src/mcp_server_elf/examples_dump.json" = "mcp_server_elf/examples_dump.json"
+"src/mcp_server_elf/wiki_dump.json" = "mcp_server_elf/wiki_dump.json"
+"src/mcp_server_elf/python_dump.json" = "mcp_server_elf/python_dump.json"
 
 [tool.hatch.build.targets.sdist]
 include = [

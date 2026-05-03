@@ -12,23 +12,23 @@ This server does **not** execute ELF600 simulations — it provides curated docu
 
 ## Features
 
-**7 tools** providing curated docs + raw access to ELF600 help HTM and example input files:
+**13 tools** providing curated docs + raw access to ELF600 help HTM, example inputs, vendor wiki, and Python ctypes API:
 
-| Tool | Purpose |
-|---|---|
-| `elf_usage(topic)` | 26 curated topics — high-level recipes |
-| `elf_help_index(prefix)` | List all 1141 bundled help HTM files |
-| `elf_help_search(query, top_k, prefix)` | Substring search across help text |
-| `elf_help_get(path, max_chars)` | Get full extracted text of a specific HTM |
-| `elf_examples_index(solver, category, ext)` | List 332 bundled example input files |
-| `elf_examples_search(query, top_k, solver, ext)` | Substring search across .mai/.mei/.txt examples |
-| `elf_examples_get(path, max_chars)` | Get full text of a specific example input |
+| Tool family | Purpose | Files |
+|---|---|---|
+| `elf_usage(topic)` | 26 curated topics — high-level recipes | (1762-line knowledge.py) |
+| `elf_help_*(...)` | Help HTM files from `C:/ELF600/help/` | 1141 files, 1.18M chars |
+| `elf_examples_*(...)` | Example .mai/.mei/.txt from `C:/ELF600/examples/` | 332 files, 533k chars |
+| `elf_wiki_*(...)` | Vendor wiki pages from elf.co.jp PukiWiki | 67 pages, 176k chars |
+| `elf_python_*(...)` | Python ctypes API + configs from `C:/ELF600/bin/` | 15 files, 246k chars |
 
-Bundled data:
-- `help_dump.json` — 1141 HTM files from `C:/ELF600/help/` (Shift_JIS decoded, HTML-stripped, 1.18M chars)
-- `examples_dump.json` — 332 .mai/.mei/.txt files from `C:/ELF600/examples/` (228 MAGIC + 66 ELFIN + 38 BEAM, 533k chars)
+Each `_*` family has 3 tools: `_index`, `_search(query)`, `_get(path)`.
 
-Regenerate from a fresh ELF600 install via `scripts/crawl_help.py` and `scripts/crawl_examples.py`.
+Bundled data (all generated from fresh ELF600 install via `scripts/crawl_*.py`):
+- `help_dump.json` — Shift_JIS HTM decoded + HTML-stripped
+- `examples_dump.json` — 228 MAGIC + 66 ELFIN + 38 BEAM input files
+- `wiki_dump.json` — 67 curated pages from https://elf.co.jp/
+- `python_dump.json` — `elftypes.py`/`magtypes.py` (83 ctypes API functions each), `*.cfg`, `ELFERR.def`/`MESERR.def`, etc.
 
 ### Curated topics (`elf_usage`)
 
