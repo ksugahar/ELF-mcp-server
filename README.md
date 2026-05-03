@@ -12,16 +12,23 @@ This server does **not** execute ELF600 simulations — it provides curated docu
 
 ## Features
 
-**4 tools** providing both curated topic-based docs and raw access to all 1141 ELF600 help HTM files:
+**7 tools** providing curated docs + raw access to ELF600 help HTM and example input files:
 
 | Tool | Purpose |
 |---|---|
 | `elf_usage(topic)` | 26 curated topics — high-level recipes |
-| `elf_help_index(prefix)` | List all 1141 bundled help files (filterable by directory) |
-| `elf_help_search(query, top_k, prefix)` | Substring search across all help text (AND multi-keyword) |
+| `elf_help_index(prefix)` | List all 1141 bundled help HTM files |
+| `elf_help_search(query, top_k, prefix)` | Substring search across help text |
 | `elf_help_get(path, max_chars)` | Get full extracted text of a specific HTM |
+| `elf_examples_index(solver, category, ext)` | List 332 bundled example input files |
+| `elf_examples_search(query, top_k, solver, ext)` | Substring search across .mai/.mei/.txt examples |
+| `elf_examples_get(path, max_chars)` | Get full text of a specific example input |
 
-The bundled `help_dump.json` is generated from `C:/ELF600/help/` Shift_JIS HTM files via `scripts/crawl_help.py` (1141 files, ~1.18M characters, decoded + HTML-stripped).
+Bundled data:
+- `help_dump.json` — 1141 HTM files from `C:/ELF600/help/` (Shift_JIS decoded, HTML-stripped, 1.18M chars)
+- `examples_dump.json` — 332 .mai/.mei/.txt files from `C:/ELF600/examples/` (228 MAGIC + 66 ELFIN + 38 BEAM, 533k chars)
+
+Regenerate from a fresh ELF600 install via `scripts/crawl_help.py` and `scripts/crawl_examples.py`.
 
 ### Curated topics (`elf_usage`)
 

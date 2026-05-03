@@ -29,6 +29,7 @@ from mcp.server.fastmcp import FastMCP
 
 from .elf_knowledge import get_elf_documentation
 from .help_access import list_help_files, search_help, get_help_file
+from .examples_access import list_examples, search_examples, get_example
 
 mcp = FastMCP("mcp-server-elf")
 
@@ -135,6 +136,89 @@ def elf_help_search(query: str, top_k: int = 10, prefix: str = "") -> str:
 
 
 @mcp.tool()
+def elf_examples_index(solver: str = "", category: str = "", ext: str = "") -> str:
+    """
+    List all 332 ELF600 example input files (.mai analysis + .mei mesh + .txt + .props + .model)
+    bundled with this server, from C:/ELF600/examples/.
+
+    Use this to discover authoritative input file templates for any ELF analysis pattern.
+    The examples cover: BASIC, IPM motors, LscLl inductance, MK Maxwell, MOMC sinusoidal,
+    MR moment, MT time-stepping, V6Conv, WorkBook (MAGIC: 228 files), ELFIN: 66, BEAM: 38.
+
+    Args:
+        solver: "MAGIC" / "ELFIN" / "BEAM" (case-insensitive, empty = all).
+        category: Subcategory filter ("BASIC", "IPM", "MOMC", "LscLl", etc.).
+        ext: File extension ("mai", "mei", "txt", "props", "model"). Empty = all.
+
+    Returns:
+        Tab-separated: PATH<TAB>SOLVER<TAB>CATEGORY<TAB>EXT<TAB>CHARS per line.
+    """
+    files = list_examples(solver=solver or None, category=category or None, ext=ext or None)
+    if not files:
+        return f"No examples match (solver='{solver}', category='{category}', ext='{ext}')."
+    lines = [f"{f['path']}\t{f['solver']}\t{f['category']}\t{f['ext']}\t{f['char_count']}"
+             for f in files]
+    filt = []
+    if solver: filt.append(f"solver={solver}")
+    if category: filt.append(f"category={category}")
+    if ext: filt.append(f"ext={ext}")
+    header = f"# {len(files)} examples" + (f" ({', '.join(filt)})" if filt else " total")
+    return header + "\n" + "\n".join(lines)
+
+
+@mcp.tool()
+def elf_examples_search(query: str, top_k: int = 10, solver: str = "", ext: str = "") -> str:
+    """
+    Substring-search across all 332 ELF600 example input files (case-insensitive).
+
+    Multiple keywords (space-separated) require ALL to match (AND).
+    Find concrete .mai/.mei templates that demonstrate specific keywords/elements.
+
+    Args:
+        query: Keywords (e.g. "MOMC FREQ", "OHM2 MAB", "AMP1I", "HBA1 lamination").
+        top_k: Max results.
+        solver: Restrict to "MAGIC" / "ELFIN" / "BEAM".
+        ext: Restrict to "mai" / "mei" / "txt".
+
+    Returns:
+        Ranked snippets — drill into specific files via ``elf_examples_get``.
+    """
+    results = search_examples(query, top_k=top_k, solver=solver or None, ext=ext or None)
+    if not results:
+        return f"No matches for '{query}'"
+    out = [f"# {len(results)} matches for '{query}'\n"]
+    for i, r in enumerate(results, 1):
+        out.append(f"## [{i}] {r['path']}  ({r['solver']}/{r['category']}, .{r['ext']}, score={r['score']})")
+        out.append(r["snippet"])
+        out.append("")
+    return "\n".join(out)
+
+
+@mcp.tool()
+def elf_examples_get(path: str, max_chars: int = 30000) -> str:
+    """
+    Get full text of a specific ELF600 example input file.
+
+    Args:
+        path: Relative path under C:/ELF600/examples/, e.g. "magic/BASIC/ABCL2.mai",
+              "magic/MOMC/coil_eddy.mai", "elfin/MOMC/cap1.mei".
+              Filename-only also works if unambiguous.
+        max_chars: Truncate output if longer (default 30000).
+
+    Returns:
+        File metadata + raw text (Shift_JIS decoded if needed).
+    """
+    result = get_example(path, max_chars=max_chars)
+    if "error" in result:
+        return f"Error reading '{path}': {result['error']}"
+    head = f"# {result['path']}  ({result['solver']}/{result['category']}, .{result['ext']})"
+    head += f"\n_chars: {result['char_count']}_"
+    if result["truncated"]:
+        head += " (truncated)"
+    return head + "\n\n" + result["text"]
+
+
+@mcp.tool()
 def elf_help_get(path: str, max_chars: int = 30000) -> str:
     """
     Get full extracted text of a specific ELF600 help file.
@@ -228,7 +312,7 @@ def main():
         print("ELF MCP server self-test:")
 
         # 1. Curated topics
-        print("[1/4] elf_usage topics:")
+        print("[1/7] elf_usage topics:")
         topics = [
             "overview", "mai_format", "mei_format", "meg_format",
             "magic", "elfin", "beam", "element_types", "bh_curves",
@@ -244,7 +328,7 @@ def main():
         print(f"  {len(topics)} topics OK")
 
         # 2. Help index
-        print("[2/4] elf_help_index:")
+        print("[2/7] elf_help_index:")
         idx = elf_help_index()
         n_files = idx.count("\n") - 1
         assert n_files > 1000, f"Expected >1000 files, got {n_files}"
@@ -254,19 +338,46 @@ def main():
         print(f"  m_rf1/ filter OK")
 
         # 3. Help search
-        print("[3/4] elf_help_search:")
+        print("[3/7] elf_help_search:")
         for q in ["MOMC", "渦電流", "OHM2", "FORC"]:
             r = elf_help_search(q, top_k=5)
             assert "No matches" not in r, f"Query '{q}' had no matches"
         print(f"  4 queries OK")
 
         # 4. Help get
-        print("[4/4] elf_help_get:")
+        print("[4/7] elf_help_get:")
         for p in ["m_rf1/index.htm", "d_ken/MOMC.htm", "u_support/error.htm"]:
             r = elf_help_get(p)
             assert "Error reading" not in r, f"Failed to read {p}"
             assert len(r) > 100, f"{p} returned too little"
         print(f"  3 files OK")
+
+        # 5. Examples index
+        print("[5/7] elf_examples_index:")
+        all_idx = elf_examples_index()
+        n_ex = all_idx.count("\n") - 1
+        assert n_ex > 300, f"Expected >300 examples, got {n_ex}"
+        magic_idx = elf_examples_index(solver="MAGIC")
+        assert "magic/BASIC/" in magic_idx, "MAGIC filter missed BASIC/"
+        mai_idx = elf_examples_index(ext="mai")
+        n_mai = mai_idx.count("\n") - 1
+        assert n_mai > 100, f"Expected >100 .mai files, got {n_mai}"
+        print(f"  {n_ex} examples ({n_mai} .mai), filters OK")
+
+        # 6. Examples search
+        print("[6/7] elf_examples_search:")
+        for q in ["MOMC", "OHM2", "FREQ", "PRE"]:
+            r = elf_examples_search(q, top_k=5)
+            assert "No matches" not in r, f"Query '{q}' had no matches"
+        print(f"  4 queries OK")
+
+        # 7. Examples get
+        print("[7/7] elf_examples_get:")
+        for p in ["magic/BASIC/ABCL2.mai"]:
+            r = elf_examples_get(p)
+            assert "Error reading" not in r, f"Failed to read {p}"
+            assert "MOMC" in r or "PRE" in r, f"{p} missing expected MAGIC keyword"
+        print(f"  1 file OK")
 
         print("PASSED")
         return
