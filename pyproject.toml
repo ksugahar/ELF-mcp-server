@@ -1,0 +1,47 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mcp-server-elf"
+version = "1.27.0"
+description = "MCP server providing ELF600 electromagnetic field analysis (MAGIC/ELFIN/BEAM) documentation: .mai/.mei/.meg formats, eddy current setup (MAB/MAT/MBB), sinusoidal AC (SOL MOMC), IPM motor workflow."
+readme = "README.md"
+license = {text = "BSD-3-Clause"}
+requires-python = ">=3.10"
+authors = [{name = "Kengo Sugahara", email = "ksugahar@ele.kindai.ac.jp"}]
+keywords = ["mcp", "model-context-protocol", "elf", "elf600", "electromagnetic", "fem", "bem", "eddy-current", "magnetostatic", "magic", "elfin"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+dependencies = [
+    "mcp>=1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/ksugahar/mcp-server-elf"
+Repository = "https://github.com/ksugahar/mcp-server-elf"
+Issues = "https://github.com/ksugahar/mcp-server-elf/issues"
+"ELF600 Vendor" = "https://www.science-solutions.jp/elf/"
+
+[project.scripts]
+mcp-server-elf = "mcp_server_elf.server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mcp_server_elf"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/mcp_server_elf",
+    "README.md",
+    "LICENSE",
+    "pyproject.toml",
+]
