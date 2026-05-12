@@ -53,8 +53,13 @@ magic, elfin, beam, element_types, bh_curves,
 sol_commands, mei_commands, ipm_motor, inductance,
 magnetization, examples, meg_export, treasure_box,
 sinusoidal, anisotropy, sted, meshing, convergence,
-force_methods, errors, iemesh, tools
+force_methods, errors, iemesh, tools, cln_extraction
 ```
+
+The `cln_extraction` topic documents the 6-step ELF MAGIC -> Cauer Ladder
+Network synthesis workflow (Foster fit + Cauer-I/II + 3-way validation
+against step response / Joule loss / Lorentz force). Distilled from the
+21-script analysis suite in `S:/ELF_MAGIC/2026_04_01_長方形CLN/`.
 
 ---
 

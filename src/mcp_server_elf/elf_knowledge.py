@@ -1717,6 +1717,211 @@ TOOLS_DOCS = """\
 """
 
 # ============================================================
+# Cauer Ladder Network (CLN) extraction from ELF MAGIC output
+# ============================================================
+#
+# Distilled from S:/ELF_MAGIC/2026_04_01_長方形CLN/ (21 Python scripts;
+# Cu cuboid 5x2x1 mm benchmark, B_x/B_y/B_z directions, sinusoidal AC
+# + transient validation, 2026-04..05).
+
+CLN_EXTRACTION = """\
+# ELF MAGIC -> Cauer Ladder Network (CLN) extraction workflow
+
+This topic documents the **post-processing pipeline** for synthesising an
+equivalent RL Cauer ladder (or Foster series) of a conductor's eddy-current
+response from ELF MAGIC sinusoidal-response output. The reference
+implementation is the 21-script analysis suite in
+`S:/ELF_MAGIC/2026_04_01_長方形CLN/`.
+
+ELF MAGIC produces field/current data for a list of frequencies via
+`SOL MOMC` (sinusoidal MOM Complex). The 4 steps below turn that into a
+compact 4-10-stage RL ladder that can be embedded in SPICE / equivalent
+circuits and reproduces the ELF response to within 0.1-1% across the
+sampled frequency range.
+
+## Step 1 -- ELF MAGIC SOL MOMC run
+
+Choose N frequencies log-spaced over the band of interest (typically
+10^2..10^8 Hz for thin metal targets). Example .mai SOL block:
+
+```
+SOL MOMC
+ FREQ 1   100
+ FREQ 2   1000
+ FREQ 3   10000
+ ...
+ FREQ 30  1e8
+ BCND, NODES
+ RHS  HXYZ  0  0  1     ! drive B_z = mu_0 * H_z = mu_0 unit
+END
+```
+
+Use the **same conductor mesh** for all frequencies (no remeshing).
+Output: `.mag` file with J (real + imag) at each frequency, plus `M1EW`
+Joule-loss density per element when requested.
+
+## Step 2 -- Parse `.mag` to extract J at each (x_e, omega)
+
+Key data-line patterns (ASCII format, regex-friendly):
+
+| Line tag | Meaning | Columns (after tag + 4 ints) |
+|----------|---------|------------------------------|
+| `M3GJG`  | Geometry: node position for nodal-J output | `x y z` (METERS) |
+| `M3GJ`   | Real part of nodal J | `Jx_re Jy_re Jz_re` (A/m^2) |
+| `M3GJI`  | Imag part of nodal J | `Jx_im Jy_im Jz_im` (A/m^2) |
+| `M3EJG`  | Geometry: element centroid (elemental-J output) | `x y z` |
+| `M3EJ`   | Real part of element-centroid J | `Jx_re Jy_re Jz_re` |
+| `M3EJI`  | Imag part of element-centroid J | `Jx_im Jy_im Jz_im` |
+| `M1EW`   | Joule loss density per element (W/m^3) | one column |
+| `TOTAL = ` in `.mao` | SOL FORT integrated force | `area flux Fx Fy Fz Tx Ty Tz` |
+
+Parsing convention: line tags repeat for each frequency step; counter-based
+parsing collects NEL (or NNODE) consecutive lines per step, then resets.
+
+**Pitfalls**:
+- `.mag` is **UTF-8** but `.mao` is **shift_jis** — open with the right codec.
+- Coordinates in `.mag` are in **meters** even if the `.mei` input used mm
+  (because ELF normalises via GSC=0.001).
+- Node-J (`M3GJ*`) gives a (N+1)^3 grid; element-J (`M3EJ*`) gives N^3
+  centroids. Choose ONE for moment integration to avoid double-counting.
+- Sometimes the geometry block is emitted only at step 0 — use a
+  `geom_done` flag and ignore later geom blocks.
+
+## Step 3 -- Compute magnetic-moment admittance Y_ij(i omega)
+
+The driving-direction-j to response-direction-i admittance is
+
+```
+Y_ij(i omega) = m_i(i omega) / H_j_applied
+m_i = (1/2) integral_V epsilon_ikl x_k J_l dV
+```
+
+For the standard cuboid benchmark (B_z driving):
+
+```python
+m_z = (1/2) sum_e (x_e * Jy_e - y_e * Jx_e) * V_e
+Y_zz = (m_z_real + 1j * m_z_imag) / H_applied
+```
+
+Compute Y at all N frequencies; build the data array `(omega_k, Y_k)`.
+
+For full anisotropic susceptibility tensor, run 3 jobs (B_x / B_y / B_z
+driving) and stack the 3x3 matrix at each frequency. See `cauer_3dir_full.py`.
+
+## Step 4 -- Foster fit then Cauer synthesis
+
+### Foster (parallel-pole) fit
+
+Model the admittance as a finite Foster series:
+
+```
+Y(s) = - mu_0 s sum_{n=1..N_F} a_n / (1 + s tau_n)
+```
+
+at s = i omega. Fit by minimising `sum_k |Y_data(omega_k) - Y_foster(omega_k)|^2`
+over `(a_n, tau_n)`. Practical pointers:
+
+- Use **scipy.optimize.least_squares** with log(tau_n) and log(a_n) as the
+  unknowns to keep the search well-conditioned.
+- Initial guesses for tau_n: log-spaced between 1/omega_max and 1/omega_min.
+- Increase N_F until the residual stops decreasing; typically 3-5 modes
+  capture > 99% of energy for simple cuboid / sphere geometry.
+- For higher-N stability, switch to **mpmath** (50 digits) -- the Hankel-
+  Pade conditioning blows up around N=6-7 in FP64 (see
+  `bem_foster_high_N_stability.py` and `pymor_cauer_RnLn.py`).
+
+### Foster -> Cauer-I (series-pole)
+
+Continued-fraction expansion at s = 0 gives the **Cauer-I R-L ladder**:
+
+```
+Y(s) = 1 / (R_0 + 1 / (s L_1 + 1 / (R_2 + 1 / (s L_3 + ...))))
+```
+
+Algorithm (see `foster_to_cauer_ELF.py`):
+1. Build Y as a rational polynomial num/den in numpy.poly1d from Foster
+   `(a_n, tau_n)`.
+2. At each stage k: extract constant (or 1/s) part as the next ladder
+   element, then invert and subtract; stop when the polynomial degree
+   drops below 1.
+3. For Cauer-II (series-inductor first) use continued fraction at s -> inf.
+
+### Foster -> Cauer-I (Hankel-Pade route)
+
+The **moment-matching** route is more robust for high-N: extract moments
+`m_k = integral of t^k h(t) dt` from Y(s) Taylor series at s=0, then run
+QD-Pade / Stieltjes / Wheeler-Lanczos to get the Cauer rungs. See the
+parent CLN research line (radia-mcp's `cln_sphere_dd` topic) for a DD
+(double-double) version that pushes the precision wall from FP64 stage 4-5
+to stage 12+.
+
+## Step 5 -- Cross-validation against ELF transient + force
+
+The synthesised CLN can be checked against three independent ELF outputs:
+
+| Check | Predicted by CLN | ELF source | Pass criterion |
+|-------|------------------|------------|----------------|
+| Step response m_z(t) | `m_z(t) = -mu_0 H_0 sum (a_n/tau_n) exp(-t/tau_n)` | `.mag` from SOL transient | < 1% relative at all sampled t |
+| Joule loss P(omega) | `P(omega) = - (omega/2) Im Y(i omega) * mu_0 * H_0^2 * V` | `.mao` integrated M1EW or `SOL ENGY` | < 1% relative |
+| Lorentz force F_z | `F_z = integral_V Re[J x B] / 2 dV` from CLN-reconstructed J,B | `.mao` `SOL FORT` `TOTAL` line | < 1% (Maxwell-stress agreement) |
+
+Scripts: `validate_step_response.py`, `validate_step_fine.py`,
+`validate_step_via_fft.py`, `validate_loss.py`, `validate_lorentz.py`,
+`check_lorentz_consistency.py`. See also `prony_time_fit.py` for an
+independent time-domain Prony fit of m_z(t) that should match the
+frequency-domain Foster (a_n, tau_n).
+
+## Step 6 -- Reconciliation and high-precision refinement
+
+For publication-quality cross-platform agreement, combine all 3 datasets
+(freq Y, time m(t), force F):
+
+- `joint_freq_time_fit.py` -- joint least squares over both domains.
+- `refit_cauer_high_order.py` -- 4..10-stage fits to find the right cutoff.
+- `reconcile_and_cauer.py` -- Foster <-> ELF reconciliation followed by
+  Cauer-I extraction.
+
+For high-precision (10+ stage) work, use the radia-mcp
+`cln_sphere_dd_pipeline` MCP tool's DD pipeline -- it pushes the FP64
+precision wall back via double-double arithmetic.
+
+## Quick reference: 21 reference scripts (S:/ELF_MAGIC/2026_04_01_長方形CLN/)
+
+| Script | Step | Purpose |
+|--------|------|---------|
+| `parse_mag_compute_Yzz.py` | 2,3 | Element-J -> Y_zz(i omega) for cuboid 5x2x1 |
+| `parse_mag_v2_M3GJ.py` | 2,3 | Node-J -> Y via 3D trapezoidal |
+| `parse_mag_v3_farfield.py` | 2,3 | Far-field dipole back-extraction (sanity) |
+| `parse_lorentz_force.py` | 5 | `.mao` SOL FORT TOTAL parser |
+| `bem_foster_high_N_stability.py` | 4 | Vector Fitting stability sweep |
+| `cauer_from_elf_30f.py` | 3,4 | 30-freq Foster + Cauer-I |
+| `cauer_3dir_full.py` | 4 | Tensor Y_ij + Cauer per direction |
+| `cauer_N_step_compare.py` | 5 | N-stage convergence vs ELF transient |
+| `elf_cauer_RnLn_highN.py` | 4 | High-N Cauer-I extraction |
+| `foster_to_cauer_ELF.py` | 4 | Foster -> Cauer-II continued fraction |
+| `joint_freq_time_fit.py` | 4,6 | Joint freq+time fit |
+| `prony_time_fit.py` | 4,6 | Time-domain Prony fit |
+| `pymor_cauer_RnLn.py` | 4 | pymor Vector Fitting alternative |
+| `reconcile_and_cauer.py` | 4,6 | Foster <-> ELF reconciliation |
+| `refit_cauer_high_order.py` | 4,6 | N=4..10 stage cutoff finder |
+| `validate_step_response.py` | 5 | Step response cross-check |
+| `validate_step_fine.py` | 5 | Fine-dt validation |
+| `validate_step_via_fft.py` | 5 | FFT-reconstructed step |
+| `validate_loss.py` | 5 | Joule loss P(omega) check |
+| `validate_lorentz.py` | 5 | Lorentz force F_z check |
+| `check_lorentz_consistency.py` | 5 | F_z = integral [Re J x B] / 2 dV cross-check |
+
+## See also
+
+- `elf_usage("sinusoidal")` for SOL MOMC complex-arithmetic conventions.
+- `elf_usage("force_methods")` for FORT / FORC / FIXB Maxwell-stress integration.
+- `elf_help_search("M3GJ")` / `elf_help_search("M3EJ")` for raw line specs
+  in the MAGIC reference manual.
+- The radia-mcp `cln_sphere_dd_pipeline` MCP tool for the DD high-precision
+  Cauer pipeline applied to the same workflow on a sphere benchmark.
+"""
+
+# ============================================================
 # Router function
 # ============================================================
 
@@ -1747,6 +1952,7 @@ _TOPICS = {
     "errors": ERROR_MESSAGES,
     "iemesh": IEMESH_TOOL,
     "tools": TOOLS_DOCS,
+    "cln_extraction": CLN_EXTRACTION,
 }
 
 

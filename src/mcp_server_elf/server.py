@@ -80,6 +80,12 @@ def elf_usage(topic: str = "all") -> str:
             "errors"           - Error messages (ELF-Q/E/W, 160+ codes)
             "iemesh"           - IEmesh tool overview and command families
             "tools"            - Wmap3, MagFilter2, MaiEditor3, ELF/Bench
+            "cln_extraction"   - ELF MAGIC -> Cauer Ladder Network synthesis
+                                 workflow (6-step Foster + Cauer-I/II + 3-way
+                                 cross-validation against step response /
+                                 Joule loss / Lorentz force). Distilled from
+                                 the 21-script analysis suite in
+                                 S:/ELF_MAGIC/2026_04_01_長方形CLN/
     """
     return get_elf_documentation(topic)
 
