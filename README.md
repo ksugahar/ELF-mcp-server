@@ -12,7 +12,7 @@ This server does **not** execute ELF600 simulations — it provides curated docu
 
 ## Features
 
-**13 tools** providing curated docs + raw access to ELF600 help HTM, example inputs, vendor wiki, and Python ctypes API:
+**16 tools + 1 prompt** providing curated docs + raw access to ELF600 help HTM, example inputs, vendor wiki, work-example dumps, and Python ctypes API:
 
 | Tool family | Purpose | Files |
 |---|---|---|

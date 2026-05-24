@@ -11,4 +11,4 @@ types, B-H curves, IPM motor workflows, sinusoidal AC analysis (SOL MOMC),
 and more.
 """
 
-__version__ = "1.32.0"
+__version__ = "1.33.0"
