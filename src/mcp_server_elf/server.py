@@ -38,6 +38,73 @@ mcp = FastMCP("mcp-server-elf")
 
 
 # ============================================================
+# Meta / overview (★ recommended first call)
+# Pattern adopted 2026-05-25 from radia-mcp.meta (Sugahara lab
+# discovery infrastructure). 16 tools is enough that a cold-start
+# LLM benefits from an overview before browsing tool-by-tool.
+# ============================================================
+
+_TOOL_CATALOG = [
+    ("elf_usage(topic)", "Curated documentation across 27 topics: "
+                          ".mai/.mei/.meg formats, MAGIC/ELFIN/BEAM "
+                          "solvers, element conventions, B-H, IPM motor, "
+                          "SOL MOMC AC, cln_extraction"),
+    ("elf_help_index / search / get", "Raw access to C:/ELF600/help/ "
+                                       "(1141 files, 1.18 MB)"),
+    ("elf_examples_index / search / get", "C:/ELF600/examples/ "
+                                            "(332 .mai/.mei/.txt, 533 KB)"),
+    ("elf_wiki_index / search / get", "elf.co.jp PukiWiki cache "
+                                       "(67 pages, 176 KB)"),
+    ("elf_python_index / search / get", "C:/ELF600/bin/ Python ctypes "
+                                         "API + config (15 files, 246 KB)"),
+    ("elf_work_index / search / get", "W:/00_CAE/ELF_MAGIC/ lab work "
+                                       "examples (789 files)"),
+]
+
+_RELATED_LAB_PACKAGES = [
+    ("radia-mcp", "pip install radia-mcp",
+     "https://github.com/ksugahar/Radia",
+     "37-server lab MCP ecosystem (Radia + NGSolve + Cubit + meta + ML)"),
+    ("COMSOL_Multiphysics_MCP", "(fork; not yet on PyPI)",
+     "https://github.com/ksugahar/COMSOL_Multiphysics_MCP",
+     "Lab fork of wjc9011/COMSOL_Multiphysics_MCP with multilingual + "
+     "Kelvin tutorial"),
+    ("mcp-server-document", "(LAB private)",
+     "(internal: S:/mcp-server)",
+     "Paper / grant / poster writing helpers"),
+]
+
+
+@mcp.tool()
+def elf_overview() -> dict:
+    """RECOMMENDED FIRST CALL. Catalog of ELF MCP's 16 tools + 1
+    prompt, plus related lab MCP packages for cross-team discovery.
+
+    Returns:
+        dict with `tool_families` (curated 16-tool grouping), `n_tools`,
+        `related_lab_packages` (radia-mcp / COMSOL fork / document),
+        and a `next_step_hint` pointing at elf_usage for the topic
+        catalogue.
+    """
+    return {
+        "n_tools": 16,
+        "n_prompts": 1,
+        "tool_families": [
+            {"signature": sig, "description": desc}
+            for sig, desc in _TOOL_CATALOG
+        ],
+        "related_lab_packages": [
+            {"name": n, "install": inst, "github": gh, "description": d}
+            for n, inst, gh, d in _RELATED_LAB_PACKAGES
+        ],
+        "next_step_hint":
+            "Call elf_usage(topic='all') for the 27 curated topic "
+            "catalogue. Or elf_help_search('keyword') / "
+            "elf_examples_search('keyword') for raw access.",
+    }
+
+
+# ============================================================
 # MCP Tools
 # ============================================================
 
