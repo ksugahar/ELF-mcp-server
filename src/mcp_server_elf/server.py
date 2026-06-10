@@ -45,7 +45,7 @@ mcp = FastMCP("mcp-server-elf")
 # ============================================================
 
 _TOOL_CATALOG = [
-    ("elf_usage(topic)", "Curated documentation across 28 topics: "
+    ("elf_usage(topic)", "Curated documentation across 29 topics: "
                           ".mai/.mei/.meg formats, MAGIC/ELFIN/BEAM "
                           "solvers, element conventions, B-H, IPM motor, "
                           "SOL MOMC AC, cln_extraction, licensing (dongle)"),
@@ -98,7 +98,7 @@ def elf_overview() -> dict:
             for n, inst, gh, d in _RELATED_LAB_PACKAGES
         ],
         "next_step_hint":
-            "Call elf_usage(topic='all') for the 28 curated topic "
+            "Call elf_usage(topic='all') for the 29 curated topic "
             "catalogue. Or elf_help_search('keyword') / "
             "elf_examples_search('keyword') for raw access.",
     }
@@ -158,6 +158,10 @@ def elf_usage(topic: str = "all") -> str:
                                  "dongle not recognized" troubleshooting
                                  (Code 43 / descriptor-request-failed on USB 3.x
                                  -> move to a USB 2.0 port)
+            "python_api"       - Python ctypes API: DLL wrappers (magtypes /
+                                 elftypes), Fortran-ABI calling convention,
+                                 end-to-end call sequence, key function table,
+                                 _R return variants, common pitfalls
     """
     return get_elf_documentation(topic)
 
@@ -641,7 +645,7 @@ def main():
             "magnetization", "examples", "meg_export",
             "treasure_box", "sinusoidal", "anisotropy", "sted",
             "meshing", "convergence", "force_methods", "errors",
-            "iemesh", "tools", "licensing",
+            "iemesh", "tools", "cln_extraction", "licensing", "python_api",
         ]
         for t in topics:
             result = elf_usage(t)

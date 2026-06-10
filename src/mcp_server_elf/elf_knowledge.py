@@ -2025,6 +2025,222 @@ pnputil /scan-devices
 
 
 # ============================================================
+# Python API
+# ============================================================
+
+PYTHON_API_DOCS = """\
+# ELF600 Python ctypes API
+
+ELF600 ships two Python ctypes wrappers in the `bin/` directory:
+
+| Wrapper | DLL | Solver |
+|---------|-----|--------|
+| `magtypes.py` / class `mag` | `magh1600.dll` | MAGIC (magnetostatic / eddy) |
+| `elftypes.py` / class `elf` | `elfh1300.dll` | ELFIN (electrostatic) |
+
+Both load the DLL on instantiation and expose all DLL functions as class methods.
+The `bin/` directory must be on `PATH`, or the `ELF600_BIN` environment variable
+can override the default path in enhanced wrapper versions.
+
+## Calling convention (Fortran pass-by-reference ABI)
+
+**Scalar arguments** are wrapped by the method layer with `ctypes.byref`:
+```python
+m.SET_AMP1(mid, 100.0)
+# internally: dll.SET_AMP1(byref(c_int(mid)), byref(c_double(100.0)))
+```
+
+**Array arguments** pass a `numpy.ndarray` directly — dtype must match exactly:
+```python
+bx = np.zeros(N, dtype=np.float64)   # float64 required
+m.GET_FIEL_N(nid, x, y, z, bx, by, bz)   # bx/by/bz populated in-place
+```
+
+**String arguments** use `.encode() + b"/"` sentinel (Fortran string terminator);
+the wrapper handles this, so callers pass plain Python `str`:
+```python
+m.START_PRE("MYMODEL")   # internally: dll.START_PRE(b"MYMODEL/")
+```
+
+## Method name suffixes
+
+| Suffix | Meaning |
+|--------|---------|
+| *(none)* | Caller provides pre-allocated numpy output buffers |
+| `_V` | Vector variant: coordinates as a shape-`(3,)` float64 array |
+| `_A` | Array variant: evaluate at M points simultaneously |
+| `_R` | **Return variant** — allocates buffers internally; returns Python values |
+
+Prefer `_R` variants in scripts:
+```python
+bx, by, bz = m.GET_FIEL_X_R(0.0, 0.0, 0.005)
+Bvec = m.GET_FIEL_X_V_R([0.0, 0.0, 0.005])      # shape-(3,) array
+fx,fy,fz,tx,ty,tz = m.GET_FORT_R(mid)
+flux = m.GET_FLUM_R(mid_target, nb3, mid_source)
+```
+
+## End-to-end call sequence (MAGIC)
+
+```python
+import os, sys
+os.chdir(project_directory)   # START_PRE resolves .mai/.meg from cwd
+sys.path.insert(0, elf600_bin_dir)
+from magtypes import mag
+
+m = mag()
+
+# 1 — open project (MYMODEL.mai + MYMODEL.meg must exist in cwd)
+m.START_PRE("MYMODEL")
+
+# 2 — allocate result storage (n = max element ID in model)
+m.SET_NMAD(n);  m.SET_NMAF(n);  m.SET_NMAH(n);  m.SET_NMAO(n)
+
+# 3 — (optional) update excitation before each moment
+m.SET_AMP1(1, 100.0)      # 100 A in coil element group 1
+
+# 4 — solve one moment
+m.SOL_MOME()
+
+# 5 — retrieve results
+bx, by, bz = m.GET_FIEL_X_R(x, y, z)
+fx,fy,fz,tx,ty,tz = m.GET_FORT_R(mid)
+flux = m.GET_FLUM_R(mid_t, nb3, mid_s)
+
+# 6 — parametric sweep: update excitation, re-solve in a loop
+for amp in [50.0, 100.0, 200.0]:
+    m.SET_AMP1(1, amp)
+    m.SOL_MOME()
+    _, _, bz_val = m.GET_FIEL_X_R(0.0, 0.0, 0.01)
+    print(f"amp={amp} A  Bz={bz_val*1e3:.3f} mT")
+
+# 7 — per-project cleanup (after all moments for this project)
+m.SOL_END()
+m.DE_ALLOCATE()
+m.CLOSE_FILE()
+# m.STOP_DLL()  # omit here; call once at end of the entire Python session
+```
+
+Use `RESET_MOME()` to restart the solver from scratch while keeping the project open.
+
+## Key functions reference
+
+### Lifecycle
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `START_PRE(name)` | `str` | Open project; `name` = file stem (no extension) |
+| `SET_NMAG/NMAF/NMAH/NMAO/NMAD(n)` | `int` | Allocate result buffers |
+| `SOL_MOME()` | — | Solve one moment / time step |
+| `RESET_MOME()` | — | Reset state (keep project open) |
+| `SOL_END()` | — | Finalize solution |
+| `DE_ALLOCATE()` | — | Free internal arrays |
+| `CLOSE_FILE()` | — | Close project files |
+| `STOP_DLL()` | — | Unload DLL (once per process) |
+
+### Excitation
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `SET_AMP1(mid, A)` | `int, float` | Coil current [A] on element group `mid` |
+| `SET_VOL1(mid, V)` | `int, float` | Voltage source [V] |
+| `SET_OHM1(mid, R)` | `int, float` | Resistance [Ω] |
+| `SET_COI1(mid,T,NB1,NB2)` | `int,float,int,int` | Coil: turns, start/end boundary |
+| `SET_UNI1(Hx,Hy,Hz)` | `float×3` | Applied uniform H-field [A/m] |
+| `SET_VEC3(mid,vx,vy,vz)` | `int,float×3` | Remanence direction (MBB permanent magnet) |
+| `SET_VEC1(eid,vx,vy,vz)` | `int,float×3` | Per-element remanence direction |
+| `SET_MOV1(mid,x,y,z,t)` | `int,float×4` | Motion: translation + angle [rad] |
+| `SET_ORI1(mid,x,y,z,k)` | `int,float×3,int` | Orientation for anisotropic material |
+| `SET_TIME(start,step)` | `float×2` | Transient start time and step |
+| `SET_NONL(method,n,tol)` | `int,int,float` | Nonlinear iteration control |
+| `SET_PASS(n)` | `int` | Number of BEM passes |
+| `SET_NCPU(n)` | `int` | CPU thread count |
+
+### B-H curve (nonlinear MAGIC iron)
+
+```python
+m.SET_HBID(mid)              # begin curve for element group mid
+m.SET_HBUN(mid, "A/m", "T") # unit strings (Fortran string sentinel handled)
+m.SET_HBSC(mid, Hs, Bs)     # scale factors (usually 1.0)
+for H, B in bh_points:
+    m.SET_HBCU(H, B)         # add one point at a time
+```
+
+### Field retrieval (_R variants)
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `GET_FIEL_X_R(x,y,z)` | `Bx,By,Bz` | B-field at arbitrary coordinate |
+| `GET_FIEL_X_V_R(pos)` | `array(3)` | B-field, vector position input |
+| `GET_FIEL_X_A_R(M,X,Y,Z)` | `Bx[M],By[M],Bz[M]` | B-field at M coordinates |
+| `GET_FIEL_N_R(nid)` | `x,y,z,Bx,By,Bz` | B-field at mesh node `nid` |
+| `GET_FIEL_N_V_R(nid)` | `pos(3),B(3)` | B-field at mesh node (vector) |
+| `GET_FORT_R(mid)` | `Fx,Fy,Fz,Tx,Ty,Tz` | Force+torque on element group |
+| `GET_FORT_V_R(mid)` | `F(3),T(3)` | Force+torque (vector form) |
+| `GET_FIXB_R(mid,n)` | `Fx,Fy,Fz,Tx,Ty,Tz` | Force on fixed boundary |
+| `GET_FLUM_R(mid_t,nb3,mid_s)` | `float` | Flux linkage |
+| `GET_EMFM_R(mid)` | `amp, emf` | Induced EMF in coil group |
+| `GET_NONL_R(i)` | `n, a` | Nonlinear convergence info |
+
+### PUT_MAD: write result data to .mad file
+
+`PUT_MAD_*` writes tagged result records (4-char key, indices i/j, then data):
+
+| Method | Description |
+|--------|-------------|
+| `PUT_MAD_1(key,i,j,val)` | One scalar |
+| `PUT_MAD_3(key,i,j,x,y,z)` | Three scalars |
+| `PUT_MAD_6(key,i,j,a,b,c,d,e,f)` | Six scalars (e.g. force+torque) |
+| `PUT_MAD_V(key,i,j,arr)` | Shape-`(3,)` array |
+| `PUT_MAD_VV(key,i,j,X,Y)` | Two shape-`(3,)` arrays |
+| `PUT_MAD_H(key,i,j,arr)` | Shape-`(6,)` array |
+
+### MAGIC eddy current (MAB/MAT element groups)
+
+| Method | Arguments | Description |
+|--------|-----------|-------------|
+| `SET_EDID(mid)` | `int` | Declare eddy-current group |
+| `SET_EDSC(mid,Es,Ds)` | `int,float,float` | σ and scale |
+| `SET_EDCU(E,D)` | `float,float` | Global eddy parameters |
+
+### ELFIN field retrieval (electrostatic, elftypes.py)
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `GET_POTE_X_R(x,y,z)` | `float` | Scalar potential φ at coordinate |
+| `GET_POTE_N_R(nid)` | `x,y,z, φ` | φ at mesh node |
+| `GET_POTE_X_A_R(M,X,Y,Z)` | `array(M)` | φ at M coordinates |
+| `GET_POTE_X_V_R(pos)` | `float` | φ, vector position input |
+
+ELFIN material data uses `SET_CHA1/CHA2/VAL1` (charge / permittivity).
+ELFIN does not have `GET_FORT`, `GET_FLUM`, or `GET_EMFM`.
+
+## Common pitfalls
+
+- **Working directory**: `START_PRE("NAME")` opens `NAME.mai` + `NAME.meg`
+  relative to the current directory. Call `os.chdir(project_dir)` first, or
+  pass the full absolute path stem.
+- **Buffer dtype**: numpy arrays passed to non-`_R` variants must use exactly
+  `dtype=np.float64` or `dtype=np.int32` as declared. Wrong dtype → silent
+  data corruption or a ctypes type mismatch.
+- **Single session per process**: Only one DLL instance can be active. Creating
+  a second `mag()` in the same process is not supported.
+- **Cleanup order**: `SOL_END()` → `DE_ALLOCATE()` → `CLOSE_FILE()` per
+  project. Call `STOP_DLL()` only once at the very end of a Python process —
+  it is a blocking/finalizing call and must **not** be used inside a loop or
+  a context manager that wraps individual projects. The context manager
+  `__exit__` does **not** call `STOP_DLL()` for this reason.
+- **`from magtypes import *`**: This also imports `numpy as np` into the calling
+  namespace (magtypes.py imports numpy at module level).
+
+## See also
+- `elf_usage("magic")` — MAGIC solver details, .mai keywords, element types
+- `elf_usage("elfin")` — ELFIN solver, D-E curves
+- `elf_usage("examples")` — Example models (MBCL magnetostatic, ABCL/BBCL transient)
+- `elf_usage("bh_curves")` — B-H table format and extrapolation rules
+"""
+
+
+# ============================================================
 # Router function
 # ============================================================
 
@@ -2057,6 +2273,7 @@ _TOPICS = {
     "tools": TOOLS_DOCS,
     "cln_extraction": CLN_EXTRACTION,
     "licensing": LICENSING_DOCS,
+    "python_api": PYTHON_API_DOCS,
 }
 
 
