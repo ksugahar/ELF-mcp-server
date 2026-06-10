@@ -45,10 +45,10 @@ mcp = FastMCP("mcp-server-elf")
 # ============================================================
 
 _TOOL_CATALOG = [
-    ("elf_usage(topic)", "Curated documentation across 27 topics: "
+    ("elf_usage(topic)", "Curated documentation across 28 topics: "
                           ".mai/.mei/.meg formats, MAGIC/ELFIN/BEAM "
                           "solvers, element conventions, B-H, IPM motor, "
-                          "SOL MOMC AC, cln_extraction"),
+                          "SOL MOMC AC, cln_extraction, licensing (dongle)"),
     ("elf_help_index / search / get", "Raw access to C:/ELF600/help/ "
                                        "(1141 files, 1.18 MB)"),
     ("elf_examples_index / search / get", "C:/ELF600/examples/ "
@@ -98,7 +98,7 @@ def elf_overview() -> dict:
             for n, inst, gh, d in _RELATED_LAB_PACKAGES
         ],
         "next_step_hint":
-            "Call elf_usage(topic='all') for the 27 curated topic "
+            "Call elf_usage(topic='all') for the 28 curated topic "
             "catalogue. Or elf_help_search('keyword') / "
             "elf_examples_search('keyword') for raw access.",
     }
@@ -153,6 +153,11 @@ def elf_usage(topic: str = "all") -> str:
                                  Joule loss / Lorentz force). Distilled from
                                  the 21-script analysis suite in
                                  S:/ELF_MAGIC/2026_04_01_長方形CLN/
+            "licensing"        - Sentinel HL USB dongle (HASP): run-time,
+                                 Admin Control Center (localhost:1947), and
+                                 "dongle not recognized" troubleshooting
+                                 (Code 43 / descriptor-request-failed on USB 3.x
+                                 -> move to a USB 2.0 port)
     """
     return get_elf_documentation(topic)
 
@@ -636,7 +641,7 @@ def main():
             "magnetization", "examples", "meg_export",
             "treasure_box", "sinusoidal", "anisotropy", "sted",
             "meshing", "convergence", "force_methods", "errors",
-            "iemesh", "tools",
+            "iemesh", "tools", "licensing",
         ]
         for t in topics:
             result = elf_usage(t)

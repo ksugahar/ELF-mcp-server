@@ -1911,6 +1911,18 @@ precision wall back via double-double arithmetic.
 | `validate_lorentz.py` | 5 | Lorentz force F_z check |
 | `check_lorentz_consistency.py` | 5 | F_z = integral [Re J x B] / 2 dV cross-check |
 
+## Common Y(s) helper formulas
+
+For the unit-driving cuboid 5x2x1 mm benchmark:
+
+- **Saturation susceptibility** Y_sat = lim_{omega -> inf} Y(i omega) = -V_conductor
+  (perfect diamagnetic limit). For 5x2x1 mm: Y_sat = -1e-8 m^3.
+- **Low-freq slope** Y(0) = 0 (no DC magnetization for a perfect conductor).
+- **Joule loss** P(omega) = -(omega/2) Im{Y(i omega)} * mu_0 * |H_0|^2 * V.
+  Cross-check against M1EW total via integral_V M1EW dV.
+- **Foster step response** m(t) = -mu_0 H_0 sum (a_n/tau_n) exp(-t/tau_n);
+  m(0+) = -V_conductor * H_0 (saturation), m(inf) = 0.
+
 ## See also
 
 - `elf_usage("sinusoidal")` for SOL MOMC complex-arithmetic conventions.
@@ -1920,6 +1932,97 @@ precision wall back via double-double arithmetic.
 - The radia-mcp `cln_sphere_dd_pipeline` MCP tool for the DD high-precision
   Cauer pipeline applied to the same workflow on a sphere benchmark.
 """
+
+# ============================================================
+# Licensing / dongle (Sentinel HL)
+# ============================================================
+
+LICENSING_DOCS = """\
+# ELF600 Licensing -- Sentinel HL USB Dongle (HASP)
+
+ELF600 is protected by a **SafeNet/Thales Sentinel HL USB dongle** (formerly
+HASP HL). To read the license, the **Sentinel LDK Run-time Environment** must be
+installed and the `hasplms` ("Sentinel LDK License Manager") service running.
+A healthy dongle enumerates with USB identity **VID_0529 / PID_0001**
+("Sentinel HL" / "Sentinel USB Key") and binds the `aksusb` / `akshasp` drivers.
+
+## Admin Control Center (ACC)
+The run-time exposes a local web console:
+
+- URL: **http://localhost:1947**  (Sentinel Admin Control Center)
+- The "Sentinel Keys" page lists every locally-connected and network key.
+- A healthy local dongle appears with `addrs: Local`, a Key ID, and the ELF
+  vendor code.
+
+If ELF refuses to start with a licensing error, confirm the key is visible here
+first.
+
+## Troubleshooting: dongle not recognized
+
+### Symptom A -- "Unknown USB Device (Device Descriptor Request Failed)"
+Device Manager shows the dongle under *Universal Serial Bus controllers* as
+**"Unknown USB Device (Device Descriptor Request Failed)"** with a yellow
+warning (**Code 43**), and its USB ID is the placeholder **VID_0000 & PID_0002**
+(not VID_0529). The ACC shows **no key**.
+
+Meaning: Windows could not read the device descriptor, so it never learns the
+dongle is a Sentinel -- an enumeration failure *below* the driver layer. **This
+is NOT a missing-driver or bad-install problem** -- re-installing the run-time
+does not fix it. It is most commonly seen on **USB 3.x (xHCI) ports**,
+front-panel headers, USB hubs, or extension cables.
+
+**Fix -- change the USB port:**
+1. Unplug and re-seat the dongle **directly** (no hub / extension / KVM) into a
+   different port -- prefer a rear **USB 2.0** port, or go through a powered
+   **USB 2.0 hub** (the hub handles enumeration the dongle struggles with on raw
+   xHCI). Avoid blue USB 3.x and USB-C ports.
+2. On a clean enumeration the device re-appears as **"Sentinel HL" /
+   "Sentinel USB Key" (VID_0529 & PID_0001)**, the `aksusb` / `akshasp` drivers
+   bind automatically, and `ProblemCode` becomes 0 (status OK).
+3. Re-check the ACC (http://localhost:1947) -- the key now appears as
+   `addrs: Local`.
+
+Note: `aksusb` binds only **after** a real key enumerates cleanly. If you
+inspect during the failure and see "aksusb not installed", that is a *symptom*
+of the enumeration failure, not the root cause -- it appears as soon as the key
+is read on a good port.
+
+### Symptom B -- key present in ACC but ELF still complains
+If the key is visible in the ACC but ELF reports an expired/invalid license,
+that is a license-content matter (e.g. a time-limited "Sentinel HL Time" key),
+not a connection problem -- the hardware side is fine.
+
+## Windows diagnostics (PowerShell)
+```
+# Any USB device in an error state (Code 43, etc.)
+Get-CimInstance Win32_PnPEntity | Where-Object { $_.ConfigManagerErrorCode -ne 0 } |
+  Select-Object Name, DeviceID, ConfigManagerErrorCode
+
+# The Sentinel dongle's problem code and bound driver
+Get-PnpDevice -PresentOnly | Where-Object { $_.InstanceId -match 'VID_0529' } |
+  ForEach-Object { $_ | Get-PnpDeviceProperty `
+    -KeyName DEVPKEY_Device_ProblemCode, DEVPKEY_Device_Service }
+
+# License-manager service + drivers
+Get-Service hasplms
+Get-CimInstance Win32_SystemDriver | Where-Object { $_.Name -match 'aksusb|akshasp' }
+
+# ACC key list (programmatic)
+(Invoke-WebRequest 'http://localhost:1947/_int_/devices.html' -UseBasicParsing).Content
+```
+
+Clear stale/ghost device records, then force a fresh enumeration:
+```
+pnputil /remove-device "USB\\VID_0000&PID_0002\\..."   # the failed node(s)
+pnputil /scan-devices
+```
+
+## See also
+- `elf_usage("tools")` for the ELF application tools.
+- The Sentinel run-time (HASP driver) is installed together with ELF by the ELF
+  setup package; it is not shipped as a standalone installer.
+"""
+
 
 # ============================================================
 # Router function
@@ -1953,6 +2056,7 @@ _TOPICS = {
     "iemesh": IEMESH_TOOL,
     "tools": TOOLS_DOCS,
     "cln_extraction": CLN_EXTRACTION,
+    "licensing": LICENSING_DOCS,
 }
 
 
