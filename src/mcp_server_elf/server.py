@@ -32,7 +32,6 @@ from .help_access import list_help_files, search_help, get_help_file
 from .examples_access import list_examples, search_examples, get_example
 from .wiki_access import list_wiki_pages, search_wiki, get_wiki_page
 from .python_access import list_python_files, search_python, get_python_file
-from .work_access import list_work_files, search_work, get_work_file
 
 mcp = FastMCP("mcp-server-elf")
 
@@ -40,7 +39,7 @@ mcp = FastMCP("mcp-server-elf")
 # ============================================================
 # Meta / overview (★ recommended first call)
 # Pattern adopted 2026-05-25 from radia-mcp.meta (Sugahara lab
-# discovery infrastructure). 16 tools is enough that a cold-start
+# discovery infrastructure). 13 tools is enough that a cold-start
 # LLM benefits from an overview before browsing tool-by-tool.
 # ============================================================
 
@@ -57,8 +56,6 @@ _TOOL_CATALOG = [
                                        "(67 pages, 176 KB)"),
     ("elf_python_index / search / get", "C:/ELF600/bin/ Python ctypes "
                                          "API + config (15 files, 246 KB)"),
-    ("elf_work_index / search / get", "W:/00_CAE/ELF_MAGIC/ lab work "
-                                       "examples (789 files)"),
 ]
 
 _RELATED_LAB_PACKAGES = [
@@ -151,8 +148,7 @@ def elf_usage(topic: str = "all") -> str:
                                  workflow (6-step Foster + Cauer-I/II + 3-way
                                  cross-validation against step response /
                                  Joule loss / Lorentz force). Distilled from
-                                 the 21-script analysis suite in
-                                 S:/ELF_MAGIC/2026_04_01_長方形CLN/
+                                 a 21-script rectangular-CLN reference suite.
             "licensing"        - Sentinel HL USB dongle (HASP): run-time,
                                  Admin Control Center (localhost:1947), and
                                  "dongle not recognized" troubleshooting
@@ -408,88 +404,6 @@ def elf_wiki_get(name: str, max_chars: int = 30000) -> str:
 # ============================================================
 
 @mcp.tool()
-def elf_work_index(category: str = "", ext: str = "") -> str:
-    """
-    List 789 user-accumulated ELF MAGIC work-example files (W:/00_CAE/ELF_MAGIC).
-
-    Spans 58+ dated project subdirectories (2009-2026): TEAM problems, Halbach
-    magnets, vector hysteresis, TSVD, particle accelerators, SVD high-order,
-    homogenization, MMM+EFIE, perm-magnet bearings, harmonic balance, etc.
-
-    Args:
-        category: Filter by subdirectory name (e.g. "2014_09_05_ELF_加速器",
-                  "2010_02_13_MMM+EFIE", "02_Manual"). Empty = all.
-        ext: Filter by extension ("mai", "mei", "txt", "py", "wls", "log", "mao").
-
-    Returns:
-        Tab-separated: PATH<TAB>CATEGORY<TAB>EXT<TAB>CHARS per line.
-    """
-    files = list_work_files(category=category or None, ext=ext or None)
-    if not files:
-        return f"No work files match (category='{category}', ext='{ext}')."
-    lines = [f"{f['path']}\t{f['category']}\t{f['ext']}\t{f['char_count']}" for f in files]
-    filt = []
-    if category: filt.append(f"category={category}")
-    if ext: filt.append(f"ext={ext}")
-    header = f"# {len(files)} work-example files" + (f" ({', '.join(filt)})" if filt else " total")
-    return header + "\n" + "\n".join(lines)
-
-
-@mcp.tool()
-def elf_work_search(query: str, top_k: int = 10, category: str = "", ext: str = "") -> str:
-    """
-    Substring-search across all 789 user work-example files (W:/00_CAE/ELF_MAGIC).
-
-    Find concrete patterns from prior project work (e.g. how Halbach magnets
-    were modeled, what mesh density worked for accelerator magnets, etc.).
-
-    Args:
-        query: Keywords (e.g. "Halbach", "TEAM 7", "渦電流", "MOMC", "TSVD").
-        top_k: Max results.
-        category: Restrict to one subdirectory.
-        ext: Restrict to extension.
-
-    Returns:
-        Ranked snippets.
-    """
-    results = search_work(query, top_k=top_k, category=category or None, ext=ext or None)
-    if not results:
-        return f"No matches for '{query}'"
-    out = [f"# {len(results)} matches for '{query}'\n"]
-    for i, r in enumerate(results, 1):
-        out.append(f"## [{i}] {r['path']}  ({r['category']}/.{r['ext']}, score={r['score']})")
-        out.append(r["snippet"])
-        out.append("")
-    return "\n".join(out)
-
-
-@mcp.tool()
-def elf_work_get(path: str, max_chars: int = 30000) -> str:
-    """
-    Get full text of a specific user work-example file from W:/00_CAE/ELF_MAGIC.
-
-    Args:
-        path: Relative path under W:/00_CAE/ELF_MAGIC, e.g.
-              "2014_09_05_ELF_加速器/main.mai", "02_Manual/elfin_intro.txt".
-              Substring match works if unambiguous.
-        max_chars: Truncate output if longer.
-
-    Returns:
-        File text (UTF-8 decoded).
-    """
-    result = get_work_file(path, max_chars=max_chars)
-    if "error" in result:
-        return f"Error reading '{path}': {result['error']}"
-    head = f"# {result['path']}  ({result['category']}/.{result['ext']})"
-    head += f"\n_chars: {result['char_count']}_"
-    if result["truncated"]:
-        head += " (output-truncated)"
-    if result.get("file_truncated_in_bundle"):
-        head += "  [bundled file capped at 100 KB]"
-    return head + "\n\n" + result["text"]
-
-
-@mcp.tool()
 def elf_python_index(ext: str = "") -> str:
     """
     List 15 ELF600 bin/ files bundled with this server: Python ctypes
@@ -637,7 +551,7 @@ def main():
         print("ELF MCP server self-test:")
 
         # 1. Curated topics
-        print("[1/16] elf_usage topics:")
+        print("[1/13] elf_usage topics:")
         topics = [
             "overview", "mai_format", "mei_format", "meg_format",
             "magic", "elfin", "beam", "element_types", "bh_curves",
@@ -653,7 +567,7 @@ def main():
         print(f"  {len(topics)} topics OK")
 
         # 2. Help index
-        print("[2/16] elf_help_index:")
+        print("[2/13] elf_help_index:")
         idx = elf_help_index()
         n_files = idx.count("\n") - 1
         assert n_files > 1000, f"Expected >1000 files, got {n_files}"
@@ -663,14 +577,14 @@ def main():
         print(f"  m_rf1/ filter OK")
 
         # 3. Help search
-        print("[3/16] elf_help_search:")
+        print("[3/13] elf_help_search:")
         for q in ["MOMC", "渦電流", "OHM2", "FORC"]:
             r = elf_help_search(q, top_k=5)
             assert "No matches" not in r, f"Query '{q}' had no matches"
         print(f"  4 queries OK")
 
         # 4. Help get
-        print("[4/16] elf_help_get:")
+        print("[4/13] elf_help_get:")
         for p in ["m_rf1/index.htm", "d_ken/MOMC.htm", "u_support/error.htm"]:
             r = elf_help_get(p)
             assert "Error reading" not in r, f"Failed to read {p}"
@@ -678,7 +592,7 @@ def main():
         print(f"  3 files OK")
 
         # 5. Examples index
-        print("[5/16] elf_examples_index:")
+        print("[5/13] elf_examples_index:")
         all_idx = elf_examples_index()
         n_ex = all_idx.count("\n") - 1
         assert n_ex > 300, f"Expected >300 examples, got {n_ex}"
@@ -690,14 +604,14 @@ def main():
         print(f"  {n_ex} examples ({n_mai} .mai), filters OK")
 
         # 6. Examples search
-        print("[6/16] elf_examples_search:")
+        print("[6/13] elf_examples_search:")
         for q in ["MOMC", "OHM2", "FREQ", "PRE"]:
             r = elf_examples_search(q, top_k=5)
             assert "No matches" not in r, f"Query '{q}' had no matches"
         print(f"  4 queries OK")
 
         # 7. Examples get
-        print("[7/16] elf_examples_get:")
+        print("[7/13] elf_examples_get:")
         for p in ["magic/BASIC/ABCL2.mai"]:
             r = elf_examples_get(p)
             assert "Error reading" not in r, f"Failed to read {p}"
@@ -705,19 +619,19 @@ def main():
         print(f"  1 file OK")
 
         # 8-10. Wiki tools
-        print("[8/16] elf_wiki_index:")
+        print("[8/13] elf_wiki_index:")
         wi = elf_wiki_index()
         n_w = wi.count("\n") - 1
         assert n_w >= 50, f"Expected >=50 wiki pages, got {n_w}"
         print(f"  {n_w} wiki pages")
 
-        print("[9/16] elf_wiki_search:")
+        print("[9/13] elf_wiki_search:")
         for q in ["磁場解析", "MAGIC", "渦電流"]:
             r = elf_wiki_search(q, top_k=3)
             assert "No matches" not in r, f"Wiki query '{q}' had no matches"
         print(f"  3 queries OK")
 
-        print("[10/16] elf_wiki_get:")
+        print("[10/13] elf_wiki_get:")
         for p in ["FAQ", "磁場解析"]:
             r = elf_wiki_get(p)
             assert "Error reading" not in r, f"Failed to read wiki '{p}'"
@@ -725,7 +639,7 @@ def main():
         print(f"  2 pages OK")
 
         # 11-13. Python interface tools
-        print("[11/16] elf_python_index:")
+        print("[11/13] elf_python_index:")
         pi = elf_python_index()
         n_p = pi.count("\n") - 1
         assert n_p >= 10, f"Expected >=10 bin files, got {n_p}"
@@ -733,36 +647,17 @@ def main():
         assert "elftypes.py" in py_only and "magtypes.py" in py_only
         print(f"  {n_p} files (py filter OK)")
 
-        print("[12/16] elf_python_search:")
+        print("[12/13] elf_python_search:")
         for q in ["GET_FIEL", "SET_AMP1", "ctypes"]:
             r = elf_python_search(q, top_k=3)
             assert "No matches" not in r, f"Python query '{q}' had no matches"
         print(f"  3 queries OK")
 
-        print("[13/16] elf_python_get:")
+        print("[13/13] elf_python_get:")
         for p in ["elftypes.py", "magtypes.py", "ELFERR.def"]:
             r = elf_python_get(p)
             assert "Error reading" not in r, f"Failed to read python '{p}'"
         print(f"  3 files OK")
-
-        print("[14/16] elf_work_index:")
-        wi = elf_work_index()
-        n_w = wi.count("\n") - 1
-        assert n_w >= 500, f"Expected >=500 work files, got {n_w}"
-        print(f"  {n_w} work-example files")
-
-        print("[15/16] elf_work_search:")
-        for q in ["MAGIC", "BLOCK"]:
-            r = elf_work_search(q, top_k=3)
-            assert "No matches" not in r, f"work query '{q}' had no matches"
-        print(f"  2 queries OK")
-
-        print("[16/16] elf_work_get:")
-        first = wi.split("\n")[1]
-        first_path = first.split("\t")[0]
-        r = elf_work_get(first_path)
-        assert "Error reading" not in r, f"Failed to read work '{first_path}'"
-        print(f"  1 file ({first_path[:50]}...) OK")
 
         print("PASSED")
         return

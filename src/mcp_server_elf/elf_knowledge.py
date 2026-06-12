@@ -1720,7 +1720,7 @@ TOOLS_DOCS = """\
 # Cauer Ladder Network (CLN) extraction from ELF MAGIC output
 # ============================================================
 #
-# Distilled from S:/ELF_MAGIC/2026_04_01_長方形CLN/ (21 Python scripts;
+# Distilled from a rectangular-CLN reference suite (21 Python scripts;
 # Cu cuboid 5x2x1 mm benchmark, B_x/B_y/B_z directions, sinusoidal AC
 # + transient validation, 2026-04..05).
 
@@ -1730,8 +1730,7 @@ CLN_EXTRACTION = """\
 This topic documents the **post-processing pipeline** for synthesising an
 equivalent RL Cauer ladder (or Foster series) of a conductor's eddy-current
 response from ELF MAGIC sinusoidal-response output. The reference
-implementation is the 21-script analysis suite in
-`S:/ELF_MAGIC/2026_04_01_長方形CLN/`.
+implementation is a 21-script rectangular-CLN reference analysis suite.
 
 ELF MAGIC produces field/current data for a list of frequencies via
 `SOL MOMC` (sinusoidal MOM Complex). The 4 steps below turn that into a
@@ -1885,7 +1884,7 @@ For high-precision (10+ stage) work, use the radia-mcp
 `cln_sphere_dd_pipeline` MCP tool's DD pipeline -- it pushes the FP64
 precision wall back via double-double arithmetic.
 
-## Quick reference: 21 reference scripts (S:/ELF_MAGIC/2026_04_01_長方形CLN/)
+## Quick reference: 21 reference scripts (a rectangular-CLN reference suite)
 
 | Script | Step | Purpose |
 |--------|------|---------|

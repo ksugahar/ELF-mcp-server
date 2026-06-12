@@ -13,6 +13,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Publish-boundary gate (block private/commercial leakage)
+        run: |
+          echo "Scanning packaged sources for publish-boundary violations..."
+          # case-sensitive (TOSCA word-bounded so vendor "AutoScale" doesn't trip it)
+          PATTERN='_crossval|work_examples_dump|\bTOSCA\b|FEMM\+\+|vs\.? (FEMM|COMSOL|JMAG)|W:[\\/]00_CAE|G:[\\/]2014'
+          if grep -rnE "$PATTERN" src/mcp_server_elf README.md pyproject.toml ; then
+            echo "::error::Publish-boundary violation detected above (private crossval / removed work corpus / commercial-tool provenance / private drive path). Aborting publish."
+            exit 1
+          fi
+          echo "Publish-boundary gate passed."
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:

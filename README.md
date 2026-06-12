@@ -12,7 +12,7 @@ This server does **not** execute ELF600 simulations — it provides curated docu
 
 ## Features
 
-**16 tools + 1 prompt** providing curated docs + raw access to ELF600 help HTM, example inputs, vendor wiki, work-example dumps, and Python ctypes API:
+**13 tools + 1 prompt** providing curated docs + raw access to ELF600 help HTM, example inputs, vendor wiki, and Python ctypes API:
 
 | Tool family | Purpose | Files |
 |---|---|---|
@@ -58,8 +58,8 @@ force_methods, errors, iemesh, tools, cln_extraction
 
 The `cln_extraction` topic documents the 6-step ELF MAGIC -> Cauer Ladder
 Network synthesis workflow (Foster fit + Cauer-I/II + 3-way validation
-against step response / Joule loss / Lorentz force). Distilled from the
-21-script analysis suite in `S:/ELF_MAGIC/2026_04_01_長方形CLN/`.
+against step response / Joule loss / Lorentz force). Distilled from a
+21-script rectangular-CLN reference analysis suite.
 
 ---
 
