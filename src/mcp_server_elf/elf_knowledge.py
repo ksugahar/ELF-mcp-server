@@ -2243,6 +2243,29 @@ ELFIN does not have `GET_FORT`, `GET_FLUM`, or `GET_EMFM`.
 # Router function
 # ============================================================
 
+LIVE_DRIVE_DOCS = """\
+# Driving the open MAGIC kernel from Python (live)
+
+The open, dongle-free MAGIC field kernel (this project's open re-implementation,
+github.com/ksugahar/ELF) is driven from Python via the `magic_dll.Magic` wrapper
+(`src/python` on `sys.path`):
+
+    from magic_dll import Magic
+    magic = Magic("build/magic.dll")
+    magic.add_element(vertices, material_id=1)      # per tetrahedron (4x3 node coords)
+    magic.set_element_magnetization(e, (Mx, My, Mz))
+    Bv, Hv = magic.compute_field_at(x, y, z)        # field at a point
+    magic.finalize()
+
+Set `KMP_DUPLICATE_LIB_OK=TRUE` when using netgen + magic.dll in the same process.
+
+VERIFIED (2026-06-14): a uniformly magnetized block's on-axis fringe field matches the
+exact closed form (Camacho & Sosa, Rev. Mex. Fis. E 59 (2013) 8-17) to ~machine precision
+(rel 5.4e-10). Runnable example: `examples/block_magnet_fringe_field/` in the open repo.
+This is the live-drive leg used to cross-validate an independent BEM surface-charge solver
+against analytic closed forms.
+"""
+
 _TOPICS = {
     "overview": ELF_OVERVIEW,
     "mai_format": MAI_FORMAT,
@@ -2273,6 +2296,7 @@ _TOPICS = {
     "cln_extraction": CLN_EXTRACTION,
     "licensing": LICENSING_DOCS,
     "python_api": PYTHON_API_DOCS,
+    "live_drive": LIVE_DRIVE_DOCS,
 }
 
 
