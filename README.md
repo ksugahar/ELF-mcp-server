@@ -1,6 +1,6 @@
-# mcp-server-elf
+# elf-mcp-server
 
-[![PyPI](https://img.shields.io/pypi/v/mcp-server-elf.svg)](https://pypi.org/project/mcp-server-elf/)
+[![PyPI](https://img.shields.io/pypi/v/elf-mcp-server.svg)](https://pypi.org/project/elf-mcp-server/)
 [![License: BSD-3-Clause](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 [![Python: 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
 
@@ -66,12 +66,12 @@ against step response / Joule loss / Lorentz force). Distilled from a
 ## Installation
 
 ```bash
-pip install mcp-server-elf
+pip install elf-mcp-server
 ```
 
 Verify:
 ```bash
-mcp-server-elf --selftest
+elf-mcp-server --selftest
 ```
 
 ---
@@ -81,10 +81,10 @@ mcp-server-elf --selftest
 ### Claude Code
 
 ```bash
-claude mcp add elf "C:/Program Files/Python312/Scripts/mcp-server-elf.exe"
+claude mcp add elf "C:/Program Files/Python312/Scripts/elf-mcp-server.exe"
 ```
 
-(Adjust path for your Python install. On Linux/macOS, the script is typically `~/.local/bin/mcp-server-elf` or similar.)
+(Adjust path for your Python install. On Linux/macOS, the script is typically `~/.local/bin/elf-mcp-server` or similar.)
 
 ### Cursor / Other MCP clients
 
@@ -93,7 +93,7 @@ Add to your MCP config:
 {
   "mcpServers": {
     "elf": {
-      "command": "mcp-server-elf"
+      "command": "elf-mcp-server"
     }
   }
 }
@@ -102,7 +102,7 @@ Add to your MCP config:
 ### Self-test
 
 ```bash
-mcp-server-elf --selftest
+elf-mcp-server --selftest
 ```
 Iterates through all 26 topics and asserts non-empty documentation.
 

@@ -10,7 +10,7 @@ Bundles:
 Skips binary .exe / .dll / .sres.
 
 Output:
-  src/mcp_server_elf/python_dump.json
+  src/elf_mcp_server/python_dump.json
     {
       "elftypes.py": {
         "ext": "py",
@@ -46,7 +46,7 @@ def decode(raw: bytes) -> str:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--root", default=r"C:/ELF600/bin")
-    ap.add_argument("--out", default=str(Path(__file__).parent.parent / "src" / "mcp_server_elf" / "python_dump.json"))
+    ap.add_argument("--out", default=str(Path(__file__).parent.parent / "src" / "elf_mcp_server" / "python_dump.json"))
     args = ap.parse_args()
 
     root = Path(args.root)

@@ -1,4 +1,4 @@
-"""mcp-server-elf: MCP server providing ELF600 electromagnetic field analysis documentation.
+"""elf-mcp-server: MCP server providing ELF600 electromagnetic field analysis documentation.
 
 ELF600 (https://www.science-solutions.jp/elf/) is a BEM-based commercial
 electromagnetic analysis suite (MAGIC magnetostatic / ELFIN electrostatic /

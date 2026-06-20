@@ -25,7 +25,7 @@ from typing import Any
 
 @lru_cache(maxsize=1)
 def load_python_dump() -> dict[str, dict[str, Any]]:
-    data = resources.files("mcp_server_elf").joinpath("python_dump.json").read_text(encoding="utf-8")
+    data = resources.files("elf_mcp_server").joinpath("python_dump.json").read_text(encoding="utf-8")
     return json.loads(data)
 
 

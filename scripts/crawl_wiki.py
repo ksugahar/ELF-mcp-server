@@ -5,7 +5,7 @@ Filter: skip session-key pages (uppercase+digits placeholder pages)
         keep: meaningful content pages (technical articles, guides, FAQs)
 
 Output:
-  src/mcp_server_elf/wiki_dump.json
+  src/elf_mcp_server/wiki_dump.json
     {
       "ページ名": {
         "url": "https://elf.co.jp/index.php?...",
@@ -172,7 +172,7 @@ class WikiTextExtractor(HTMLParser):
 
 
 def fetch(url: str, timeout: int = 30) -> bytes:
-    req = Request(url, headers={"User-Agent": "mcp-server-elf/crawler"})
+    req = Request(url, headers={"User-Agent": "elf-mcp-server/crawler"})
     with urlopen(req, timeout=timeout) as r:
         return r.read()
 
@@ -211,7 +211,7 @@ def crawl_page(name: str) -> dict:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--out", default=str(Path(__file__).parent.parent / "src" / "mcp_server_elf" / "wiki_dump.json"))
+    ap.add_argument("--out", default=str(Path(__file__).parent.parent / "src" / "elf_mcp_server" / "wiki_dump.json"))
     ap.add_argument("--sleep", type=float, default=0.5, help="Seconds between requests (be polite)")
     ap.add_argument("--pages", nargs="*", default=None, help="Page names to crawl (overrides --pagelist)")
     ap.add_argument("--pagelist", default=None, help="File with one page name per line")

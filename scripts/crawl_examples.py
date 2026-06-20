@@ -3,7 +3,7 @@
 Skips .meg (binary mesh), .mag (binary results), .pdf, .xls/.xlsx (separate).
 
 Output:
-  src/mcp_server_elf/examples_dump.json
+  src/elf_mcp_server/examples_dump.json
     {
       "magic/BASIC/ABCL2.mai": {
         "ext": "mai",
@@ -41,7 +41,7 @@ def decode(raw: bytes) -> str:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--root", default=r"C:/ELF600/examples")
-    ap.add_argument("--out", default=str(Path(__file__).parent.parent / "src" / "mcp_server_elf" / "examples_dump.json"))
+    ap.add_argument("--out", default=str(Path(__file__).parent.parent / "src" / "elf_mcp_server" / "examples_dump.json"))
     args = ap.parse_args()
 
     root = Path(args.root)

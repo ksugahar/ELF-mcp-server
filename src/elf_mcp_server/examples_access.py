@@ -25,7 +25,7 @@ def load_examples_dump() -> dict[str, dict[str, Any]]:
     Each entry: {"ext", "solver", "category", "char_count", "byte_size", "text"}
     keyed by relative path under C:/ELF600/examples/ (e.g. "magic/BASIC/ABCL2.mai").
     """
-    data = resources.files("mcp_server_elf").joinpath("examples_dump.json").read_text(encoding="utf-8")
+    data = resources.files("elf_mcp_server").joinpath("examples_dump.json").read_text(encoding="utf-8")
     return json.loads(data)
 
 

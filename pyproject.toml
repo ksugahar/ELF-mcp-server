@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "mcp-server-elf"
+name = "elf-mcp-server"
 version = "1.34.0"
 description = "MCP server for ELF600 electromagnetic field analysis: 27 curated topics (incl. ELF MAGIC -> Cauer Ladder Network synthesis workflow) + 1141 help files + 332 examples + 146 wiki pages + Python ctypes API — 13 tools, all searchable."
 readme = "README.md"
@@ -27,26 +27,26 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/ksugahar/mcp-server-elf"
-Repository = "https://github.com/ksugahar/mcp-server-elf"
-Issues = "https://github.com/ksugahar/mcp-server-elf/issues"
+Homepage = "https://github.com/ksugahar/ELF-mcp-server"
+Repository = "https://github.com/ksugahar/ELF-mcp-server"
+Issues = "https://github.com/ksugahar/ELF-mcp-server/issues"
 "ELF600 Vendor" = "https://www.science-solutions.jp/elf/"
 
 [project.scripts]
-mcp-server-elf = "mcp_server_elf.server:main"
+elf-mcp-server = "elf_mcp_server.server:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/mcp_server_elf"]
+packages = ["src/elf_mcp_server"]
 
 [tool.hatch.build.targets.wheel.force-include]
-"src/mcp_server_elf/help_dump.json" = "mcp_server_elf/help_dump.json"
-"src/mcp_server_elf/examples_dump.json" = "mcp_server_elf/examples_dump.json"
-"src/mcp_server_elf/wiki_dump.json" = "mcp_server_elf/wiki_dump.json"
-"src/mcp_server_elf/python_dump.json" = "mcp_server_elf/python_dump.json"
+"src/elf_mcp_server/help_dump.json" = "elf_mcp_server/help_dump.json"
+"src/elf_mcp_server/examples_dump.json" = "elf_mcp_server/examples_dump.json"
+"src/elf_mcp_server/wiki_dump.json" = "elf_mcp_server/wiki_dump.json"
+"src/elf_mcp_server/python_dump.json" = "elf_mcp_server/python_dump.json"
 
 [tool.hatch.build.targets.sdist]
 include = [
-    "src/mcp_server_elf",
+    "src/elf_mcp_server",
     "README.md",
     "LICENSE",
     "pyproject.toml",

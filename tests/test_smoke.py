@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Smoke tests for the public ELF doc-server (mcp-server-elf).
+"""Smoke tests for the public ELF doc-server (elf-mcp-server).
 
 Minimal guards for a public package: the server imports, the four bundled
 vendor-doc dumps load, the tool surface is the expected size, and the removed
@@ -13,15 +13,15 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 
 def test_server_imports():
-    from mcp_server_elf import server
+    from elf_mcp_server import server
     assert server.mcp is not None
 
 
 def test_doc_dumps_load():
-    from mcp_server_elf.help_access import list_help_files
-    from mcp_server_elf.examples_access import list_examples
-    from mcp_server_elf.wiki_access import list_wiki_pages
-    from mcp_server_elf.python_access import list_python_files
+    from elf_mcp_server.help_access import list_help_files
+    from elf_mcp_server.examples_access import list_examples
+    from elf_mcp_server.wiki_access import list_wiki_pages
+    from elf_mcp_server.python_access import list_python_files
     assert len(list_help_files()) > 1000
     assert len(list_examples()) > 300
     assert len(list_wiki_pages()) > 50
@@ -29,7 +29,7 @@ def test_doc_dumps_load():
 
 
 def test_tool_surface_and_no_work_family():
-    from mcp_server_elf.server import mcp
+    from elf_mcp_server.server import mcp
     tools = asyncio.run(mcp.list_tools())
     names = [t.name for t in tools]
     assert len(names) >= 13
@@ -39,5 +39,5 @@ def test_tool_surface_and_no_work_family():
 
 
 def test_usage_topic_nonempty():
-    from mcp_server_elf.elf_knowledge import get_elf_documentation
+    from elf_mcp_server.elf_knowledge import get_elf_documentation
     assert len(get_elf_documentation("overview")) > 100

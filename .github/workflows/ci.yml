@@ -23,4 +23,4 @@ jobs:
       - name: Install package
         run: pip install -e .
       - name: Run selftest
-        run: mcp-server-elf --selftest
+        run: elf-mcp-server --selftest

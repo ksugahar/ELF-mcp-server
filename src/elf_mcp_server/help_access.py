@@ -25,7 +25,7 @@ def load_help_dump() -> dict[str, dict[str, Any]]:
     Each entry: {"title": str, "text": str, "byte_size": int, "char_count": int}
     keyed by relative path under C:/ELF600/help/ (e.g. "m_rf1/index.htm").
     """
-    data = resources.files("mcp_server_elf").joinpath("help_dump.json").read_text(encoding="utf-8")
+    data = resources.files("elf_mcp_server").joinpath("help_dump.json").read_text(encoding="utf-8")
     return json.loads(data)
 
 

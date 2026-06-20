@@ -19,8 +19,8 @@ Topics:
 - Magnetization / demagnetization
 
 Usage:
-    mcp-server-elf              # Start MCP server (stdio transport)
-    mcp-server-elf --selftest   # Run self-test
+    elf-mcp-server              # Start MCP server (stdio transport)
+    elf-mcp-server --selftest   # Run self-test
 """
 
 import sys
@@ -33,7 +33,7 @@ from .examples_access import list_examples, search_examples, get_example
 from .wiki_access import list_wiki_pages, search_wiki, get_wiki_page
 from .python_access import list_python_files, search_python, get_python_file
 
-mcp = FastMCP("mcp-server-elf")
+mcp = FastMCP("elf-mcp-server")
 
 
 # ============================================================
