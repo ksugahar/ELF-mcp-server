@@ -12,17 +12,20 @@ This server does **not** execute ELF600 simulations — it provides curated docu
 
 ## Features
 
-**13 tools + 1 prompt** providing curated docs + raw access to ELF600 help HTM, example inputs, vendor wiki, and Python ctypes API:
+**15 tools + 1 prompt** providing curated docs + raw access to ELF600 help HTM, example inputs, vendor wiki, and Python ctypes API:
 
 | Tool family | Purpose | Files |
 |---|---|---|
-| `elf_usage(topic)` | 26 curated topics — high-level recipes | (1762-line knowledge.py) |
+| `elf_usage(topic)` | 31 curated topics — high-level recipes | (knowledge.py) |
 | `elf_help_*(...)` | Help HTM files from `C:/ELF600/help/` | 1141 files, 1.18M chars |
-| `elf_examples_*(...)` | Example .mai/.mei/.txt from `C:/ELF600/examples/` | 332 files, 533k chars |
+| `elf_examples_*(...)` | Example .mai/.mei/.txt plus 100-card playbook from `C:/ELF600/examples/` | 332 files, 533k chars |
 | `elf_wiki_*(...)` | Vendor wiki pages from elf.co.jp PukiWiki | 67 pages, 176k chars |
 | `elf_python_*(...)` | Python ctypes API + configs from `C:/ELF600/bin/` | 15 files, 246k chars |
 
 Each `_*` family has 3 tools: `_index`, `_search(query)`, `_get(path)`.
+The examples family also has `elf_examples_playbook(limit=100)`, which
+summarizes 100 `.mai` examples as compact cards with detected SOL blocks,
+element families, feature tags, companion `.mei/.model` files, and reuse hints.
 
 Bundled data (all generated from fresh ELF600 install via `scripts/crawl_*.py`):
 - `help_dump.json` — Shift_JIS HTM decoded + HTML-stripped
@@ -39,7 +42,7 @@ Returns documentation on:
 - **Eddy current**: MAB / MAT / MBB elements, time-stepping, sinusoidal AC (SOL MOMC)
 - **Element types**: full catalog with DOF counts and symmetry restrictions (3D / 2D / Axisym)
 - **B-H curves**: anisotropy (HBA1/HBA2), recoil, extrapolation
-- **IPM motor workflow**: Ld/Lq calculation
+- **Motor workflows**: IPM Ld/Lq plus a radia-mcp/open-FEA concept bridge for air-gap field, torque, flux linkage/back-EMF, lamination, and eddy-current studies
 - **Inductance**: Lsc (JIS) and Ll (IEEJ) with 6 samples
 - **Magnetization / demagnetization** (MAGNE2)
 - **Convergence** troubleshooting, error codes (160+ ELF-Q/E/W codes)
@@ -50,10 +53,11 @@ Available topics:
 ```
 all, overview, mai_format, mei_format, meg_format,
 magic, elfin, beam, element_types, bh_curves,
-sol_commands, mei_commands, ipm_motor, inductance,
+sol_commands, mei_commands, ipm_motor, motor_radia_bridge, inductance,
 magnetization, examples, meg_export, treasure_box,
 sinusoidal, anisotropy, sted, meshing, convergence,
-force_methods, errors, iemesh, tools, cln_extraction
+force_methods, errors, iemesh, tools, cln_extraction,
+licensing, python_api, live_drive
 ```
 
 The `cln_extraction` topic documents the 6-step ELF MAGIC -> Cauer Ladder
@@ -104,7 +108,7 @@ Add to your MCP config:
 ```bash
 elf-mcp-server --selftest
 ```
-Iterates through all 26 topics and asserts non-empty documentation.
+Iterates through all curated topics and asserts non-empty documentation.
 
 ---
 

@@ -1226,6 +1226,90 @@ Three-phase-to-two-phase transform (Clarke) -> rotating coordinate transform
 """
 
 # ============================================================
+# Motor bridge: radia-mcp concepts -> ELF/MAGIC workflows
+# ============================================================
+
+MOTOR_RADIA_BRIDGE = """\
+# Motor Workflows: radia-mcp Concepts -> ELF/MAGIC
+
+This topic is a practical translation table for rotating-machine studies.
+Use it after `ipm_motor` when you want to turn open motor-FEA concepts
+(air-gap field, torque, flux linkage, skew, lamination/core loss) into
+ELF/MAGIC input files and post-processing steps.
+
+## Concept Map
+
+| Motor quantity | radia-mcp / open-FEA concept | ELF/MAGIC representation |
+|----------------|------------------------------|--------------------------|
+| Open-circuit PM air-gap field | PM source sweep, read B_r(theta) | MWL/MWV magnet elements + MCO/MJH space points + `SOL FIEL` |
+| Iron-boosted PM field | Add stator/rotor iron reluctivity | MMB/MMP/MMS/MBB iron elements + B-H curve or linear high-mu curve |
+| Cogging / reluctance torque | Maxwell-stress air-gap torque vs angle | MCM closed stress surface around rotor + `SOL FORT` |
+| Lorentz coil force | J x B force on windings | MCL coil elements + `SOL FIXB` |
+| Flux linkage / back-EMF | Phi(theta), e = -dPhi/dt | MCL search/phase coils + `SOL FIXA` / FLUM, then differentiate |
+| Ld/Lq | PM-only and current-on flux sweeps | `Motor1`/`Motor2` IPM workflow, then Fourier or dq transform |
+| Rotor rotation sweep | Rotate mesh or magnetization angle | `ORI1` + `MOV1`, `.model` rotor settings, and TIME steps |
+| Laminated steel | Effective anisotropic reluctivity | `HBA2` stacking factor + `VEC1`/`VEC3` stacking direction |
+| Eddy-current rotor/shield | Time-domain or sinusoidal diffusion | MAB/MAT/MBB + `TIME`, `STED`, or `SOL MOMC` |
+
+## Minimal Progression for Motor Examples
+
+1. **PM-only rotor field:** Build a magnet ring or IPM magnet set, place
+   `MCO*` / `MJH*` evaluation points in the air gap, run `SOL MOME` then
+   `SOL FIEL`, and Fourier-analyse B_r(theta).
+2. **Add linear iron:** Add stator/rotor iron with a simple monotone B-H
+   table or high-mu linear curve. Keep the same observation points so the
+   field boost is a direct ratio.
+3. **Torque:** Add an `MCM*` stress surface that encloses the rotor in the
+   air gap. Sweep rotor angle with `ORI1`/`MOV1` and run `SOL FORT`.
+4. **Flux linkage:** Add phase/search coils (`MCL*`), run `SOL FIXA` with
+   FLUM, unwrap Phi(theta), and compute back-EMF from angular speed.
+5. **Current-on machine:** Add three-phase `AMP1` definitions, `STAR` when
+   needed, and compare magnet-only vs current-on flux for Ld/Lq.
+6. **Loss extensions:** Use `HBA2` for lamination direction, `MOMC` for
+   linear harmonic studies, and MAB/MAT/MBB with TIME/STED for conducting
+   rotor or shield problems.
+
+## ELF/MAGIC Details That Matter
+
+- MWL magnets get their magnetisation direction from element winding
+  (node/face ordering); MWV magnets use `VEC1`/`VEC3`.
+- A simple linear soft-iron stator/rotor yoke can be authored as `MMB8T`
+  hexahedra with a two-point B-H curve, for example
+  `HBUN 2 OE G; HBCU 2 0 0; HBCU 2 1 1000` for an approximate
+  `mu_r=1000` material.
+- Air-gap probes should not sit numerically on a material boundary. Put
+  `MCO*` / `MJH*` points safely inside air when comparing B_r(theta).
+- Search or phase coils can be modeled with `MCL8T` volume coils or the
+  line-coil family (`MCL2T`/`MCL1*`). Define turns and source type with
+  `COI1`; for a passive pickup coil, set its `AMP1` current to zero and
+  request `SOL FIXA` / `FLUM` for that coil material.
+- `FLUM <MIDT> [NB3] [MIDS]` writes flux-linkage records (`M1MF`) to
+  the `.mag` result. Sweep rotor angle, collect Phi(theta), and compute
+  back-EMF from `e = -omega dPhi/dtheta`.
+- `SOL MOME` is the first solve. Post-blocks (`FIEL`, `FIXA`, `FORT`,
+  `FIXB`) read the solved state and can be added incrementally.
+- `SOL MOMC` is linear AC only: use `CMU1`/`CMU1I` instead of nonlinear
+  B-H curves, and remember that after MOMC only `FIEL` and `FIXA` are
+  available.
+- For torque, prefer `SOL FORT` with a clean closed stress surface in the
+  air gap. `SOL FORC` is useful, but stress-surface torque is usually the
+  motor quantity to track.
+- For 3D stress integration, place a closed `MCM4T` surface around the
+  target rotor/body in the air region, select it with `SELM ON <mid> <mid>
+  1`, and read the `.mao` `TOTAL =` row as
+  `area flux Fx Fy Fz Tx Ty Tz`.
+
+## Useful Starting Points
+
+- `elf_usage("ipm_motor")`: vendor IPM Ld/Lq workflow and example files.
+- `elf_usage("force_methods")`: FORC/FORT/FIXB comparison.
+- `elf_usage("anisotropy")`: lamination and anisotropic material setup.
+- `elf_usage("sted")`: steady-state eddy-current motion.
+- `elf_examples_search("MT06")`: IPM cogging-torque tutorial files.
+- `elf_examples_search("Motor1")`: IPM Ld/Lq example files.
+"""
+
+# ============================================================
 # Inductance computation
 # ============================================================
 
@@ -1586,6 +1670,12 @@ EXAMPLES_CATALOG = """\
 # ELF600 Example File Catalog
 
 Located in `C:\\ELF600\\examples\\`.
+
+Use `elf_examples_playbook(limit=100)` for compact cards over 100 example
+analyses. Each card summarizes paired `.mai`/`.mei`/`.model` files, detected
+SOL blocks, element families, feature tags (for example `flux-linkage`,
+`maxwell-force`, `eddy-current`, `sinusoidal-ac`, `motor`), and a reuse hint.
+Then call `elf_examples_get(path)` for the raw template.
 
 ## beam/ -- Charged Particle Beam Tracking
 | Example | Description |
@@ -2279,6 +2369,7 @@ _TOPICS = {
     "sol_commands": SOL_COMMANDS,
     "mei_commands": MEI_COMMANDS,
     "ipm_motor": IPM_MOTOR,
+    "motor_radia_bridge": MOTOR_RADIA_BRIDGE,
     "inductance": INDUCTANCE_DOCS,
     "magnetization": MAGNETIZATION_DOCS,
     "examples": EXAMPLES_CATALOG,
