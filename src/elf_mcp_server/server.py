@@ -35,6 +35,10 @@ from .sample_decks import (
     list_sample_decks,
     search_sample_decks,
     get_sample_deck,
+    build_sample_deck_cards,
+    build_team28_cards,
+    format_sample_deck_cards,
+    format_team28_cards,
 )
 from .recipes import (
     list_recipes,
@@ -69,7 +73,8 @@ _TOOL_CATALOG = [
     ("elf_examples_index / search / get / playbook", "C:/ELF600/examples/ "
                                                        "(332 .mai/.mei/.txt, 533 KB) "
                                                        "plus 100 compact example cards"),
-    ("elf_sample_decks_index / search / get", "Lab-authored runnable "
+    ("elf_sample_decks_index / search / get / playbook",
+                                              "Lab-authored ELF-runnable "
                                               "public .mai/.meg input decks "
                                               "(input files only; no solver outputs)"),
     ("elf_recipe_index / search / get / plan", "Public-safe workflow "
@@ -78,51 +83,74 @@ _TOOL_CATALOG = [
                                                 "outputs, checks, and pitfalls"),
     ("elf_wiki_index / search / get", "elf.co.jp PukiWiki cache "
                                        "(146 pages, 211 KB)"),
-    ("elf_python_index / search / get", "C:/ELF600/bin/ Python ctypes "
-                                         "API + config (15 files, 246 KB)"),
+    ("elf_python_index / search / get; elf_python_team28",
+                                                  "C:/ELF600/bin/ Python ctypes "
+                                                  "API + config (15 files, 246 KB) "
+                                                  "plus Python-interface seed manifest"),
 ]
 
-_RELATED_LAB_PACKAGES = [
+_RELATED_PUBLIC_PACKAGES = [
     ("radia-mcp", "pip install radia-mcp",
      "https://github.com/ksugahar/Radia",
-     "37-server lab MCP ecosystem (Radia + NGSolve + Cubit + meta + ML)"),
-    ("COMSOL_Multiphysics_MCP", "(fork; not yet on PyPI)",
-     "https://github.com/ksugahar/COMSOL_Multiphysics_MCP",
-     "Lab fork of wjc9011/COMSOL_Multiphysics_MCP with multilingual + "
-     "Kelvin tutorial"),
-    ("mcp-server-document", "(LAB private)",
-     "(internal: S:/mcp-server)",
-     "Paper / grant / poster writing helpers"),
+     "Optional public companion for open electromagnetic modeling references"),
 ]
 
 
 @mcp.tool()
 def elf_overview() -> dict:
-    """RECOMMENDED FIRST CALL. Catalog of ELF MCP's 22 tools + 1
-    prompt, plus related lab MCP packages for cross-team discovery.
+    """RECOMMENDED FIRST CALL. Catalog of ELF MCP's 24 tools + 1
+    prompt, with public-safe routing hints for MCP clients.
 
     Returns:
-        dict with `tool_families` (curated 22-tool grouping), `n_tools`,
-        `related_lab_packages` (radia-mcp / COMSOL fork / document),
-        and a `next_step_hint` pointing at elf_usage for the topic
-        catalogue.
+        dict with `tool_families` (curated 24-tool grouping), `n_tools`,
+        public boundary notes, recommended calls, and public companion package
+        hints.
     """
     return {
-        "n_tools": 22,
+        "n_tools": 24,
         "n_prompts": 1,
         "tool_families": [
             {"signature": sig, "description": desc}
             for sig, desc in _TOOL_CATALOG
         ],
-        "related_lab_packages": [
+        "recommended_calls": [
+            {
+                "goal": "Inspect the server surface",
+                "call": "elf_overview()",
+            },
+            {
+                "goal": "Find the right ELF/MAGIC command pattern",
+                "call": "elf_usage(topic='all') or elf_recipe_search(query)",
+            },
+            {
+                "goal": "Learn from the 332 public motor input decks",
+                "call": "elf_sample_decks_playbook(limit=20, family='pm_square')",
+            },
+            {
+                "goal": "Open a specific public .mai/.meg input deck",
+                "call": "elf_sample_decks_get(path)",
+            },
+            {
+                "goal": "Inspect the Python-interface team28 seed manifest",
+                "call": "elf_python_team28()",
+            },
+        ],
+        "public_boundary": (
+            "Documentation and lab-authored public input decks only. This MCP "
+            "server does not execute ELF, launch GUI/CLI solvers, bundle solver "
+            "outputs, expose comparison metrics, or publish private validation "
+            "provenance."
+        ),
+        "related_public_packages": [
             {"name": n, "install": inst, "github": gh, "description": d}
-            for n, inst, gh, d in _RELATED_LAB_PACKAGES
+            for n, inst, gh, d in _RELATED_PUBLIC_PACKAGES
         ],
         "next_step_hint":
             "Call elf_usage(topic='all') for the 31 curated topic "
             "catalogue, elf_plan_workflow('goal') for a workflow plan, "
             "elf_recipe_search('keyword') for decision cards, or "
-            "elf_sample_decks_index() for runnable public .mai/.meg decks, "
+            "elf_sample_decks_playbook() for ELF-runnable public .mai/.meg decks, "
+            "elf_python_team28() for the Python-interface team28 seed manifest, "
             "elf_help_search('keyword') / "
             "elf_examples_search('keyword') for raw access, or "
             "elf_examples_playbook(limit=100) for compact example cards.",
@@ -462,6 +490,47 @@ def elf_sample_decks_get(path: str, max_chars: int = 60000) -> str:
     if result["truncated"]:
         head += " (truncated)"
     return head + "\n\n" + result["text"]
+
+
+@mcp.tool()
+def elf_sample_decks_playbook(limit: int = 100, family: str = "", query: str = "") -> str:
+    """
+    Build compact cards from the 332 public ELF-runnable `.mai`/`.meg` cases.
+
+    Each card links the `.mai` and `.meg` pair and summarizes detected SOL
+    blocks, PRE keywords, element types, feature tags, and a reuse hint. This
+    is the fastest way to learn from the public deck corpus without reading
+    every raw file.
+
+    Args:
+        limit: Number of cards to return. Default 100. Max 332.
+        family: Optional family substring, e.g. "pm_square" or "cosine".
+        query: Optional keyword filter across paths, tags, and deck text.
+
+    Returns:
+        Markdown compact cards. Drill into raw files with
+        ``elf_sample_decks_get(path)``.
+    """
+    cards = build_sample_deck_cards(limit=limit, family=family or None, query=query or None)
+    return format_sample_deck_cards(cards)
+
+
+@mcp.tool()
+def elf_python_team28() -> str:
+    """
+    Return the Python-interface team28 seed manifest.
+
+    team28 is a compact 28-case tour across 2-pole, 4-pole, 6-pole,
+    8-pole, and cosine-remanence PM pickup families. Unlike the normal
+    public `.mai`/`.meg` sample decks, team28 is intended for orchestration
+    through the ELF Python interface, not normal ELF GUI/CLI deck execution.
+    The listed public decks are seed/inspection material for that Python
+    orchestration.
+
+    Returns:
+        Markdown compact cards for 28 Python-interface seed cases.
+    """
+    return format_team28_cards(build_team28_cards())
 
 
 @mcp.tool()
@@ -883,7 +952,10 @@ def main():
         assert "pm001.mai" in sd_search and "No sample deck matches" not in sd_search
         sd_get = elf_sample_decks_get("motor/pm_cosine_pickup_72/pm001/pm001.mai")
         assert "HBCN 1 0 1" in sd_get and "HBCN 2 0 2" in sd_get
-        sample_text = sd + sd_mai + sd_search + sd_get
+        sd_pb = elf_sample_decks_playbook(limit=28, family="pm_square")
+        assert sd_pb.count("\n## ") == 28, "Expected 28 sample deck playbook cards"
+        assert "Python-interface seed manifest" not in sd_pb, "Normal sample playbook must not claim team28"
+        sample_text = sd + sd_mai + sd_search + sd_get + sd_pb
         forbidden_sample_markers = ("C:" + "\\temp", "S:" + "\\", "_cross" + "val", ".mag", ".mao")
         assert not any(marker in sample_text for marker in forbidden_sample_markers)
         print("  332-case .mai/.meg sample deck corpus OK")
@@ -942,7 +1014,12 @@ def main():
         for p in ["elftypes.py", "magtypes.py", "ELFERR.def"]:
             r = elf_python_get(p)
             assert "Error reading" not in r, f"Failed to read python '{p}'"
-        print(f"  3 files OK")
+        team28 = elf_python_team28()
+        assert "Python-interface seed manifest" in team28
+        assert "normal ELF GUI/CLI" in team28
+        assert "outside this documentation MCP server" in team28
+        assert team28.count("\n## ") == 28, "Expected 28 Python-interface team28 cards"
+        print(f"  3 files + Python-interface team28 OK")
 
         print("PASSED")
         return

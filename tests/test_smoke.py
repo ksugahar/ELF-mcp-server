@@ -8,13 +8,20 @@ work-examples family stays OUT (publish-boundary regression guard).
 import os
 import sys
 import asyncio
+import tomllib
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 
 def test_server_imports():
+    import elf_mcp_server
     from elf_mcp_server import server
+
     assert server.mcp is not None
+    pyproject = os.path.join(os.path.dirname(__file__), "..", "pyproject.toml")
+    with open(pyproject, "rb") as f:
+        project = tomllib.load(f)["project"]
+    assert elf_mcp_server.__version__ == project["version"]
 
 
 def test_doc_dumps_load():
@@ -42,16 +49,26 @@ def test_100_example_playbook_cards_public_safe():
 
 
 def test_tool_surface_and_no_work_family():
-    from elf_mcp_server.server import mcp
+    from elf_mcp_server.server import mcp, elf_overview
     tools = asyncio.run(mcp.list_tools())
     names = [t.name for t in tools]
-    assert len(names) >= 22
+    assert len(names) >= 24
     assert "elf_examples_playbook" in names
     assert "elf_recipe_search" in names
     assert "elf_recipe_get" in names
     assert "elf_plan_workflow" in names
     assert "elf_sample_decks_index" in names
     assert "elf_sample_decks_get" in names
+    assert "elf_sample_decks_playbook" in names
+    assert "elf_python_team28" in names
+    overview = elf_overview()
+    overview_text = str(overview)
+    assert overview["n_tools"] == 24
+    assert "public_boundary" in overview
+    assert "recommended_calls" in overview
+    assert "COMSOL" not in overview_text
+    assert "internal:" not in overview_text
+    assert "S:" + "\\" not in overview_text
     # publish boundary: the private work-examples corpus tools were removed and
     # must never come back into the public package. Public workflow planning is
     # allowed; private work-example corpus tools are not.
@@ -61,6 +78,9 @@ def test_tool_surface_and_no_work_family():
 
 def test_public_sample_decks_are_runnable_inputs_only():
     from elf_mcp_server.sample_decks import (
+        build_sample_deck_cards,
+        build_team28_cards,
+        format_team28_cards,
         list_sample_decks,
         search_sample_decks,
         get_sample_deck,
@@ -79,9 +99,27 @@ def test_public_sample_decks_are_runnable_inputs_only():
     assert "HBCN 1 0 1" in text
     assert "HBCN 2 0 2" in text
     assert "FLUM  49" in text
+    cards = build_sample_deck_cards(limit=332)
+    assert len(cards) == 332
+    team28 = build_team28_cards()
+    assert len(team28) == 28
+    team28_text = format_team28_cards(team28)
+    assert "Python-interface seed manifest" in team28_text
+    assert "normal ELF GUI/CLI" in team28_text
+    assert "outside this documentation MCP server" in team28_text
+    assert "pm_square_2pole_pickup_100" in team28_text
     combined = "\n".join(get_sample_deck(d["path"])["text"] for d in decks)
     forbidden = ("C:" + "\\temp", "S:" + "\\", "_cross" + "val", ".mag", ".mao", ".mat", ".mac")
     assert not any(token in combined for token in forbidden)
+
+
+def test_public_policy_lint_passes():
+    from pathlib import Path
+
+    from elf_mcp_server.policy_lint import run_policy_lint
+
+    repo = Path(__file__).resolve().parents[1]
+    assert run_policy_lint(repo) == []
 
 
 def test_usage_topic_nonempty():
@@ -101,7 +139,7 @@ def test_motor_radia_bridge_topic_public_safe():
     assert "passive pickup coil" in doc
     assert "FLUM <pickup_mid>" in doc
     assert "PM-only pickup examples" in doc
-    assert "S:\\" not in doc
+    assert "S:" + "\\" not in doc
     assert "C:" + "\\temp" not in doc
     assert "_cross" + "val" not in doc
 

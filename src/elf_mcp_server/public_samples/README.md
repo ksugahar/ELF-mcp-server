@@ -1,6 +1,6 @@
 # Public ELF/MAGIC Sample Decks
 
-This directory contains lab-authored runnable ELF/MAGIC input decks.
+This directory contains lab-authored ELF-runnable ELF/MAGIC input decks.
 
 Included files are input decks only:
 
@@ -14,4 +14,5 @@ Excluded files:
 - machine-local paths or private provenance
 
 The decks are intended as public examples that users can inspect, copy, and run
-with their own ELF/MAGIC installation.
+with their own ELF/MAGIC installation. The MCP server itself does not execute
+ELF/MAGIC or bundle solver results.
