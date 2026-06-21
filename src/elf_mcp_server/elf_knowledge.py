@@ -1286,6 +1286,12 @@ ELF/MAGIC input files and post-processing steps.
 - `FLUM <MIDT> [NB3] [MIDS]` writes flux-linkage records (`M1MF`) to
   the `.mag` result. Sweep rotor angle, collect Phi(theta), and compute
   back-EMF from `e = -omega dPhi/dtheta`.
+- For mutual-flux or pickup-coil studies, keep source and measurement
+  coils as separate material IDs. Drive only the source coil with `AMP1`,
+  keep the pickup coil passive (`AMP1=0`), and use
+  `FLUM <pickup_mid> <nb3> <source_mid>` when you need source-isolated
+  linkage rather than total linkage. Check current sign and scaling with
+  paired positive/negative-current runs before adding magnets or iron.
 - `SOL MOME` is the first solve. Post-blocks (`FIEL`, `FIXA`, `FORT`,
   `FIXB`) read the solved state and can be added incrementally.
 - `SOL MOMC` is linear AC only: use `CMU1`/`CMU1I` instead of nonlinear

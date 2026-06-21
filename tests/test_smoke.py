@@ -66,5 +66,8 @@ def test_motor_radia_bridge_topic_public_safe():
     assert "M1MF" in doc
     assert "SOL FORT" in doc
     assert "SOL FIXA" in doc
+    assert "passive pickup coil" in doc
+    assert "FLUM <pickup_mid>" in doc
     assert "S:\\" not in doc
+    assert "C:\\temp" not in doc
     assert "_crossval" not in doc
