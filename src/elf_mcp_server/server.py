@@ -31,6 +31,15 @@ from .elf_knowledge import get_elf_documentation
 from .help_access import list_help_files, search_help, get_help_file
 from .examples_access import list_examples, search_examples, get_example
 from .example_playbook import build_example_cards, format_example_cards
+from .recipes import (
+    list_recipes,
+    search_recipes,
+    get_recipe,
+    format_recipe_index,
+    format_search_results,
+    format_recipe,
+    plan_workflow,
+)
 from .wiki_access import list_wiki_pages, search_wiki, get_wiki_page
 from .python_access import list_python_files, search_python, get_python_file
 
@@ -55,8 +64,12 @@ _TOOL_CATALOG = [
     ("elf_examples_index / search / get / playbook", "C:/ELF600/examples/ "
                                                        "(332 .mai/.mei/.txt, 533 KB) "
                                                        "plus 100 compact example cards"),
+    ("elf_recipe_index / search / get / plan", "Public-safe workflow "
+                                                "recipes for choosing ELF "
+                                                "elements, PRE/SOL blocks, "
+                                                "outputs, checks, and pitfalls"),
     ("elf_wiki_index / search / get", "elf.co.jp PukiWiki cache "
-                                       "(67 pages, 176 KB)"),
+                                       "(146 pages, 211 KB)"),
     ("elf_python_index / search / get", "C:/ELF600/bin/ Python ctypes "
                                          "API + config (15 files, 246 KB)"),
 ]
@@ -77,17 +90,17 @@ _RELATED_LAB_PACKAGES = [
 
 @mcp.tool()
 def elf_overview() -> dict:
-    """RECOMMENDED FIRST CALL. Catalog of ELF MCP's 15 tools + 1
+    """RECOMMENDED FIRST CALL. Catalog of ELF MCP's 19 tools + 1
     prompt, plus related lab MCP packages for cross-team discovery.
 
     Returns:
-        dict with `tool_families` (curated 15-tool grouping), `n_tools`,
+        dict with `tool_families` (curated 19-tool grouping), `n_tools`,
         `related_lab_packages` (radia-mcp / COMSOL fork / document),
         and a `next_step_hint` pointing at elf_usage for the topic
         catalogue.
     """
     return {
-        "n_tools": 15,
+        "n_tools": 19,
         "n_prompts": 1,
         "tool_families": [
             {"signature": sig, "description": desc}
@@ -99,7 +112,9 @@ def elf_overview() -> dict:
         ],
         "next_step_hint":
             "Call elf_usage(topic='all') for the 31 curated topic "
-            "catalogue. Or elf_help_search('keyword') / "
+            "catalogue, elf_plan_workflow('goal') for a workflow plan, "
+            "elf_recipe_search('keyword') for decision cards, or "
+            "elf_help_search('keyword') / "
             "elf_examples_search('keyword') for raw access, or "
             "elf_examples_playbook(limit=100) for compact example cards.",
     }
@@ -348,6 +363,84 @@ def elf_examples_playbook(
         query=query or None,
     )
     return format_example_cards(cards)
+
+
+@mcp.tool()
+def elf_recipe_index(tag: str = "", solver: str = "") -> str:
+    """
+    List public-safe workflow recipe cards.
+
+    Recipes are decision cards for selecting ELF/MAGIC elements, PRE
+    commands, SOL blocks, outputs, checks, and common pitfalls. They contain
+    no solver outputs or machine-local validation paths.
+
+    Args:
+        tag: Optional tag filter, e.g. "motor", "flux-linkage",
+             "maxwell-force", "eddy-current", "sinusoidal-ac".
+        solver: Optional solver filter, currently mostly "MAGIC".
+
+    Returns:
+        Markdown index of recipe names. Drill down with ``elf_recipe_get``.
+    """
+    recipes = list_recipes(tag=tag or None, solver=solver or None)
+    return format_recipe_index(recipes)
+
+
+@mcp.tool()
+def elf_recipe_search(query: str, top_k: int = 5, tag: str = "", solver: str = "") -> str:
+    """
+    Search public-safe workflow recipes by goal or keyword.
+
+    Args:
+        query: Goal or keywords, e.g. "back EMF pickup", "cogging torque",
+               "current mutual flux", "MOMC frequency".
+        top_k: Max recipes to return.
+        tag: Optional tag filter.
+        solver: Optional solver filter.
+
+    Returns:
+        Ranked recipe summaries with ``elf_recipe_get`` drilldown hints.
+    """
+    results = search_recipes(query, top_k=top_k, tag=tag or None, solver=solver or None)
+    return format_search_results(results, query)
+
+
+@mcp.tool()
+def elf_recipe_get(name: str) -> str:
+    """
+    Get one public-safe workflow recipe by name.
+
+    Args:
+        name: Recipe name or unambiguous substring. Use
+              ``elf_recipe_index`` or ``elf_recipe_search`` to discover
+              names.
+
+    Returns:
+        Full recipe card with use cases, elements, PRE/SOL commands, outputs,
+        checks, pitfalls, examples, and follow-up recipes.
+    """
+    recipe = get_recipe(name)
+    if recipe is None:
+        return f"No unique recipe named '{name}'. Try elf_recipe_index() or elf_recipe_search()."
+    return format_recipe(recipe)
+
+
+@mcp.tool()
+def elf_plan_workflow(goal: str) -> str:
+    """
+    Propose a short ELF workflow plan from a natural-language goal.
+
+    This is a recipe-level planner, not a solver. It chooses public-safe
+    workflow cards and lists first checks and pitfalls.
+
+    Args:
+        goal: Natural-language target, e.g. "measure motor back EMF",
+              "cogging torque sweep", "mutual inductance between coils".
+
+    Returns:
+        Markdown plan with recipe sequence and drilldown command.
+    """
+    return plan_workflow(goal)
 
 
 @mcp.tool()
@@ -602,7 +695,7 @@ def main():
         print("ELF MCP server self-test:")
 
         # 1. Curated topics
-        print("[1/14] elf_usage topics:")
+        print("[1/15] elf_usage topics:")
         topics = [
             "overview", "mai_format", "mei_format", "meg_format",
             "magic", "elfin", "beam", "element_types", "bh_curves",
@@ -620,9 +713,9 @@ def main():
         print(f"  {len(topics)} topics OK")
 
         # 2. Help index
-        print("[2/14] elf_help_index:")
+        print("[2/15] elf_help_index:")
         idx = elf_help_index()
-        n_files = idx.count("\n") - 1
+        n_files = len(list_help_files())
         assert n_files > 1000, f"Expected >1000 files, got {n_files}"
         print(f"  {n_files} files indexed")
         idx_mrf1 = elf_help_index("m_rf1/")
@@ -630,14 +723,14 @@ def main():
         print(f"  m_rf1/ filter OK")
 
         # 3. Help search
-        print("[3/14] elf_help_search:")
+        print("[3/15] elf_help_search:")
         for q in ["MOMC", "渦電流", "OHM2", "FORC"]:
             r = elf_help_search(q, top_k=5)
             assert "No matches" not in r, f"Query '{q}' had no matches"
         print(f"  4 queries OK")
 
         # 4. Help get
-        print("[4/14] elf_help_get:")
+        print("[4/15] elf_help_get:")
         for p in ["m_rf1/index.htm", "d_ken/MOMC.htm", "u_support/error.htm"]:
             r = elf_help_get(p)
             assert "Error reading" not in r, f"Failed to read {p}"
@@ -645,33 +738,33 @@ def main():
         print(f"  3 files OK")
 
         # 5. Examples index
-        print("[5/14] elf_examples_index:")
+        print("[5/15] elf_examples_index:")
         all_idx = elf_examples_index()
-        n_ex = all_idx.count("\n") - 1
+        n_ex = len(list_examples())
         assert n_ex > 300, f"Expected >300 examples, got {n_ex}"
         magic_idx = elf_examples_index(solver="MAGIC")
         assert "magic/BASIC/" in magic_idx, "MAGIC filter missed BASIC/"
         mai_idx = elf_examples_index(ext="mai")
-        n_mai = mai_idx.count("\n") - 1
+        n_mai = len(list_examples(ext="mai"))
         assert n_mai > 100, f"Expected >100 .mai files, got {n_mai}"
         print(f"  {n_ex} examples ({n_mai} .mai), filters OK")
 
         # 6. Examples search
-        print("[6/14] elf_examples_search:")
+        print("[6/15] elf_examples_search:")
         for q in ["MOMC", "OHM2", "FREQ", "PRE"]:
             r = elf_examples_search(q, top_k=5)
             assert "No matches" not in r, f"Query '{q}' had no matches"
         print(f"  4 queries OK")
 
         # 7. Examples get
-        print("[7/14] elf_examples_get:")
+        print("[7/15] elf_examples_get:")
         for p in ["magic/BASIC/ABCL2.mai"]:
             r = elf_examples_get(p)
             assert "Error reading" not in r, f"Failed to read {p}"
             assert "MOMC" in r or "PRE" in r, f"{p} missing expected MAGIC keyword"
         print(f"  1 file OK")
 
-        print("[8/14] elf_examples_playbook:")
+        print("[8/15] elf_examples_playbook:")
         pb = elf_examples_playbook()
         assert pb.count("\n## ") >= 100, "Expected >=100 playbook cards"
         magic_pb = elf_examples_playbook(limit=120, solver="MAGIC")
@@ -680,42 +773,57 @@ def main():
         assert "SOL FORT" in force_pb or "MCM" in force_pb, "Maxwell-force filter missed force examples"
         print("  100-card playbook + filters OK")
 
-        # 9-11. Wiki tools
-        print("[9/14] elf_wiki_index:")
+        # 9. Recipe tools
+        print("[9/15] elf_recipe tools:")
+        ri = elf_recipe_index()
+        assert "passive_flum_pickup" in ri and "maxwell_torque_surface" in ri
+        rs = elf_recipe_search("back EMF pickup", top_k=3)
+        assert "passive_flum_pickup" in rs
+        rg = elf_recipe_get("mutual_flux_current_pickup")
+        assert "FLUM <pickup_mid>" in rg and "AMP1" in rg
+        rp = elf_plan_workflow("cogging torque sweep")
+        assert "maxwell_torque_surface" in rp
+        recipe_text = ri + rs + rg + rp
+        private_markers = ("C:" + "\\temp", "_cross" + "val")
+        assert not any(marker in recipe_text for marker in private_markers)
+        print("  recipe index/search/get/plan OK")
+
+        # 10-12. Wiki tools
+        print("[10/15] elf_wiki_index:")
         wi = elf_wiki_index()
-        n_w = wi.count("\n") - 1
+        n_w = len(list_wiki_pages())
         assert n_w >= 50, f"Expected >=50 wiki pages, got {n_w}"
         print(f"  {n_w} wiki pages")
 
-        print("[10/14] elf_wiki_search:")
+        print("[11/15] elf_wiki_search:")
         for q in ["磁場解析", "MAGIC", "渦電流"]:
             r = elf_wiki_search(q, top_k=3)
             assert "No matches" not in r, f"Wiki query '{q}' had no matches"
         print(f"  3 queries OK")
 
-        print("[11/14] elf_wiki_get:")
+        print("[12/15] elf_wiki_get:")
         for p in ["FAQ", "磁場解析"]:
             r = elf_wiki_get(p)
             assert "Error reading" not in r, f"Failed to read wiki '{p}'"
             assert len(r) > 100
         print(f"  2 pages OK")
 
-        # 12-14. Python interface tools
-        print("[12/14] elf_python_index:")
+        # 13-15. Python interface tools
+        print("[13/15] elf_python_index:")
         pi = elf_python_index()
-        n_p = pi.count("\n") - 1
+        n_p = len(list_python_files())
         assert n_p >= 10, f"Expected >=10 bin files, got {n_p}"
         py_only = elf_python_index(ext="py")
         assert "elftypes.py" in py_only and "magtypes.py" in py_only
         print(f"  {n_p} files (py filter OK)")
 
-        print("[13/14] elf_python_search:")
+        print("[14/15] elf_python_search:")
         for q in ["GET_FIEL", "SET_AMP1", "ctypes"]:
             r = elf_python_search(q, top_k=3)
             assert "No matches" not in r, f"Python query '{q}' had no matches"
         print(f"  3 queries OK")
 
-        print("[14/14] elf_python_get:")
+        print("[15/15] elf_python_get:")
         for p in ["elftypes.py", "magtypes.py", "ELFERR.def"]:
             r = elf_python_get(p)
             assert "Error reading" not in r, f"Failed to read python '{p}'"

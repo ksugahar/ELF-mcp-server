@@ -5,10 +5,9 @@ electromagnetic analysis suite (MAGIC magnetostatic / ELFIN electrostatic /
 BEAM particle tracking solvers, with eddy current support in MAGIC via
 MAB/MAT/MBB elements).
 
-This server exposes one tool, ``elf_usage(topic)``, returning curated
-documentation on file formats (.mai/.mei/.meg), solver modules, element
-types, B-H curves, IPM motor workflows, sinusoidal AC analysis (SOL MOMC),
-and more.
+This server exposes 19 MCP tools plus one prompt: curated documentation,
+workflow recipes, bundled help/example/wiki/Python API search, and compact
+planning aids for authoring ELF input files.
 """
 
-__version__ = "1.33.0"
+__version__ = "1.34.0"

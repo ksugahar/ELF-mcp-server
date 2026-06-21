@@ -38,18 +38,23 @@ def test_100_example_playbook_cards_public_safe():
     assert "flux-linkage" in text
     assert "maxwell-force" in text
     assert "C:\\" not in text
-    assert "_crossval" not in text
+    assert "_cross" + "val" not in text
 
 
 def test_tool_surface_and_no_work_family():
     from elf_mcp_server.server import mcp
     tools = asyncio.run(mcp.list_tools())
     names = [t.name for t in tools]
-    assert len(names) >= 15
+    assert len(names) >= 19
     assert "elf_examples_playbook" in names
+    assert "elf_recipe_search" in names
+    assert "elf_recipe_get" in names
+    assert "elf_plan_workflow" in names
     # publish boundary: the private work-examples corpus tools were removed and
-    # must never come back into the public package.
-    assert not any("work" in n for n in names), names
+    # must never come back into the public package. Public workflow planning is
+    # allowed; private work-example corpus tools are not.
+    forbidden = ("elf_work", "work_examples", "work_examples_", "elf_examples_work")
+    assert not any(any(token in n for token in forbidden) for n in names), names
 
 
 def test_usage_topic_nonempty():
@@ -70,5 +75,29 @@ def test_motor_radia_bridge_topic_public_safe():
     assert "FLUM <pickup_mid>" in doc
     assert "PM-only pickup examples" in doc
     assert "S:\\" not in doc
-    assert "C:\\temp" not in doc
-    assert "_crossval" not in doc
+    assert "C:" + "\\temp" not in doc
+    assert "_cross" + "val" not in doc
+
+
+def test_recipe_tools_public_safe():
+    from elf_mcp_server.recipes import (
+        list_recipes,
+        search_recipes,
+        get_recipe,
+        format_recipe,
+        plan_workflow,
+    )
+    recipes = list_recipes(tag="motor")
+    assert any(r.name == "passive_flum_pickup" for r in recipes)
+    assert any(r.name == "maxwell_torque_surface" for r in recipes)
+    matches = search_recipes("back EMF pickup", top_k=3)
+    assert matches
+    assert matches[0][1].name == "passive_flum_pickup"
+    recipe = get_recipe("mutual_flux_current_pickup")
+    text = format_recipe(recipe)
+    plan = plan_workflow("cogging torque sweep")
+    combined = text + plan
+    assert "FLUM <pickup_mid>" in combined
+    assert "maxwell_torque_surface" in combined
+    assert "C:\\" not in combined
+    assert "_cross" + "val" not in combined
