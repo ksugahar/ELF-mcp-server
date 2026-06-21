@@ -45,16 +45,43 @@ def test_tool_surface_and_no_work_family():
     from elf_mcp_server.server import mcp
     tools = asyncio.run(mcp.list_tools())
     names = [t.name for t in tools]
-    assert len(names) >= 19
+    assert len(names) >= 22
     assert "elf_examples_playbook" in names
     assert "elf_recipe_search" in names
     assert "elf_recipe_get" in names
     assert "elf_plan_workflow" in names
+    assert "elf_sample_decks_index" in names
+    assert "elf_sample_decks_get" in names
     # publish boundary: the private work-examples corpus tools were removed and
     # must never come back into the public package. Public workflow planning is
     # allowed; private work-example corpus tools are not.
     forbidden = ("elf_work", "work_examples", "work_examples_", "elf_examples_work")
     assert not any(any(token in n for token in forbidden) for n in names), names
+
+
+def test_public_sample_decks_are_runnable_inputs_only():
+    from elf_mcp_server.sample_decks import (
+        list_sample_decks,
+        search_sample_decks,
+        get_sample_deck,
+    )
+    decks = list_sample_decks()
+    assert len(decks) == 144
+    assert sum(1 for d in decks if d["ext"] == "mai") == 72
+    assert sum(1 for d in decks if d["ext"] == "meg") == 72
+    assert any(d["path"] == "motor/pm_cosine_pickup_72/pm001/pm001.mai" for d in decks)
+    hits = search_sample_decks("HBCN FLUM", ext="mai")
+    assert hits
+    assert hits[0]["path"].endswith(".mai")
+    pm001 = get_sample_deck("motor/pm_cosine_pickup_72/pm001/pm001.mai")
+    text = pm001["text"]
+    assert "USE  MAGIC" in text
+    assert "HBCN 1 0 1" in text
+    assert "HBCN 2 0 2" in text
+    assert "FLUM  49" in text
+    combined = "\n".join(get_sample_deck(d["path"])["text"] for d in decks)
+    forbidden = ("C:" + "\\temp", "S:" + "\\", "_cross" + "val", ".mag", ".mao", ".mat", ".mac")
+    assert not any(token in combined for token in forbidden)
 
 
 def test_usage_topic_nonempty():

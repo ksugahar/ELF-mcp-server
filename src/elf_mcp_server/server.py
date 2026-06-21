@@ -31,6 +31,11 @@ from .elf_knowledge import get_elf_documentation
 from .help_access import list_help_files, search_help, get_help_file
 from .examples_access import list_examples, search_examples, get_example
 from .example_playbook import build_example_cards, format_example_cards
+from .sample_decks import (
+    list_sample_decks,
+    search_sample_decks,
+    get_sample_deck,
+)
 from .recipes import (
     list_recipes,
     search_recipes,
@@ -64,6 +69,9 @@ _TOOL_CATALOG = [
     ("elf_examples_index / search / get / playbook", "C:/ELF600/examples/ "
                                                        "(332 .mai/.mei/.txt, 533 KB) "
                                                        "plus 100 compact example cards"),
+    ("elf_sample_decks_index / search / get", "Lab-authored runnable "
+                                              "public .mai/.meg input decks "
+                                              "(input files only; no solver outputs)"),
     ("elf_recipe_index / search / get / plan", "Public-safe workflow "
                                                 "recipes for choosing ELF "
                                                 "elements, PRE/SOL blocks, "
@@ -90,17 +98,17 @@ _RELATED_LAB_PACKAGES = [
 
 @mcp.tool()
 def elf_overview() -> dict:
-    """RECOMMENDED FIRST CALL. Catalog of ELF MCP's 19 tools + 1
+    """RECOMMENDED FIRST CALL. Catalog of ELF MCP's 22 tools + 1
     prompt, plus related lab MCP packages for cross-team discovery.
 
     Returns:
-        dict with `tool_families` (curated 19-tool grouping), `n_tools`,
+        dict with `tool_families` (curated 22-tool grouping), `n_tools`,
         `related_lab_packages` (radia-mcp / COMSOL fork / document),
         and a `next_step_hint` pointing at elf_usage for the topic
         catalogue.
     """
     return {
-        "n_tools": 19,
+        "n_tools": 22,
         "n_prompts": 1,
         "tool_families": [
             {"signature": sig, "description": desc}
@@ -114,6 +122,7 @@ def elf_overview() -> dict:
             "Call elf_usage(topic='all') for the 31 curated topic "
             "catalogue, elf_plan_workflow('goal') for a workflow plan, "
             "elf_recipe_search('keyword') for decision cards, or "
+            "elf_sample_decks_index() for runnable public .mai/.meg decks, "
             "elf_help_search('keyword') / "
             "elf_examples_search('keyword') for raw access, or "
             "elf_examples_playbook(limit=100) for compact example cards.",
@@ -363,6 +372,96 @@ def elf_examples_playbook(
         query=query or None,
     )
     return format_example_cards(cards)
+
+
+@mcp.tool()
+def elf_sample_decks_index(family: str = "", case: str = "", ext: str = "") -> str:
+    """
+    List lab-authored public runnable ELF/MAGIC sample decks.
+
+    These are `.mai` and `.meg` input files only. Solver outputs and
+    comparison metrics are intentionally not bundled.
+
+    Args:
+        family: Optional family substring, e.g. "motor" or
+                "pm_cosine_pickup_72".
+        case: Optional case ID such as "pm001".
+        ext: Optional file extension: "mai" or "meg".
+
+    Returns:
+        Tab-separated: PATH<TAB>FAMILY<TAB>CASE<TAB>EXT<TAB>CHARS per line.
+    """
+    decks = list_sample_decks(family=family or None, case=case or None, ext=ext or None)
+    if not decks:
+        return f"No sample decks match (family='{family}', case='{case}', ext='{ext}')."
+    lines = [
+        f"{d['path']}\t{d['family']}\t{d['case']}\t{d['ext']}\t{d['char_count']}"
+        for d in decks
+    ]
+    filters = []
+    if family:
+        filters.append(f"family={family}")
+    if case:
+        filters.append(f"case={case}")
+    if ext:
+        filters.append(f"ext={ext}")
+    header = f"# {len(decks)} sample decks" + (f" ({', '.join(filters)})" if filters else " total")
+    return header + "\n" + "\n".join(lines)
+
+
+@mcp.tool()
+def elf_sample_decks_search(query: str, top_k: int = 10, ext: str = "") -> str:
+    """
+    Search lab-authored public sample deck paths and text.
+
+    Multiple keywords require all terms to match. Use this to find runnable
+    `.mai`/`.meg` input decks that contain specific ELF commands such as
+    `HBCN`, `MWL8T`, `COI1`, or `FLUM`.
+
+    Args:
+        query: Search keywords.
+        top_k: Max results.
+        ext: Optional extension filter: "mai" or "meg".
+
+    Returns:
+        Ranked snippets. Drill down with ``elf_sample_decks_get(path)``.
+    """
+    results = search_sample_decks(query, top_k=top_k, ext=ext or None)
+    if not results:
+        return f"No sample deck matches for '{query}'"
+    out = [f"# {len(results)} sample deck matches for '{query}'\n"]
+    for i, r in enumerate(results, 1):
+        out.append(
+            f"## [{i}] {r['path']}  ({r['family']}/{r['case']}, .{r['ext']}, score={r['score']})"
+        )
+        out.append(r["snippet"])
+        out.append("")
+    return "\n".join(out)
+
+
+@mcp.tool()
+def elf_sample_decks_get(path: str, max_chars: int = 60000) -> str:
+    """
+    Get full text of a public runnable ELF/MAGIC sample deck.
+
+    Args:
+        path: Relative sample path, e.g.
+              "motor/pm_cosine_pickup_72/pm001/pm001.mai".
+              Filename-only works if unambiguous.
+        max_chars: Truncate output if longer. Default 60000, enough for
+                   the bundled motor `.meg` decks.
+
+    Returns:
+        File metadata plus raw `.mai` or `.meg` text.
+    """
+    result = get_sample_deck(path, max_chars=max_chars)
+    if "error" in result:
+        return f"Error reading sample deck '{path}': {result['error']}"
+    head = f"# {result['path']}  ({result['family']}/{result['case']}, .{result['ext']})"
+    head += f"\n_chars: {result['char_count']}_"
+    if result["truncated"]:
+        head += " (truncated)"
+    return head + "\n\n" + result["text"]
 
 
 @mcp.tool()
@@ -695,7 +794,7 @@ def main():
         print("ELF MCP server self-test:")
 
         # 1. Curated topics
-        print("[1/15] elf_usage topics:")
+        print("[1/16] elf_usage topics:")
         topics = [
             "overview", "mai_format", "mei_format", "meg_format",
             "magic", "elfin", "beam", "element_types", "bh_curves",
@@ -713,7 +812,7 @@ def main():
         print(f"  {len(topics)} topics OK")
 
         # 2. Help index
-        print("[2/15] elf_help_index:")
+        print("[2/16] elf_help_index:")
         idx = elf_help_index()
         n_files = len(list_help_files())
         assert n_files > 1000, f"Expected >1000 files, got {n_files}"
@@ -723,14 +822,14 @@ def main():
         print(f"  m_rf1/ filter OK")
 
         # 3. Help search
-        print("[3/15] elf_help_search:")
+        print("[3/16] elf_help_search:")
         for q in ["MOMC", "渦電流", "OHM2", "FORC"]:
             r = elf_help_search(q, top_k=5)
             assert "No matches" not in r, f"Query '{q}' had no matches"
         print(f"  4 queries OK")
 
         # 4. Help get
-        print("[4/15] elf_help_get:")
+        print("[4/16] elf_help_get:")
         for p in ["m_rf1/index.htm", "d_ken/MOMC.htm", "u_support/error.htm"]:
             r = elf_help_get(p)
             assert "Error reading" not in r, f"Failed to read {p}"
@@ -738,7 +837,7 @@ def main():
         print(f"  3 files OK")
 
         # 5. Examples index
-        print("[5/15] elf_examples_index:")
+        print("[5/16] elf_examples_index:")
         all_idx = elf_examples_index()
         n_ex = len(list_examples())
         assert n_ex > 300, f"Expected >300 examples, got {n_ex}"
@@ -750,21 +849,21 @@ def main():
         print(f"  {n_ex} examples ({n_mai} .mai), filters OK")
 
         # 6. Examples search
-        print("[6/15] elf_examples_search:")
+        print("[6/16] elf_examples_search:")
         for q in ["MOMC", "OHM2", "FREQ", "PRE"]:
             r = elf_examples_search(q, top_k=5)
             assert "No matches" not in r, f"Query '{q}' had no matches"
         print(f"  4 queries OK")
 
         # 7. Examples get
-        print("[7/15] elf_examples_get:")
+        print("[7/16] elf_examples_get:")
         for p in ["magic/BASIC/ABCL2.mai"]:
             r = elf_examples_get(p)
             assert "Error reading" not in r, f"Failed to read {p}"
             assert "MOMC" in r or "PRE" in r, f"{p} missing expected MAGIC keyword"
         print(f"  1 file OK")
 
-        print("[8/15] elf_examples_playbook:")
+        print("[8/16] elf_examples_playbook:")
         pb = elf_examples_playbook()
         assert pb.count("\n## ") >= 100, "Expected >=100 playbook cards"
         magic_pb = elf_examples_playbook(limit=120, solver="MAGIC")
@@ -773,8 +872,24 @@ def main():
         assert "SOL FORT" in force_pb or "MCM" in force_pb, "Maxwell-force filter missed force examples"
         print("  100-card playbook + filters OK")
 
-        # 9. Recipe tools
-        print("[9/15] elf_recipe tools:")
+        # 9. Public sample decks
+        print("[9/16] elf_sample_decks tools:")
+        sd = elf_sample_decks_index()
+        assert "motor/pm_cosine_pickup_72/pm001/pm001.mai" in sd
+        assert "motor/pm_cosine_pickup_72/pm001/pm001.meg" in sd
+        sd_mai = elf_sample_decks_index(ext="mai")
+        assert sd_mai.count(".mai") == 72, "Expected 72 public .mai decks"
+        sd_search = elf_sample_decks_search("HBCN FLUM", top_k=5, ext="mai")
+        assert "pm001.mai" in sd_search and "No sample deck matches" not in sd_search
+        sd_get = elf_sample_decks_get("motor/pm_cosine_pickup_72/pm001/pm001.mai")
+        assert "HBCN 1 0 1" in sd_get and "HBCN 2 0 2" in sd_get
+        sample_text = sd + sd_mai + sd_search + sd_get
+        forbidden_sample_markers = ("C:" + "\\temp", "S:" + "\\", "_cross" + "val", ".mag", ".mao")
+        assert not any(marker in sample_text for marker in forbidden_sample_markers)
+        print("  72-case .mai/.meg sample deck corpus OK")
+
+        # 10. Recipe tools
+        print("[10/16] elf_recipe tools:")
         ri = elf_recipe_index()
         assert "passive_flum_pickup" in ri and "maxwell_torque_surface" in ri
         rs = elf_recipe_search("back EMF pickup", top_k=3)
@@ -788,28 +903,28 @@ def main():
         assert not any(marker in recipe_text for marker in private_markers)
         print("  recipe index/search/get/plan OK")
 
-        # 10-12. Wiki tools
-        print("[10/15] elf_wiki_index:")
+        # 11-13. Wiki tools
+        print("[11/16] elf_wiki_index:")
         wi = elf_wiki_index()
         n_w = len(list_wiki_pages())
         assert n_w >= 50, f"Expected >=50 wiki pages, got {n_w}"
         print(f"  {n_w} wiki pages")
 
-        print("[11/15] elf_wiki_search:")
+        print("[12/16] elf_wiki_search:")
         for q in ["磁場解析", "MAGIC", "渦電流"]:
             r = elf_wiki_search(q, top_k=3)
             assert "No matches" not in r, f"Wiki query '{q}' had no matches"
         print(f"  3 queries OK")
 
-        print("[12/15] elf_wiki_get:")
+        print("[13/16] elf_wiki_get:")
         for p in ["FAQ", "磁場解析"]:
             r = elf_wiki_get(p)
             assert "Error reading" not in r, f"Failed to read wiki '{p}'"
             assert len(r) > 100
         print(f"  2 pages OK")
 
-        # 13-15. Python interface tools
-        print("[13/15] elf_python_index:")
+        # 14-16. Python interface tools
+        print("[14/16] elf_python_index:")
         pi = elf_python_index()
         n_p = len(list_python_files())
         assert n_p >= 10, f"Expected >=10 bin files, got {n_p}"
@@ -817,13 +932,13 @@ def main():
         assert "elftypes.py" in py_only and "magtypes.py" in py_only
         print(f"  {n_p} files (py filter OK)")
 
-        print("[14/15] elf_python_search:")
+        print("[15/16] elf_python_search:")
         for q in ["GET_FIEL", "SET_AMP1", "ctypes"]:
             r = elf_python_search(q, top_k=3)
             assert "No matches" not in r, f"Python query '{q}' had no matches"
         print(f"  3 queries OK")
 
-        print("[15/15] elf_python_get:")
+        print("[16/16] elf_python_get:")
         for p in ["elftypes.py", "magtypes.py", "ELFERR.def"]:
             r = elf_python_get(p)
             assert "Error reading" not in r, f"Failed to read python '{p}'"
