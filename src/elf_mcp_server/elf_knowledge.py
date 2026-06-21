@@ -1269,6 +1269,11 @@ ELF/MAGIC input files and post-processing steps.
    linear harmonic studies, and MAB/MAT/MBB with TIME/STED for conducting
    rotor or shield problems.
 
+For robust PM-only pickup examples, vary pickup radius, pickup position,
+and rotor angle separately before adding current or iron. Include at least
+one sign-changing rotor angle and keep every pickup integration surface
+comfortably in air, away from magnet/iron boundaries.
+
 ## ELF/MAGIC Details That Matter
 
 - MWL magnets get their magnetisation direction from element winding
