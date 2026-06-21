@@ -15,14 +15,7 @@ jobs:
 
       - name: Publish-boundary gate (block private/commercial leakage)
         run: |
-          echo "Scanning packaged sources for publish-boundary violations..."
-          # case-sensitive (TOSCA word-bounded so vendor "AutoScale" doesn't trip it)
-          PATTERN='_crossval|work_examples_dump|\bTOSCA\b|FEMM\+\+|vs\.? (FEMM|COMSOL|JMAG)|W:[\\/]00_CAE|G:[\\/]2014'
-          if grep -rnE "$PATTERN" src/elf_mcp_server README.md pyproject.toml ; then
-            echo "::error::Publish-boundary violation detected above (private crossval / removed work corpus / commercial-tool provenance / private drive path). Aborting publish."
-            exit 1
-          fi
-          echo "Publish-boundary gate passed."
+          python -m elf_mcp_server.policy_lint .
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -47,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/elf-mcp-server
+      url: https://pypi.org/project/elf-mcp-server/
     permissions:
       id-token: write   # required for OIDC trusted publishing
     steps:
