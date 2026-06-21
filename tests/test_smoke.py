@@ -66,9 +66,9 @@ def test_public_sample_decks_are_runnable_inputs_only():
         get_sample_deck,
     )
     decks = list_sample_decks()
-    assert len(decks) == 144
-    assert sum(1 for d in decks if d["ext"] == "mai") == 72
-    assert sum(1 for d in decks if d["ext"] == "meg") == 72
+    assert len(decks) == 664
+    assert sum(1 for d in decks if d["ext"] == "mai") == 332
+    assert sum(1 for d in decks if d["ext"] == "meg") == 332
     assert any(d["path"] == "motor/pm_cosine_pickup_72/pm001/pm001.mai" for d in decks)
     hits = search_sample_decks("HBCN FLUM", ext="mai")
     assert hits

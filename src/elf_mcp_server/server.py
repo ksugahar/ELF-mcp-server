@@ -384,7 +384,7 @@ def elf_sample_decks_index(family: str = "", case: str = "", ext: str = "") -> s
 
     Args:
         family: Optional family substring, e.g. "motor" or
-                "pm_cosine_pickup_72".
+                "pm_cosine_pickup_72" or "pm_square".
         case: Optional case ID such as "pm001".
         ext: Optional file extension: "mai" or "meg".
 
@@ -878,7 +878,7 @@ def main():
         assert "motor/pm_cosine_pickup_72/pm001/pm001.mai" in sd
         assert "motor/pm_cosine_pickup_72/pm001/pm001.meg" in sd
         sd_mai = elf_sample_decks_index(ext="mai")
-        assert sd_mai.count(".mai") == 72, "Expected 72 public .mai decks"
+        assert sd_mai.count(".mai") == 332, "Expected 332 public .mai decks"
         sd_search = elf_sample_decks_search("HBCN FLUM", top_k=5, ext="mai")
         assert "pm001.mai" in sd_search and "No sample deck matches" not in sd_search
         sd_get = elf_sample_decks_get("motor/pm_cosine_pickup_72/pm001/pm001.mai")
@@ -886,7 +886,7 @@ def main():
         sample_text = sd + sd_mai + sd_search + sd_get
         forbidden_sample_markers = ("C:" + "\\temp", "S:" + "\\", "_cross" + "val", ".mag", ".mao")
         assert not any(marker in sample_text for marker in forbidden_sample_markers)
-        print("  72-case .mai/.meg sample deck corpus OK")
+        print("  332-case .mai/.meg sample deck corpus OK")
 
         # 10. Recipe tools
         print("[10/16] elf_recipe tools:")
