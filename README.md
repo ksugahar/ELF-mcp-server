@@ -1,6 +1,6 @@
-# elf-mcp-server
+# ELF-mcp-server
 
-[![PyPI](https://img.shields.io/pypi/v/elf-mcp-server.svg)](https://pypi.org/project/elf-mcp-server/)
+[![PyPI](https://img.shields.io/pypi/v/ELF-mcp-server.svg)](https://pypi.org/project/ELF-mcp-server/)
 [![License: BSD-3-Clause](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 [![Python: 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
 
@@ -131,8 +131,11 @@ against step response / Joule loss / Lorentz force). Distilled from a
 ## Installation
 
 ```bash
-pip install elf-mcp-server
+pip install ELF-mcp-server
 ```
+
+The current PyPI distribution name is `ELF-mcp-server`. The installed console
+scripts remain lowercase: `elf-mcp-server` and `elf-mcp-policy-lint`.
 
 Verify:
 ```bash

@@ -1,4 +1,4 @@
-"""Public-package policy lint for elf-mcp-server.
+"""Public-package policy lint for ELF-mcp-server.
 
 The public ELF MCP package is a documentation/input-deck server. This lint
 guards the publish boundary that matters most for the public repository:

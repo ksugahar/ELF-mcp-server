@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Smoke tests for the public ELF doc-server (elf-mcp-server).
+"""Smoke tests for the public ELF doc-server (ELF-mcp-server).
 
 Minimal guards for a public package: the server imports, the four bundled
 vendor-doc dumps load, the tool surface is the expected size, and the removed
