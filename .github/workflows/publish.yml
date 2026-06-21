@@ -15,7 +15,7 @@ jobs:
 
       - name: Publish-boundary gate (block private/commercial leakage)
         run: |
-          python -m elf_mcp_server.policy_lint .
+          PYTHONPATH=src python -m elf_mcp_server.policy_lint .
 
       - name: Set up Python
         uses: actions/setup-python@v5
