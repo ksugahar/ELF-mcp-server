@@ -41,7 +41,8 @@ VALIDATION_LIMITATIONS = (
     "`ngsolve_proxy_energy` is a broad independent proxy-field gate for deck "
     "sanity, not a full absolute field/force/torque/loss agreement suite.",
     "`ngsolve_numeric_invariant` is used for numeric anchor families where "
-    "ELF FLUM-derived invariants and NGSolve proxy invariants are both checked.",
+    "ELF FLUM-derived flux, energy, force/torque-gradient invariants and "
+    "NGSolve proxy invariants are both checked.",
 )
 
 FAMILY_META = {
@@ -915,6 +916,34 @@ FAMILY_META.update(
             ),
             "hint": "Use for FLUM-derived inductance L = Phi/I and co-energy W = 1/2 sum(I Phi) validation decks covering current, turns, distance, symmetry, superposition, and add/cancel energy invariants.",
         },
+        "application/numeric_force_torque_100": {
+            "title": "Numeric force and torque-gradient validation campaign",
+            "tags": (
+                "application",
+                "numeric-validation",
+                "force",
+                "torque",
+                "co-energy",
+                "energy-gradient",
+                "finite-difference",
+                "dwdx",
+                "dwdtheta",
+                "flum-law",
+                "flux-linkage",
+                "validation-level:numeric-invariant",
+                "flum",
+                "ngsolve-crossval",
+                "ngsolve-numeric-invariant",
+                "current-square-scaling",
+                "distance-force",
+                "mirror-symmetry",
+                "lateral-symmetry",
+                "angular-symmetry",
+                "balanced-torque",
+                "mcl8t",
+            ),
+            "hint": "Use for FLUM-derived co-energy force/torque-gradient checks: distance-force sign, current-square scaling, mirror/lateral symmetry, angular dW/dtheta trends, and balanced-torque invariants.",
+        },
         "motor/emdlab_bldc_outer_rotor_10": {
             "title": "EMDLAB-style BLDC outer-rotor campaign",
             "tags": ("motor", "emdlab-style", "bldc", "outer-rotor", "spm", "surface-pm", "pm", "mwl8t", "mmb8t", "mcl8t", "hbrm", "hbcn", "flum", "ngsolve-crossval"),
@@ -1159,6 +1188,31 @@ SAMPLE_ROUTE_RULES: tuple[dict[str, Any], ...] = (
 )
 
 SAMPLE_ROUTE_RULES = (
+    {
+        "intent": "Numeric force and torque-gradient validation",
+        "family": "application/numeric_force_torque_100",
+        "query": "numeric force torque co-energy gradient FLUM dWdx dWdtheta",
+        "recipe": "maxwell_torque_surface",
+        "terms": (
+            "force",
+            "torque",
+            "force law",
+            "torque law",
+            "co-energy gradient",
+            "coenergy gradient",
+            "energy gradient",
+            "dwdx",
+            "dw/dx",
+            "dwdtheta",
+            "dw/dtheta",
+            "finite difference force",
+            "finite-difference force",
+            "angular torque",
+            "balanced torque",
+            "distance force",
+        ),
+        "why": "Use these decks when the prompt asks how to validate force or torque behavior from FLUM-derived co-energy gradients before moving to direct FORT/FIXB post-processing.",
+    },
     {
         "intent": "Numeric inductance and co-energy validation",
         "family": "application/numeric_inductance_energy_100",
@@ -1528,9 +1582,11 @@ def build_validation_summary(
         "limitations": list(VALIDATION_LIMITATIONS),
         "recommended_calls": [
             'elf_sample_decks_validation(level="ngsolve_numeric_invariant")',
+            'elf_sample_decks_validation(family="numeric_force_torque")',
             'elf_sample_decks_validation(family="numeric_inductance_energy")',
             'elf_sample_decks_validation(family="numeric_flum_law")',
             'elf_sample_decks_validation(family="numeric_validation")',
+            'elf_sample_decks_route("force torque co-energy gradient")',
             'elf_sample_decks_route("inductance co-energy FLUM turn scaling")',
             'elf_sample_decks_route("FLUM law current linearity superposition")',
             'elf_sample_decks_route("numeric validation anchor FLUM invariant")',
@@ -1697,7 +1753,17 @@ def search_sample_decks(query: str, top_k: int = 10, ext: str | None = None) -> 
     for deck in load_sample_decks().values():
         if e and deck.ext != e:
             continue
-        haystack = f"{deck.path}\n{deck.text}"
+        meta = _family_meta(deck.family)
+        haystack = "\n".join(
+            [
+                deck.path,
+                deck.family,
+                meta["title"],
+                " ".join(meta["tags"]),
+                meta["hint"],
+                deck.text,
+            ]
+        )
         lower = haystack.lower()
         scores = [lower.count(kw.lower()) for kw in keywords]
         if not all(score > 0 for score in scores):

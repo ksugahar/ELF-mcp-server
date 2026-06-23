@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "policy": "Only validation-passed .mai/.meg input-deck pairs are listed here and bundled in the public package.",
-  "total_cases": 1100,
-  "total_input_files": 2200,
+  "total_cases": 1200,
+  "total_input_files": 2400,
   "families": {
     "application/accelerator_corrector_10": {
       "cases": 10,
@@ -304,6 +304,22 @@
       ],
       "validation_level": "ngsolve_numeric_invariant",
       "validation_scope": "ELF/MAGIC FLUM law invariants and independent NGSolve proxy invariants both passed for current, turns, sign, distance, symmetry, superposition, and cancellation checks."
+    },
+    "application/numeric_force_torque_100": {
+      "cases": 100,
+      "input_files": 200,
+      "validation": "passed",
+      "validated_on": "2026-06-24",
+      "checks": [
+        "solver_returncode_zero",
+        "mag_output_created",
+        "no_error_markers",
+        "mai_meg_pair_present",
+        "elf_flux_invariants_passed",
+        "ngsolve_numeric_invariants_passed"
+      ],
+      "validation_level": "ngsolve_numeric_invariant",
+      "validation_scope": "ELF/MAGIC FLUM-derived co-energy force/torque-gradient invariants and independent NGSolve proxy invariants both passed for distance-force sign, current-square scaling, mirror/lateral symmetry, angular symmetry, and balanced-torque checks."
     },
     "application/numeric_inductance_energy_100": {
       "cases": 100,

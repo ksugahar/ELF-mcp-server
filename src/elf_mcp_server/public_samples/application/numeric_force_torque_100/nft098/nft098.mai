@@ -1,0 +1,35 @@
+USE  MAGIC  3.50
+* Numeric force/torque co-energy anchor nft098: balanced bias angular symmetry theta 135.
+* Evaluation quantities: FLUM flux linkage Phi, co-energy W = 1/2 sum(I_i Phi_i), finite-difference force dW/dx, and angular torque proxy dW/dtheta.
+* Validation laws: distance force sign, current-square scaling, mirror/lateral symmetry, angular symmetry, and torque-balance invariants.
+
+PRE
+  COI1 10 0 40 4 4 A
+  AMP1 10 0 1.00000000E+01
+
+  COI1 11 0 40 4 4 A
+  AMP1 11 0 1.00000000E+01
+
+  COI1 12 0 40 4 4 A
+  AMP1 12 0 1.00000000E+01
+
+END
+
+SOL MOME
+  NCPU  0
+  BLAS  8  32
+  TIME  0
+  DMEG
+END
+
+SOL FIEL
+  TIME  0
+  DMEG
+END
+
+SOL FIXA
+  TIME  0
+  FLUM  10
+  FLUM  11
+  FLUM  12
+END
