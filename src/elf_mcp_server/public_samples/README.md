@@ -5,7 +5,8 @@ Only validation-passed input-deck pairs are published here; candidate,
 failed, or unverified cases stay outside this directory until they pass the
 public sample validation gate and are listed in `VALIDATED_MANIFEST.json`.
 All published cases have an independent NGSolve proxy-field gate; the numeric
-anchor families additionally carry ELF `FLUM` and NGSolve invariant checks.
+anchor families additionally carry ELF `FLUM`-derived and NGSolve invariant
+checks.
 The machine-readable contract is `VALIDATED_MANIFEST.json`; MCP clients can
 summarize it through `elf_sample_decks_validation()`.
 `PUBLICATION_BATCHES.json` records deterministic 100-case publication
@@ -28,13 +29,14 @@ Validation levels:
   the published deck family; this is not a full absolute field/force/torque/loss
   agreement suite.
 - `ngsolve_numeric_invariant`: stronger compact-anchor gate with ELF `FLUM`
-  ratio/sign/law invariants plus independent NGSolve proxy invariants.
+  ratio/sign/law invariants, `FLUM`-derived inductance/co-energy invariants,
+  and independent NGSolve proxy invariants.
 
 Publication cadence:
 
 - validated decks are reviewed in 100-case checkpoints
-- this baseline contains 10 full checkpoints and no release-remainder batch
-- the next clean checkpoint is 1100 cases, so 100 additional validated cases are
+- this baseline contains 11 full checkpoints and no release-remainder batch
+- the next clean checkpoint is 1200 cases, so 100 additional validated cases are
   needed before the next 100-case publication increment
 
 The decks are intended as public examples that users can inspect, copy, and run
@@ -109,14 +111,15 @@ Current families:
   saliency, phase excitation, and passive pickup coils
 - `motor/hysteresis_motor_10/`: 10 high-coercivity hysteresis-motor input-deck
   proxy examples using origin-starting B-H curves and pickup coils
-- `application/`: 348 application examples covering transformers, MRI,
+- `application/`: 448 application examples covering transformers, MRI,
   wireless power transfer, induction heating, accelerator electromagnets,
   actuator plungers, maglev bearings, magnetic separators, eddy-current
   brakes, NDT eddy-current probes, magnetic gears, voice-coil actuators,
   relay solenoids, Hall-sensor fixtures, electromagnetic clutches, WPT
   misalignment, MRI gradient sequences, transformer leakage, IH susceptors,
   accelerator corrector magnets, EMDLAB-style transformer/benchmark decks,
-  numeric-validation anchors, and numeric FLUM-law validation decks
+  numeric-validation anchors, numeric FLUM-law validation decks, and numeric
+  inductance/co-energy validation decks
 - `application/emdlab_1ph_transformer_static_10/`: 10 EMDLAB-style
   single-phase transformer static examples with core limbs, primary/secondary
   coils, and `FLUM`
@@ -130,6 +133,10 @@ Current families:
 - `application/numeric_flum_law_64/`: 64 numeric FLUM-law examples validating
   magnetic flux linkage against current, turns, sign, distance, symmetry,
   superposition, and cancellation invariants
+- `application/numeric_inductance_energy_100/`: 100 numeric examples validating
+  `FLUM`-derived inductance `L = Phi/I` and co-energy
+  `W = 1/2 sum(I Phi)` against current, turns, distance, symmetry,
+  superposition, and add/cancel energy invariants
 - `application/transformer_core_pickup_12/`: 12 transformer core, primary,
   secondary, and passive pickup-coil examples
 - `application/transformer_loop_10/`: 10 loop-reviewed transformer core,

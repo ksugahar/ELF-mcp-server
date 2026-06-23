@@ -94,9 +94,9 @@ def test_public_sample_decks_are_runnable_inputs_only():
         get_sample_deck,
     )
     decks = list_sample_decks()
-    assert len(decks) == 2000
-    assert sum(1 for d in decks if d["ext"] == "mai") == 1000
-    assert sum(1 for d in decks if d["ext"] == "meg") == 1000
+    assert len(decks) == 2200
+    assert sum(1 for d in decks if d["ext"] == "mai") == 1100
+    assert sum(1 for d in decks if d["ext"] == "meg") == 1100
     assert any(d["path"] == "motor/pm_cosine_pickup_72/pm001/pm001.mai" for d in decks)
     assert any(d["path"] == "motor/spm_surface_pm_10/spm001/spm001.mai" for d in decks)
     assert any(d["path"] == "motor/srm_switched_reluctance_10/srm001/srm001.mai" for d in decks)
@@ -126,6 +126,10 @@ def test_public_sample_decks_are_runnable_inputs_only():
     )
     assert any(
         d["path"] == "application/numeric_flum_law_64/nfl001/nfl001.mai"
+        for d in decks
+    )
+    assert any(
+        d["path"] == "application/numeric_inductance_energy_100/nie001/nie001.mai"
         for d in decks
     )
     assert any(d["path"] == "motor/ipm_interior_pm_10/ipm001/ipm001.mai" for d in decks)
@@ -224,9 +228,9 @@ def test_public_sample_decks_are_runnable_inputs_only():
     )
     with open(manifest_path, encoding="ascii") as f:
         manifest = json.load(f)
-    assert manifest["total_cases"] == 1000
-    assert manifest["total_input_files"] == 2000
-    assert len(manifest["families"]) == 66
+    assert manifest["total_cases"] == 1100
+    assert manifest["total_input_files"] == 2200
+    assert len(manifest["families"]) == 67
     assert all(v["validation"] == "passed" for v in manifest["families"].values())
     assert all(v["validation_level"] for v in manifest["families"].values())
     levels = {v["validation_level"] for v in manifest["families"].values()}
@@ -249,24 +253,29 @@ def test_public_sample_decks_are_runnable_inputs_only():
     assert flum_law_manifest["validation_level"] == "ngsolve_numeric_invariant"
     assert "elf_flux_invariants_passed" in flum_law_manifest["checks"]
     assert "ngsolve_numeric_invariants_passed" in flum_law_manifest["checks"]
+    inductance_manifest = manifest["families"]["application/numeric_inductance_energy_100"]
+    assert inductance_manifest["cases"] == 100
+    assert inductance_manifest["validation_level"] == "ngsolve_numeric_invariant"
+    assert "elf_flux_invariants_passed" in inductance_manifest["checks"]
+    assert "ngsolve_numeric_invariants_passed" in inductance_manifest["checks"]
     validation_summary = build_validation_summary()
-    assert validation_summary["total_cases"] == 1000
-    assert validation_summary["total_input_files"] == 2000
-    assert validation_summary["total_families"] == 66
+    assert validation_summary["total_cases"] == 1100
+    assert validation_summary["total_input_files"] == 2200
+    assert validation_summary["total_families"] == 67
     assert validation_summary["level_counts"]["ngsolve_proxy_energy"]["families"] == 64
     assert validation_summary["level_counts"]["ngsolve_proxy_energy"]["cases"] == 926
-    assert validation_summary["level_counts"]["ngsolve_numeric_invariant"]["families"] == 2
-    assert validation_summary["level_counts"]["ngsolve_numeric_invariant"]["cases"] == 74
+    assert validation_summary["level_counts"]["ngsolve_numeric_invariant"]["families"] == 3
+    assert validation_summary["level_counts"]["ngsolve_numeric_invariant"]["cases"] == 174
     publication_batches = build_publication_batch_summary()
     assert publication_batches["checkpoint_size"] == 100
-    assert publication_batches["total_cases"] == 1000
-    assert publication_batches["total_batches"] == 10
-    assert publication_batches["full_100_case_batches"] == 10
+    assert publication_batches["total_cases"] == 1100
+    assert publication_batches["total_batches"] == 11
+    assert publication_batches["full_100_case_batches"] == 11
     assert publication_batches["remainder_cases"] == 0
-    assert publication_batches["next_checkpoint_cases"] == 1100
+    assert publication_batches["next_checkpoint_cases"] == 1200
     assert publication_batches["additional_cases_needed_for_next_100_case_checkpoint"] == 100
     validation_text = format_validation_summary(validation_summary)
-    assert "1000 cases" in validation_text
+    assert "1100 cases" in validation_text
     assert "ngsolve_proxy_energy" in validation_text
     assert "not a full absolute field/force/torque/loss agreement suite" in validation_text
     assert "100-case publication checkpoints" in validation_text
@@ -280,6 +289,10 @@ def test_public_sample_decks_are_runnable_inputs_only():
     assert flum_law_summary["selected_family_count"] == 1
     assert flum_law_summary["families"][0]["family"] == "application/numeric_flum_law_64"
     assert flum_law_summary["families"][0]["cases"] == 64
+    inductance_summary = build_validation_summary(family="numeric_inductance_energy")
+    assert inductance_summary["selected_family_count"] == 1
+    assert inductance_summary["families"][0]["family"] == "application/numeric_inductance_energy_100"
+    assert inductance_summary["families"][0]["cases"] == 100
     hits = search_sample_decks("HBCN FLUM", ext="mai")
     assert hits
     assert hits[0]["path"].endswith(".mai")
@@ -330,6 +343,9 @@ def test_public_sample_decks_are_runnable_inputs_only():
     flum_law_hits = search_sample_decks("FLUM law superposition", ext="mai")
     assert flum_law_hits
     assert flum_law_hits[0]["path"].startswith("application/numeric_flum_law_64")
+    inductance_hits = search_sample_decks("inductance co-energy FLUM turn scaling", ext="mai")
+    assert inductance_hits
+    assert inductance_hits[0]["path"].startswith("application/numeric_inductance_energy_100")
     route = route_sample_decks("I want an IPM hairpin motor flux linkage deck", limit=3)
     assert route
     assert route[0]["family"] == "motor/emdlab_ipm_hairpin_10"
@@ -348,6 +364,8 @@ def test_public_sample_decks_are_runnable_inputs_only():
     assert numeric_route[0]["family"] == "application/numeric_validation_anchors_10"
     flum_law_route = route_sample_decks("FLUM law current linearity superposition", limit=2)
     assert flum_law_route[0]["family"] == "application/numeric_flum_law_64"
+    inductance_route = route_sample_decks("inductance co-energy FLUM turn scaling", limit=2)
+    assert inductance_route[0]["family"] == "application/numeric_inductance_energy_100"
     wound_route = route_sample_decks("wound-field synchronous motor rotor field", limit=2)
     assert wound_route[0]["family"] == "motor/wound_field_sync_10"
     stepper_route = route_sample_decks("stepper motor detent angle", limit=2)
@@ -418,8 +436,8 @@ def test_public_sample_decks_are_runnable_inputs_only():
     assert "HBCN 1 0 1" in text
     assert "HBCN 2 0 2" in text
     assert "FLUM  49" in text
-    cards = build_sample_deck_cards(limit=1000)
-    assert len(cards) == 1000
+    cards = build_sample_deck_cards(limit=1100)
+    assert len(cards) == 1100
     spm_cards = build_sample_deck_cards(limit=20, family="spm_surface_pm_10")
     assert len(spm_cards) == 10
     assert "spm" in spm_cards[0]["tags"]
@@ -486,10 +504,15 @@ def test_public_sample_decks_are_runnable_inputs_only():
         ("application/accelerator_corrector_10", "corrector", "MMB8T"),
         ("application/numeric_validation_anchors_10", "numeric-validation", "MCL8T"),
         ("application/numeric_flum_law_64", "flum-law", "MCL8T"),
+        ("application/numeric_inductance_energy_100", "inductance", "MCL8T"),
     ]
+    expected_family_lengths = {
+        "application/numeric_flum_law_64": 64,
+        "application/numeric_inductance_energy_100": 100,
+    }
     for family, tag, element in loop_family_checks:
-        family_cards = build_sample_deck_cards(limit=70, family=family)
-        expected_len = 64 if family == "application/numeric_flum_law_64" else 10
+        family_cards = build_sample_deck_cards(limit=120, family=family)
+        expected_len = expected_family_lengths.get(family, 10)
         assert len(family_cards) == expected_len
         assert tag in family_cards[0]["tags"]
         assert element in family_cards[0]["elements"]

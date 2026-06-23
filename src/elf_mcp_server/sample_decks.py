@@ -24,8 +24,8 @@ VALIDATION_LEVEL_DESCRIPTIONS = {
         "energy sanity check was positive."
     ),
     "ngsolve_numeric_invariant": (
-        "ELF FLUM law invariants and independent NGSolve proxy invariants "
-        "both passed for numeric anchor cases."
+        "ELF FLUM-derived numeric invariants and independent NGSolve proxy "
+        "invariants both passed for numeric anchor cases."
     ),
 }
 
@@ -41,7 +41,7 @@ VALIDATION_LIMITATIONS = (
     "`ngsolve_proxy_energy` is a broad independent proxy-field gate for deck "
     "sanity, not a full absolute field/force/torque/loss agreement suite.",
     "`ngsolve_numeric_invariant` is used for numeric anchor families where "
-    "ELF FLUM invariants and NGSolve proxy invariants are both checked.",
+    "ELF FLUM-derived invariants and NGSolve proxy invariants are both checked.",
 )
 
 FAMILY_META = {
@@ -890,6 +890,31 @@ FAMILY_META.update(
             ),
             "hint": "Use for FLUM law validation decks covering current, turns, sign, distance, symmetry, superposition, and cancellation invariants.",
         },
+        "application/numeric_inductance_energy_100": {
+            "title": "Numeric inductance and co-energy validation campaign",
+            "tags": (
+                "application",
+                "numeric-validation",
+                "inductance",
+                "co-energy",
+                "energy",
+                "flum-law",
+                "flux-linkage",
+                "validation-level:numeric-invariant",
+                "flum",
+                "ngsolve-crossval",
+                "ngsolve-numeric-invariant",
+                "current-linearity",
+                "turn-scaling",
+                "mutual-inductance",
+                "distance-decay",
+                "mirror-symmetry",
+                "superposition",
+                "cancellation",
+                "mcl8t",
+            ),
+            "hint": "Use for FLUM-derived inductance L = Phi/I and co-energy W = 1/2 sum(I Phi) validation decks covering current, turns, distance, symmetry, superposition, and add/cancel energy invariants.",
+        },
         "motor/emdlab_bldc_outer_rotor_10": {
             "title": "EMDLAB-style BLDC outer-rotor campaign",
             "tags": ("motor", "emdlab-style", "bldc", "outer-rotor", "spm", "surface-pm", "pm", "mwl8t", "mmb8t", "mcl8t", "hbrm", "hbcn", "flum", "ngsolve-crossval"),
@@ -1134,6 +1159,32 @@ SAMPLE_ROUTE_RULES: tuple[dict[str, Any], ...] = (
 )
 
 SAMPLE_ROUTE_RULES = (
+    {
+        "intent": "Numeric inductance and co-energy validation",
+        "family": "application/numeric_inductance_energy_100",
+        "query": "numeric inductance co-energy FLUM current turns superposition energy",
+        "recipe": "mutual_flux_current_pickup",
+        "terms": (
+            "inductance",
+            "co-energy",
+            "coenergy",
+            "energy law",
+            "phi over current",
+            "phi/i",
+            "l = phi/i",
+            "w = 1/2",
+            "half i phi",
+            "mutual inductance",
+            "self inductance",
+            "turn scaling",
+            "energy current square",
+            "energy turns square",
+            "add cancel energy",
+            "what physical quantity",
+            "what quantity",
+        ),
+        "why": "Use these decks when the prompt asks what physical quantity should be evaluated after FLUM, especially inductance L = Phi/I or co-energy W = 1/2 sum(I Phi).",
+    },
     {
         "intent": "Numeric FLUM law validation",
         "family": "application/numeric_flum_law_64",
@@ -1477,8 +1528,10 @@ def build_validation_summary(
         "limitations": list(VALIDATION_LIMITATIONS),
         "recommended_calls": [
             'elf_sample_decks_validation(level="ngsolve_numeric_invariant")',
+            'elf_sample_decks_validation(family="numeric_inductance_energy")',
             'elf_sample_decks_validation(family="numeric_flum_law")',
             'elf_sample_decks_validation(family="numeric_validation")',
+            'elf_sample_decks_route("inductance co-energy FLUM turn scaling")',
             'elf_sample_decks_route("FLUM law current linearity superposition")',
             'elf_sample_decks_route("numeric validation anchor FLUM invariant")',
         ],
