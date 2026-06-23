@@ -31,13 +31,13 @@ Validation levels:
 - `ngsolve_numeric_invariant`: stronger compact-anchor gate with ELF `FLUM`
   ratio/sign/law invariants, `FLUM`-derived inductance/co-energy invariants,
   `FLUM`-derived force/torque-gradient invariants, AC-loss proxy invariants,
-  and independent NGSolve proxy invariants.
+  magnetic-circuit proxy invariants, and independent NGSolve proxy invariants.
 
 Publication cadence:
 
 - validated decks are reviewed in 100-case checkpoints
-- this baseline contains 13 full checkpoints and no release-remainder batch
-- the next clean checkpoint is 1400 cases, so 100 additional validated cases are
+- this baseline contains 14 full checkpoints and no release-remainder batch
+- the next clean checkpoint is 1500 cases, so 100 additional validated cases are
   needed before the next 100-case publication increment
 
 The decks are intended as public examples that users can inspect, copy, and run
@@ -112,7 +112,7 @@ Current families:
   saliency, phase excitation, and passive pickup coils
 - `motor/hysteresis_motor_10/`: 10 high-coercivity hysteresis-motor input-deck
   proxy examples using origin-starting B-H curves and pickup coils
-- `application/`: 648 application examples covering transformers, MRI,
+- `application/`: 748 application examples covering transformers, MRI,
   wireless power transfer, induction heating, accelerator electromagnets,
   actuator plungers, maglev bearings, magnetic separators, eddy-current
   brakes, NDT eddy-current probes, magnetic gears, voice-coil actuators,
@@ -121,7 +121,8 @@ Current families:
   accelerator corrector magnets, EMDLAB-style transformer/benchmark decks,
   numeric-validation anchors, numeric FLUM-law validation decks, numeric
   inductance/co-energy validation decks, and numeric force/torque-gradient
-  validation decks, and numeric AC-loss validation decks
+  validation decks, numeric AC-loss validation decks, and numeric
+  magnetic-circuit validation decks
 - `application/emdlab_1ph_transformer_static_10/`: 10 EMDLAB-style
   single-phase transformer static examples with core limbs, primary/secondary
   coils, and `FLUM`
@@ -147,6 +148,10 @@ Current families:
   validating AC-loss proxy behavior against frequency-square, current-square,
   resistivity-inverse, distance-decay, mirror/lateral symmetry, add/cancel,
   thickness, width, and combined `I-f-rho` scaling invariants
+- `application/numeric_magnetic_circuit_100/`: 100 numeric MMB8T/HBUN/HBCU
+  examples validating magnetic-circuit proxy behavior against B-H slope,
+  air-gap reluctance, core area/depth, current/turn scaling, mirror/height
+  sanity, return-yoke continuity, and add/cancel bias invariants
 - `application/transformer_core_pickup_12/`: 12 transformer core, primary,
   secondary, and passive pickup-coil examples
 - `application/transformer_loop_10/`: 10 loop-reviewed transformer core,

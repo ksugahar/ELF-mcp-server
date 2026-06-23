@@ -41,8 +41,8 @@ VALIDATION_LIMITATIONS = (
     "`ngsolve_proxy_energy` is a broad independent proxy-field gate for deck "
     "sanity, not a full absolute field/force/torque/loss agreement suite.",
     "`ngsolve_numeric_invariant` is used for numeric anchor families where "
-    "ELF FLUM-derived flux, energy, force/torque-gradient, and AC-loss "
-    "invariants and NGSolve proxy invariants are both checked.",
+    "ELF FLUM-derived flux, energy, force/torque-gradient, AC-loss, and "
+    "magnetic-circuit invariants and NGSolve proxy invariants are both checked.",
 )
 
 FAMILY_META = {
@@ -948,6 +948,36 @@ FAMILY_META.update(
             ),
             "hint": "Use for MOMC/FREQ/OHM2 AC-loss decks with FLUM checks and NGSolve proxy invariants covering P proportional to I^2 f^2 / rho, distance decay, symmetry, add/cancel, thickness, and width trends.",
         },
+        "application/numeric_magnetic_circuit_100": {
+            "title": "Numeric magnetic-circuit and B-H scaling validation campaign",
+            "tags": (
+                "application",
+                "numeric-validation",
+                "magnetic-circuit",
+                "b-h",
+                "bh-curve",
+                "hbcu",
+                "hbun",
+                "mmb8t",
+                "yoke",
+                "air-gap",
+                "reluctance",
+                "core-area",
+                "core-depth",
+                "return-yoke",
+                "pickup-coupling",
+                "current-scaling",
+                "turn-scaling",
+                "add-cancel",
+                "flum",
+                "co-energy",
+                "ngsolve-crossval",
+                "ngsolve-numeric-invariant",
+                "validation-level:numeric-invariant",
+                "mcl8t",
+            ),
+            "hint": "Use for MMB8T/HBUN/HBCU magnetic-circuit decks with FLUM and NGSolve proxy checks covering B-H slope, air-gap reluctance, core area/depth, current/turn scaling, return-yoke continuity, and add/cancel bias behavior.",
+        },
         "application/numeric_force_torque_100": {
             "title": "Numeric force and torque-gradient validation campaign",
             "tags": (
@@ -1220,6 +1250,33 @@ SAMPLE_ROUTE_RULES: tuple[dict[str, Any], ...] = (
 )
 
 SAMPLE_ROUTE_RULES = (
+    {
+        "intent": "Numeric magnetic-circuit and B-H scaling validation",
+        "family": "application/numeric_magnetic_circuit_100",
+        "query": "numeric magnetic circuit B-H HBCU MMB8T air gap reluctance yoke FLUM",
+        "recipe": "magnetic_circuit_yoke_gap",
+        "terms": (
+            "magnetic circuit",
+            "magnetic-circuit",
+            "b-h",
+            "bh curve",
+            "hbcu",
+            "hbun",
+            "mmb8t",
+            "air gap",
+            "air-gap",
+            "reluctance",
+            "yoke",
+            "return yoke",
+            "return-yoke",
+            "core area",
+            "core depth",
+            "pickup coupling",
+            "magnetic path",
+            "flux path",
+        ),
+        "why": "Use these decks when the prompt asks how to validate MMB8T/HBUN/HBCU magnetic-circuit behavior, air-gap reluctance, yoke continuity, or pickup coupling before detailed nonlinear material studies.",
+    },
     {
         "intent": "Numeric AC loss and eddy-current scaling validation",
         "family": "application/numeric_ac_loss_100",
@@ -1642,11 +1699,13 @@ def build_validation_summary(
         "limitations": list(VALIDATION_LIMITATIONS),
         "recommended_calls": [
             'elf_sample_decks_validation(level="ngsolve_numeric_invariant")',
+            'elf_sample_decks_validation(family="numeric_magnetic_circuit")',
             'elf_sample_decks_validation(family="numeric_ac_loss")',
             'elf_sample_decks_validation(family="numeric_force_torque")',
             'elf_sample_decks_validation(family="numeric_inductance_energy")',
             'elf_sample_decks_validation(family="numeric_flum_law")',
             'elf_sample_decks_validation(family="numeric_validation")',
+            'elf_sample_decks_route("magnetic circuit air gap HBCU")',
             'elf_sample_decks_route("AC loss frequency square OHM2")',
             'elf_sample_decks_route("force torque co-energy gradient")',
             'elf_sample_decks_route("inductance co-energy FLUM turn scaling")',
