@@ -19,7 +19,7 @@ This server does **not** execute ELF600 simulations — it provides curated docu
 | `elf_usage(topic)` | 31 curated topics — high-level recipes | (knowledge.py) |
 | `elf_help_*(...)` | Help HTM files from `C:/ELF600/help/` | 1141 files, 1.18M chars |
 | `elf_examples_*(...)` | Example .mai/.mei/.txt plus 100-card playbook from `C:/ELF600/examples/` | 332 files, 533k chars |
-| `elf_sample_decks_*(...)` | Lab-authored ELF-runnable public `.mai`/`.meg` sample decks | 332 motor cases, 664 input files |
+| `elf_sample_decks_*(...)` | Lab-authored ELF-runnable public `.mai`/`.meg` sample decks | 356 cases, 712 input files |
 | `elf_recipe_*(...)` | Workflow decision cards for elements, PRE/SOL blocks, outputs, checks, and pitfalls | public-safe recipes |
 | `elf_wiki_*(...)` | Vendor wiki pages from elf.co.jp PukiWiki | 146 pages, 211k chars |
 | `elf_python_*(...)` | Python ctypes API + configs from `C:/ELF600/bin/` | 15 files, 246k chars |
@@ -32,8 +32,8 @@ The recipe family also has `elf_plan_workflow(goal)`, which chooses a short
 public-safe recipe sequence from a natural-language analysis goal.
 The sample deck family has `elf_sample_decks_index/search/get/playbook`
 for ELF-runnable public `.mai`/`.meg` decks. The Python family also has
-`elf_python_team28()`: a compact 28-case seed manifest from the 332 public
-motor cases for ELF Python-interface orchestration. `team28` is not a normal
+`elf_python_team28()`: a compact 28-case seed manifest from the public motor
+cases for ELF Python-interface orchestration. `team28` is not a normal
 ELF GUI/CLI deck-execution workflow. Solver outputs, comparison metrics,
 executable orchestration state, and Python-interface runtime state are not
 bundled.
@@ -41,12 +41,16 @@ bundled.
 ### MCP quick start
 
 For MCP clients, start with `elf_overview()` to discover the server surface and
-public boundary. The most useful calls while authoring motor inputs are:
+public boundary. The most useful calls while authoring ELF/MAGIC inputs are:
 
 - `elf_sample_decks_playbook(limit=20, family="pm_square")` for compact cards
   over the public motor decks
+- `elf_sample_decks_playbook(limit=20, family="application")` for transformer
+  and MRI gradient-coil application decks
 - `elf_sample_decks_search("HBCN FLUM", ext="mai")` to find reusable input
   patterns
+- `elf_sample_decks_search("MRI OHM2 FREQ", ext="mai")` to find AC shielding
+  and eddy-current setup patterns
 - `elf_sample_decks_get("motor/pm_cosine_pickup_72/pm001/pm001.mai")` to open a
   concrete public deck
 - `elf_python_team28()` to inspect the Python-interface seed manifest
@@ -54,14 +58,16 @@ public boundary. The most useful calls while authoring motor inputs are:
 This MCP server is documentation and input-deck retrieval only; it does not
 launch ELF, run solvers, manage licenses, or publish validation outputs.
 
-### ELF/MAGIC for motor input authoring
+### ELF/MAGIC application input authoring
 
-ELF/MAGIC is useful for motor-oriented magnetostatic input authoring when the
+ELF/MAGIC is useful for magnetostatic and AC magnetic input authoring when the
 model is expressed as `.mai` analysis control plus `.meg` mesh data. This server
 turns that knowledge into MCP tools:
 
 - 332 public motor input-deck pairs covering 2-pole, 4-pole, 6-pole, 8-pole,
   and cosine-remanence PM pickup families
+- 24 public application input-deck pairs covering transformer core/pickup
+  coupling and MRI gradient-coil/eddy-current shield patterns
 - playbook cards that expose each deck's SOL blocks, PRE keywords, element
   families, feature tags, and reuse hints
 - curated motor topics for air-gap field, flux linkage/back-EMF pickup,
@@ -72,7 +78,10 @@ turns that knowledge into MCP tools:
 Useful entry points are `elf_usage(topic="ipm_motor")`,
 `elf_usage(topic="motor_radia_bridge")`,
 `elf_recipe_search("motor pickup")`, and
-`elf_sample_decks_playbook(limit=50, family="pm_square")`.
+`elf_sample_decks_playbook(limit=50, family="pm_square")`. For non-motor
+applications, start with `elf_sample_decks_playbook(family="application")`,
+`elf_sample_decks_search("transformer FLUM")`, or
+`elf_sample_decks_search("MRI OHM2 FREQ")`.
 
 ### Public lint
 
@@ -86,7 +95,7 @@ elf-mcp-policy-lint
 
 `elf-mcp-policy-lint` checks the public package boundary: no private validation
 paths, no unrelated commercial-tool references, and no bundled solver outputs
-inside the public motor sample decks.
+inside the public sample decks.
 
 Bundled data (all generated from fresh ELF600 install via `scripts/crawl_*.py`):
 - `help_dump.json` — Shift_JIS HTM decoded + HTML-stripped

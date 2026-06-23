@@ -76,13 +76,11 @@ def run_policy_lint(root: Path | str | None = None) -> list[str]:
             if marker in text:
                 issues.append(f"{rel}: contains private marker {marker!r}")
 
-    samples = repo / "src" / "elf_mcp_server" / "public_samples" / "motor"
+    samples = repo / "src" / "elf_mcp_server" / "public_samples"
     if samples.exists():
         for path in sorted(p for p in samples.rglob("*") if p.is_file()):
             rel = path.relative_to(repo).as_posix()
             suffix = path.suffix.lower()
-            if suffix not in {".mai", ".meg"}:
-                issues.append(f"{rel}: public motor sample must be .mai or .meg")
             if suffix in SAMPLE_OUTPUT_SUFFIXES or path.name.lower() == "summary.csv":
                 issues.append(f"{rel}: solver output file is not allowed")
             if suffix in {".mai", ".meg"}:

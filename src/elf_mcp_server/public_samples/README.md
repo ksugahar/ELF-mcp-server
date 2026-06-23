@@ -16,3 +16,12 @@ Excluded files:
 The decks are intended as public examples that users can inspect, copy, and run
 with their own ELF/MAGIC installation. The MCP server itself does not execute
 ELF/MAGIC or bundle solver results.
+
+Current families:
+
+- `motor/`: 332 permanent-magnet pickup examples for motor-oriented input
+  authoring
+- `application/transformer_core_pickup_12/`: 12 transformer core, primary,
+  secondary, and passive pickup-coil examples
+- `application/mri_gradient_shield_12/`: 12 MRI gradient-coil and
+  eddy-current shield examples using linear AC `SOL MOMC`

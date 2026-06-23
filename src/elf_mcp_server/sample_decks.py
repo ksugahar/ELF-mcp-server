@@ -15,6 +15,37 @@ from typing import Any
 ROOT = "public_samples"
 
 FAMILY_META = {
+    "application/mri_gradient_shield_12": {
+        "title": "MRI gradient coil with eddy-current shield",
+        "tags": (
+            "application",
+            "mri",
+            "gradient-coil",
+            "eddy-current",
+            "shield",
+            "momc",
+            "mab8t",
+            "ohm2",
+            "fiel",
+            "flum",
+        ),
+        "hint": "Use when a linear AC gradient-coil, conducting shield, or MOMC/FREQ pattern is needed.",
+    },
+    "application/transformer_core_pickup_12": {
+        "title": "Transformer core and passive pickup coil",
+        "tags": (
+            "application",
+            "transformer",
+            "core",
+            "primary",
+            "secondary",
+            "pickup",
+            "mmb8t",
+            "mcl8t",
+            "flum",
+        ),
+        "hint": "Use for transformer-style core/coil coupling, passive pickup FLUM, and nonlinear B-H setup.",
+    },
     "motor/pm_cosine_pickup_72": {
         "title": "2-pole cosine-amplitude PM pickup",
         "tags": ("motor", "pm", "cosine-remanence", "hbrm", "hbcn", "flum", "pickup"),
@@ -74,7 +105,10 @@ TEAM28_CASES: tuple[tuple[str, str], ...] = (
 )
 
 SOL_RE = re.compile(r"^\s*SOL\s+([A-Z0-9_]+)", re.MULTILINE)
-ELEMENT_RE = re.compile(r"\b(MWL8T|MWV8T|MCL8T|MMB8T|MCO[0-9A-Z]*|MCM[0-9A-Z]*|MJH[0-9A-Z]*)\b")
+ELEMENT_RE = re.compile(
+    r"\b(MWL8T|MWV8T|MCL8T|MMB8T|MAB8T|MAT[0-9A-Z]*|MBB[0-9A-Z]*|"
+    r"MCO[0-9A-Z]*|MCM[0-9A-Z]*|MJH[0-9A-Z]*)\b"
+)
 KEYWORDS = (
     "HBUN",
     "HBSC",
@@ -84,7 +118,12 @@ KEYWORDS = (
     "VEC3",
     "COI1",
     "AMP1",
+    "AMP1I",
+    "OHM2",
+    "CMU1",
+    "CMU1I",
     "TIME",
+    "FREQ",
     "NONL",
     "DMEG",
     "FLUM",
@@ -312,7 +351,7 @@ def build_sample_deck_cards(
     if team28:
         order = {key: i for i, key in enumerate(TEAM28_CASES)}
         cards.sort(key=lambda c: order[(c["family"], c["case"])])
-    return cards[: max(0, min(limit, 332))]
+    return cards[: max(0, limit)]
 
 
 def build_team28_cards() -> list[dict[str, Any]]:

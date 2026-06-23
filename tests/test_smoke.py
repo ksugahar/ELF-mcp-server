@@ -86,21 +86,41 @@ def test_public_sample_decks_are_runnable_inputs_only():
         get_sample_deck,
     )
     decks = list_sample_decks()
-    assert len(decks) == 664
-    assert sum(1 for d in decks if d["ext"] == "mai") == 332
-    assert sum(1 for d in decks if d["ext"] == "meg") == 332
+    assert len(decks) == 712
+    assert sum(1 for d in decks if d["ext"] == "mai") == 356
+    assert sum(1 for d in decks if d["ext"] == "meg") == 356
     assert any(d["path"] == "motor/pm_cosine_pickup_72/pm001/pm001.mai" for d in decks)
+    assert any(
+        d["path"] == "application/transformer_core_pickup_12/tf001/tf001.mai"
+        for d in decks
+    )
+    assert any(
+        d["path"] == "application/mri_gradient_shield_12/mri001/mri001.mai"
+        for d in decks
+    )
     hits = search_sample_decks("HBCN FLUM", ext="mai")
     assert hits
     assert hits[0]["path"].endswith(".mai")
+    transformer_hits = search_sample_decks("transformer FLUM", ext="mai")
+    assert transformer_hits
+    assert transformer_hits[0]["path"].startswith("application/transformer")
+    mri_hits = search_sample_decks("MRI OHM2 FREQ", ext="mai")
+    assert mri_hits
+    assert mri_hits[0]["path"].startswith("application/mri")
     pm001 = get_sample_deck("motor/pm_cosine_pickup_72/pm001/pm001.mai")
     text = pm001["text"]
     assert "USE  MAGIC" in text
     assert "HBCN 1 0 1" in text
     assert "HBCN 2 0 2" in text
     assert "FLUM  49" in text
-    cards = build_sample_deck_cards(limit=332)
-    assert len(cards) == 332
+    cards = build_sample_deck_cards(limit=356)
+    assert len(cards) == 356
+    transformer_cards = build_sample_deck_cards(limit=20, family="transformer")
+    assert len(transformer_cards) == 12
+    assert "transformer" in transformer_cards[0]["tags"]
+    mri_cards = build_sample_deck_cards(limit=20, query="MRI OHM2")
+    assert len(mri_cards) == 12
+    assert "MAB8T" in mri_cards[0]["elements"]
     team28 = build_team28_cards()
     assert len(team28) == 28
     team28_text = format_team28_cards(team28)
