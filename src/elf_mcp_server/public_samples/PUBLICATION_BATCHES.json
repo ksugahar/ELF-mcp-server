@@ -2,12 +2,12 @@
   "schema_version": 1,
   "policy": "Validated public sample decks are reviewed in deterministic 100-case checkpoints. The final release-remainder batch may be smaller when closing a baseline release.",
   "checkpoint_size": 100,
-  "total_cases": 936,
+  "total_cases": 1000,
   "total_batches": 10,
-  "full_100_case_batches": 9,
-  "remainder_cases": 36,
-  "next_checkpoint_cases": 1000,
-  "additional_cases_needed_for_next_100_case_checkpoint": 64,
+  "full_100_case_batches": 10,
+  "remainder_cases": 0,
+  "next_checkpoint_cases": 1100,
+  "additional_cases_needed_for_next_100_case_checkpoint": 100,
   "batches": [
     {
       "batch_id": "batch_001",
@@ -155,7 +155,7 @@
         "application/mri_gradient_shield_12": 12,
         "application/mri_loop_10": 10,
         "application/ndt_eddy_probe_10": 10,
-        "application/numeric_validation_anchors_10": 8
+        "application/numeric_flum_law_64": 8
       },
       "case_paths": [
         "application/ih_induction_heating_10/ihl001/ihl001.mai",
@@ -250,14 +250,14 @@
         "application/ndt_eddy_probe_10/ndl008/ndl008.mai",
         "application/ndt_eddy_probe_10/ndl009/ndl009.mai",
         "application/ndt_eddy_probe_10/ndl010/ndl010.mai",
-        "application/numeric_validation_anchors_10/nva001/nva001.mai",
-        "application/numeric_validation_anchors_10/nva002/nva002.mai",
-        "application/numeric_validation_anchors_10/nva003/nva003.mai",
-        "application/numeric_validation_anchors_10/nva004/nva004.mai",
-        "application/numeric_validation_anchors_10/nva005/nva005.mai",
-        "application/numeric_validation_anchors_10/nva006/nva006.mai",
-        "application/numeric_validation_anchors_10/nva007/nva007.mai",
-        "application/numeric_validation_anchors_10/nva008/nva008.mai"
+        "application/numeric_flum_law_64/nfl001/nfl001.mai",
+        "application/numeric_flum_law_64/nfl002/nfl002.mai",
+        "application/numeric_flum_law_64/nfl003/nfl003.mai",
+        "application/numeric_flum_law_64/nfl004/nfl004.mai",
+        "application/numeric_flum_law_64/nfl005/nfl005.mai",
+        "application/numeric_flum_law_64/nfl006/nfl006.mai",
+        "application/numeric_flum_law_64/nfl007/nfl007.mai",
+        "application/numeric_flum_law_64/nfl008/nfl008.mai"
       ]
     },
     {
@@ -268,23 +268,82 @@
       "case_start": 201,
       "case_end": 300,
       "validation_level_counts": {
-        "ngsolve_numeric_invariant": 2,
-        "ngsolve_proxy_energy": 98
+        "ngsolve_numeric_invariant": 66,
+        "ngsolve_proxy_energy": 34
       },
       "family_counts": {
-        "application/numeric_validation_anchors_10": 2,
+        "application/numeric_flum_law_64": 56,
+        "application/numeric_validation_anchors_10": 10,
         "application/relay_solenoid_10": 10,
         "application/transformer_core_pickup_12": 12,
         "application/transformer_leakage_10": 10,
-        "application/transformer_loop_10": 10,
-        "application/voice_coil_10": 10,
-        "application/wpt_coupled_coils_10": 10,
-        "application/wpt_loop_10": 10,
-        "application/wpt_misalignment_10": 10,
-        "motor/axial_flux_pm_10": 10,
-        "motor/emdlab_afpm_linearized_10": 6
+        "application/transformer_loop_10": 2
       },
       "case_paths": [
+        "application/numeric_flum_law_64/nfl009/nfl009.mai",
+        "application/numeric_flum_law_64/nfl010/nfl010.mai",
+        "application/numeric_flum_law_64/nfl011/nfl011.mai",
+        "application/numeric_flum_law_64/nfl012/nfl012.mai",
+        "application/numeric_flum_law_64/nfl013/nfl013.mai",
+        "application/numeric_flum_law_64/nfl014/nfl014.mai",
+        "application/numeric_flum_law_64/nfl015/nfl015.mai",
+        "application/numeric_flum_law_64/nfl016/nfl016.mai",
+        "application/numeric_flum_law_64/nfl017/nfl017.mai",
+        "application/numeric_flum_law_64/nfl018/nfl018.mai",
+        "application/numeric_flum_law_64/nfl019/nfl019.mai",
+        "application/numeric_flum_law_64/nfl020/nfl020.mai",
+        "application/numeric_flum_law_64/nfl021/nfl021.mai",
+        "application/numeric_flum_law_64/nfl022/nfl022.mai",
+        "application/numeric_flum_law_64/nfl023/nfl023.mai",
+        "application/numeric_flum_law_64/nfl024/nfl024.mai",
+        "application/numeric_flum_law_64/nfl025/nfl025.mai",
+        "application/numeric_flum_law_64/nfl026/nfl026.mai",
+        "application/numeric_flum_law_64/nfl027/nfl027.mai",
+        "application/numeric_flum_law_64/nfl028/nfl028.mai",
+        "application/numeric_flum_law_64/nfl029/nfl029.mai",
+        "application/numeric_flum_law_64/nfl030/nfl030.mai",
+        "application/numeric_flum_law_64/nfl031/nfl031.mai",
+        "application/numeric_flum_law_64/nfl032/nfl032.mai",
+        "application/numeric_flum_law_64/nfl033/nfl033.mai",
+        "application/numeric_flum_law_64/nfl034/nfl034.mai",
+        "application/numeric_flum_law_64/nfl035/nfl035.mai",
+        "application/numeric_flum_law_64/nfl036/nfl036.mai",
+        "application/numeric_flum_law_64/nfl037/nfl037.mai",
+        "application/numeric_flum_law_64/nfl038/nfl038.mai",
+        "application/numeric_flum_law_64/nfl039/nfl039.mai",
+        "application/numeric_flum_law_64/nfl040/nfl040.mai",
+        "application/numeric_flum_law_64/nfl041/nfl041.mai",
+        "application/numeric_flum_law_64/nfl042/nfl042.mai",
+        "application/numeric_flum_law_64/nfl043/nfl043.mai",
+        "application/numeric_flum_law_64/nfl044/nfl044.mai",
+        "application/numeric_flum_law_64/nfl045/nfl045.mai",
+        "application/numeric_flum_law_64/nfl046/nfl046.mai",
+        "application/numeric_flum_law_64/nfl047/nfl047.mai",
+        "application/numeric_flum_law_64/nfl048/nfl048.mai",
+        "application/numeric_flum_law_64/nfl049/nfl049.mai",
+        "application/numeric_flum_law_64/nfl050/nfl050.mai",
+        "application/numeric_flum_law_64/nfl051/nfl051.mai",
+        "application/numeric_flum_law_64/nfl052/nfl052.mai",
+        "application/numeric_flum_law_64/nfl053/nfl053.mai",
+        "application/numeric_flum_law_64/nfl054/nfl054.mai",
+        "application/numeric_flum_law_64/nfl055/nfl055.mai",
+        "application/numeric_flum_law_64/nfl056/nfl056.mai",
+        "application/numeric_flum_law_64/nfl057/nfl057.mai",
+        "application/numeric_flum_law_64/nfl058/nfl058.mai",
+        "application/numeric_flum_law_64/nfl059/nfl059.mai",
+        "application/numeric_flum_law_64/nfl060/nfl060.mai",
+        "application/numeric_flum_law_64/nfl061/nfl061.mai",
+        "application/numeric_flum_law_64/nfl062/nfl062.mai",
+        "application/numeric_flum_law_64/nfl063/nfl063.mai",
+        "application/numeric_flum_law_64/nfl064/nfl064.mai",
+        "application/numeric_validation_anchors_10/nva001/nva001.mai",
+        "application/numeric_validation_anchors_10/nva002/nva002.mai",
+        "application/numeric_validation_anchors_10/nva003/nva003.mai",
+        "application/numeric_validation_anchors_10/nva004/nva004.mai",
+        "application/numeric_validation_anchors_10/nva005/nva005.mai",
+        "application/numeric_validation_anchors_10/nva006/nva006.mai",
+        "application/numeric_validation_anchors_10/nva007/nva007.mai",
+        "application/numeric_validation_anchors_10/nva008/nva008.mai",
         "application/numeric_validation_anchors_10/nva009/nva009.mai",
         "application/numeric_validation_anchors_10/nva010/nva010.mai",
         "application/relay_solenoid_10/rsl001/rsl001.mai",
@@ -320,7 +379,33 @@
         "application/transformer_leakage_10/tlg009/tlg009.mai",
         "application/transformer_leakage_10/tlg010/tlg010.mai",
         "application/transformer_loop_10/tfl001/tfl001.mai",
-        "application/transformer_loop_10/tfl002/tfl002.mai",
+        "application/transformer_loop_10/tfl002/tfl002.mai"
+      ]
+    },
+    {
+      "batch_id": "batch_004",
+      "batch_kind": "full_100",
+      "status": "validated_public_baseline",
+      "case_count": 100,
+      "case_start": 301,
+      "case_end": 400,
+      "validation_level_counts": {
+        "ngsolve_proxy_energy": 100
+      },
+      "family_counts": {
+        "application/transformer_loop_10": 8,
+        "application/voice_coil_10": 10,
+        "application/wpt_coupled_coils_10": 10,
+        "application/wpt_loop_10": 10,
+        "application/wpt_misalignment_10": 10,
+        "motor/axial_flux_pm_10": 10,
+        "motor/emdlab_afpm_linearized_10": 10,
+        "motor/emdlab_bldc_outer_rotor_10": 10,
+        "motor/emdlab_bldc_spm_10": 10,
+        "motor/emdlab_induction_bar_10": 10,
+        "motor/emdlab_induction_fraction_10": 2
+      },
+      "case_paths": [
         "application/transformer_loop_10/tfl003/tfl003.mai",
         "application/transformer_loop_10/tfl004/tfl004.mai",
         "application/transformer_loop_10/tfl005/tfl005.mai",
@@ -384,33 +469,7 @@
         "motor/emdlab_afpm_linearized_10/eaf003/eaf003.mai",
         "motor/emdlab_afpm_linearized_10/eaf004/eaf004.mai",
         "motor/emdlab_afpm_linearized_10/eaf005/eaf005.mai",
-        "motor/emdlab_afpm_linearized_10/eaf006/eaf006.mai"
-      ]
-    },
-    {
-      "batch_id": "batch_004",
-      "batch_kind": "full_100",
-      "status": "validated_public_baseline",
-      "case_count": 100,
-      "case_start": 301,
-      "case_end": 400,
-      "validation_level_counts": {
-        "ngsolve_proxy_energy": 100
-      },
-      "family_counts": {
-        "motor/emdlab_afpm_linearized_10": 4,
-        "motor/emdlab_bldc_outer_rotor_10": 10,
-        "motor/emdlab_bldc_spm_10": 10,
-        "motor/emdlab_induction_bar_10": 10,
-        "motor/emdlab_induction_fraction_10": 10,
-        "motor/emdlab_ipm_hairpin_10": 10,
-        "motor/emdlab_ipm_hairpin_fraction_10": 10,
-        "motor/emdlab_spmsm_10": 10,
-        "motor/emdlab_spmsm_fraction_10": 10,
-        "motor/emdlab_spmsm_static_torque_10": 10,
-        "motor/emdlab_srm1216_outer_rotor_10": 6
-      },
-      "case_paths": [
+        "motor/emdlab_afpm_linearized_10/eaf006/eaf006.mai",
         "motor/emdlab_afpm_linearized_10/eaf007/eaf007.mai",
         "motor/emdlab_afpm_linearized_10/eaf008/eaf008.mai",
         "motor/emdlab_afpm_linearized_10/eaf009/eaf009.mai",
@@ -446,7 +505,33 @@
         "motor/emdlab_induction_bar_10/eim009/eim009.mai",
         "motor/emdlab_induction_bar_10/eim010/eim010.mai",
         "motor/emdlab_induction_fraction_10/eif001/eif001.mai",
-        "motor/emdlab_induction_fraction_10/eif002/eif002.mai",
+        "motor/emdlab_induction_fraction_10/eif002/eif002.mai"
+      ]
+    },
+    {
+      "batch_id": "batch_005",
+      "batch_kind": "full_100",
+      "status": "validated_public_baseline",
+      "case_count": 100,
+      "case_start": 401,
+      "case_end": 500,
+      "validation_level_counts": {
+        "ngsolve_proxy_energy": 100
+      },
+      "family_counts": {
+        "motor/emdlab_induction_fraction_10": 8,
+        "motor/emdlab_ipm_hairpin_10": 10,
+        "motor/emdlab_ipm_hairpin_fraction_10": 10,
+        "motor/emdlab_spmsm_10": 10,
+        "motor/emdlab_spmsm_fraction_10": 10,
+        "motor/emdlab_spmsm_static_torque_10": 10,
+        "motor/emdlab_srm1216_outer_rotor_10": 10,
+        "motor/emdlab_srm128_10": 10,
+        "motor/emdlab_srm64_10": 10,
+        "motor/emdlab_srm86_10": 10,
+        "motor/emdlab_srm86_fraction_10": 2
+      },
+      "case_paths": [
         "motor/emdlab_induction_fraction_10/eif003/eif003.mai",
         "motor/emdlab_induction_fraction_10/eif004/eif004.mai",
         "motor/emdlab_induction_fraction_10/eif005/eif005.mai",
@@ -510,33 +595,7 @@
         "motor/emdlab_srm1216_outer_rotor_10/ero003/ero003.mai",
         "motor/emdlab_srm1216_outer_rotor_10/ero004/ero004.mai",
         "motor/emdlab_srm1216_outer_rotor_10/ero005/ero005.mai",
-        "motor/emdlab_srm1216_outer_rotor_10/ero006/ero006.mai"
-      ]
-    },
-    {
-      "batch_id": "batch_005",
-      "batch_kind": "full_100",
-      "status": "validated_public_baseline",
-      "case_count": 100,
-      "case_start": 401,
-      "case_end": 500,
-      "validation_level_counts": {
-        "ngsolve_proxy_energy": 100
-      },
-      "family_counts": {
-        "motor/emdlab_srm1216_outer_rotor_10": 4,
-        "motor/emdlab_srm128_10": 10,
-        "motor/emdlab_srm64_10": 10,
-        "motor/emdlab_srm86_10": 10,
-        "motor/emdlab_srm86_fraction_10": 10,
-        "motor/emdlab_srm86_static_torque_10": 10,
-        "motor/emdlab_srm_pole_variants_10": 10,
-        "motor/emdlab_synrm_flux_barrier_10": 10,
-        "motor/emdlab_synrm_fraction_static_torque_10": 10,
-        "motor/emdlab_synrm_static_torque_10": 10,
-        "motor/hysteresis_motor_10": 6
-      },
-      "case_paths": [
+        "motor/emdlab_srm1216_outer_rotor_10/ero006/ero006.mai",
         "motor/emdlab_srm1216_outer_rotor_10/ero007/ero007.mai",
         "motor/emdlab_srm1216_outer_rotor_10/ero008/ero008.mai",
         "motor/emdlab_srm1216_outer_rotor_10/ero009/ero009.mai",
@@ -572,7 +631,33 @@
         "motor/emdlab_srm86_10/er6009/er6009.mai",
         "motor/emdlab_srm86_10/er6010/er6010.mai",
         "motor/emdlab_srm86_fraction_10/erf001/erf001.mai",
-        "motor/emdlab_srm86_fraction_10/erf002/erf002.mai",
+        "motor/emdlab_srm86_fraction_10/erf002/erf002.mai"
+      ]
+    },
+    {
+      "batch_id": "batch_006",
+      "batch_kind": "full_100",
+      "status": "validated_public_baseline",
+      "case_count": 100,
+      "case_start": 501,
+      "case_end": 600,
+      "validation_level_counts": {
+        "ngsolve_proxy_energy": 100
+      },
+      "family_counts": {
+        "motor/emdlab_srm86_fraction_10": 8,
+        "motor/emdlab_srm86_static_torque_10": 10,
+        "motor/emdlab_srm_pole_variants_10": 10,
+        "motor/emdlab_synrm_flux_barrier_10": 10,
+        "motor/emdlab_synrm_fraction_static_torque_10": 10,
+        "motor/emdlab_synrm_static_torque_10": 10,
+        "motor/hysteresis_motor_10": 10,
+        "motor/induction_cage_10": 10,
+        "motor/ipm_interior_pm_10": 10,
+        "motor/linear_pm_motor_10": 10,
+        "motor/pm_cosine_pickup_72": 2
+      },
+      "case_paths": [
         "motor/emdlab_srm86_fraction_10/erf003/erf003.mai",
         "motor/emdlab_srm86_fraction_10/erf004/erf004.mai",
         "motor/emdlab_srm86_fraction_10/erf005/erf005.mai",
@@ -636,27 +721,7 @@
         "motor/hysteresis_motor_10/hyl003/hyl003.mai",
         "motor/hysteresis_motor_10/hyl004/hyl004.mai",
         "motor/hysteresis_motor_10/hyl005/hyl005.mai",
-        "motor/hysteresis_motor_10/hyl006/hyl006.mai"
-      ]
-    },
-    {
-      "batch_id": "batch_006",
-      "batch_kind": "full_100",
-      "status": "validated_public_baseline",
-      "case_count": 100,
-      "case_start": 501,
-      "case_end": 600,
-      "validation_level_counts": {
-        "ngsolve_proxy_energy": 100
-      },
-      "family_counts": {
-        "motor/hysteresis_motor_10": 4,
-        "motor/induction_cage_10": 10,
-        "motor/ipm_interior_pm_10": 10,
-        "motor/linear_pm_motor_10": 10,
-        "motor/pm_cosine_pickup_72": 66
-      },
-      "case_paths": [
+        "motor/hysteresis_motor_10/hyl006/hyl006.mai",
         "motor/hysteresis_motor_10/hyl007/hyl007.mai",
         "motor/hysteresis_motor_10/hyl008/hyl008.mai",
         "motor/hysteresis_motor_10/hyl009/hyl009.mai",
@@ -692,7 +757,24 @@
         "motor/linear_pm_motor_10/lpm009/lpm009.mai",
         "motor/linear_pm_motor_10/lpm010/lpm010.mai",
         "motor/pm_cosine_pickup_72/pm001/pm001.mai",
-        "motor/pm_cosine_pickup_72/pm002/pm002.mai",
+        "motor/pm_cosine_pickup_72/pm002/pm002.mai"
+      ]
+    },
+    {
+      "batch_id": "batch_007",
+      "batch_kind": "full_100",
+      "status": "validated_public_baseline",
+      "case_count": 100,
+      "case_start": 601,
+      "case_end": 700,
+      "validation_level_counts": {
+        "ngsolve_proxy_energy": 100
+      },
+      "family_counts": {
+        "motor/pm_cosine_pickup_72": 70,
+        "motor/pm_square_2pole_pickup_100": 30
+      },
+      "case_paths": [
         "motor/pm_cosine_pickup_72/pm003/pm003.mai",
         "motor/pm_cosine_pickup_72/pm004/pm004.mai",
         "motor/pm_cosine_pickup_72/pm005/pm005.mai",
@@ -756,24 +838,7 @@
         "motor/pm_cosine_pickup_72/pm063/pm063.mai",
         "motor/pm_cosine_pickup_72/pm064/pm064.mai",
         "motor/pm_cosine_pickup_72/pm065/pm065.mai",
-        "motor/pm_cosine_pickup_72/pm066/pm066.mai"
-      ]
-    },
-    {
-      "batch_id": "batch_007",
-      "batch_kind": "full_100",
-      "status": "validated_public_baseline",
-      "case_count": 100,
-      "case_start": 601,
-      "case_end": 700,
-      "validation_level_counts": {
-        "ngsolve_proxy_energy": 100
-      },
-      "family_counts": {
-        "motor/pm_cosine_pickup_72": 6,
-        "motor/pm_square_2pole_pickup_100": 94
-      },
-      "case_paths": [
+        "motor/pm_cosine_pickup_72/pm066/pm066.mai",
         "motor/pm_cosine_pickup_72/pm067/pm067.mai",
         "motor/pm_cosine_pickup_72/pm068/pm068.mai",
         "motor/pm_cosine_pickup_72/pm069/pm069.mai",
@@ -809,7 +874,24 @@
         "motor/pm_square_2pole_pickup_100/pm027/pm027.mai",
         "motor/pm_square_2pole_pickup_100/pm028/pm028.mai",
         "motor/pm_square_2pole_pickup_100/pm029/pm029.mai",
-        "motor/pm_square_2pole_pickup_100/pm030/pm030.mai",
+        "motor/pm_square_2pole_pickup_100/pm030/pm030.mai"
+      ]
+    },
+    {
+      "batch_id": "batch_008",
+      "batch_kind": "full_100",
+      "status": "validated_public_baseline",
+      "case_count": 100,
+      "case_start": 701,
+      "case_end": 800,
+      "validation_level_counts": {
+        "ngsolve_proxy_energy": 100
+      },
+      "family_counts": {
+        "motor/pm_square_2pole_pickup_100": 70,
+        "motor/pm_square_4pole_pickup_60": 30
+      },
+      "case_paths": [
         "motor/pm_square_2pole_pickup_100/pm031/pm031.mai",
         "motor/pm_square_2pole_pickup_100/pm032/pm032.mai",
         "motor/pm_square_2pole_pickup_100/pm033/pm033.mai",
@@ -873,25 +955,7 @@
         "motor/pm_square_2pole_pickup_100/pm091/pm091.mai",
         "motor/pm_square_2pole_pickup_100/pm092/pm092.mai",
         "motor/pm_square_2pole_pickup_100/pm093/pm093.mai",
-        "motor/pm_square_2pole_pickup_100/pm094/pm094.mai"
-      ]
-    },
-    {
-      "batch_id": "batch_008",
-      "batch_kind": "full_100",
-      "status": "validated_public_baseline",
-      "case_count": 100,
-      "case_start": 701,
-      "case_end": 800,
-      "validation_level_counts": {
-        "ngsolve_proxy_energy": 100
-      },
-      "family_counts": {
-        "motor/pm_square_2pole_pickup_100": 6,
-        "motor/pm_square_4pole_pickup_60": 60,
-        "motor/pm_square_6pole_pickup_72": 34
-      },
-      "case_paths": [
+        "motor/pm_square_2pole_pickup_100/pm094/pm094.mai",
         "motor/pm_square_2pole_pickup_100/pm095/pm095.mai",
         "motor/pm_square_2pole_pickup_100/pm096/pm096.mai",
         "motor/pm_square_2pole_pickup_100/pm097/pm097.mai",
@@ -927,7 +991,24 @@
         "motor/pm_square_4pole_pickup_60/pm027/pm027.mai",
         "motor/pm_square_4pole_pickup_60/pm028/pm028.mai",
         "motor/pm_square_4pole_pickup_60/pm029/pm029.mai",
-        "motor/pm_square_4pole_pickup_60/pm030/pm030.mai",
+        "motor/pm_square_4pole_pickup_60/pm030/pm030.mai"
+      ]
+    },
+    {
+      "batch_id": "batch_009",
+      "batch_kind": "full_100",
+      "status": "validated_public_baseline",
+      "case_count": 100,
+      "case_start": 801,
+      "case_end": 900,
+      "validation_level_counts": {
+        "ngsolve_proxy_energy": 100
+      },
+      "family_counts": {
+        "motor/pm_square_4pole_pickup_60": 30,
+        "motor/pm_square_6pole_pickup_72": 70
+      },
+      "case_paths": [
         "motor/pm_square_4pole_pickup_60/pm031/pm031.mai",
         "motor/pm_square_4pole_pickup_60/pm032/pm032.mai",
         "motor/pm_square_4pole_pickup_60/pm033/pm033.mai",
@@ -991,28 +1072,7 @@
         "motor/pm_square_6pole_pickup_72/pm031/pm031.mai",
         "motor/pm_square_6pole_pickup_72/pm032/pm032.mai",
         "motor/pm_square_6pole_pickup_72/pm033/pm033.mai",
-        "motor/pm_square_6pole_pickup_72/pm034/pm034.mai"
-      ]
-    },
-    {
-      "batch_id": "batch_009",
-      "batch_kind": "full_100",
-      "status": "validated_public_baseline",
-      "case_count": 100,
-      "case_start": 801,
-      "case_end": 900,
-      "validation_level_counts": {
-        "ngsolve_proxy_energy": 100
-      },
-      "family_counts": {
-        "motor/pm_square_6pole_pickup_72": 38,
-        "motor/pm_square_8pole_pickup_28": 28,
-        "motor/reluctance_motor_10": 10,
-        "motor/spm_loop_10": 10,
-        "motor/spm_surface_pm_10": 10,
-        "motor/sr_motor_loop_10": 4
-      },
-      "case_paths": [
+        "motor/pm_square_6pole_pickup_72/pm034/pm034.mai",
         "motor/pm_square_6pole_pickup_72/pm035/pm035.mai",
         "motor/pm_square_6pole_pickup_72/pm036/pm036.mai",
         "motor/pm_square_6pole_pickup_72/pm037/pm037.mai",
@@ -1048,7 +1108,31 @@
         "motor/pm_square_6pole_pickup_72/pm067/pm067.mai",
         "motor/pm_square_6pole_pickup_72/pm068/pm068.mai",
         "motor/pm_square_6pole_pickup_72/pm069/pm069.mai",
-        "motor/pm_square_6pole_pickup_72/pm070/pm070.mai",
+        "motor/pm_square_6pole_pickup_72/pm070/pm070.mai"
+      ]
+    },
+    {
+      "batch_id": "batch_010",
+      "batch_kind": "full_100",
+      "status": "validated_public_baseline",
+      "case_count": 100,
+      "case_start": 901,
+      "case_end": 1000,
+      "validation_level_counts": {
+        "ngsolve_proxy_energy": 100
+      },
+      "family_counts": {
+        "motor/pm_square_6pole_pickup_72": 2,
+        "motor/pm_square_8pole_pickup_28": 28,
+        "motor/reluctance_motor_10": 10,
+        "motor/spm_loop_10": 10,
+        "motor/spm_surface_pm_10": 10,
+        "motor/sr_motor_loop_10": 10,
+        "motor/srm_switched_reluctance_10": 10,
+        "motor/stepper_motor_10": 10,
+        "motor/wound_field_sync_10": 10
+      },
+      "case_paths": [
         "motor/pm_square_6pole_pickup_72/pm071/pm071.mai",
         "motor/pm_square_6pole_pickup_72/pm072/pm072.mai",
         "motor/pm_square_8pole_pickup_28/pm001/pm001.mai",
@@ -1112,26 +1196,7 @@
         "motor/sr_motor_loop_10/srl001/srl001.mai",
         "motor/sr_motor_loop_10/srl002/srl002.mai",
         "motor/sr_motor_loop_10/srl003/srl003.mai",
-        "motor/sr_motor_loop_10/srl004/srl004.mai"
-      ]
-    },
-    {
-      "batch_id": "batch_010",
-      "batch_kind": "release_remainder",
-      "status": "validated_public_baseline",
-      "case_count": 36,
-      "case_start": 901,
-      "case_end": 936,
-      "validation_level_counts": {
-        "ngsolve_proxy_energy": 36
-      },
-      "family_counts": {
-        "motor/sr_motor_loop_10": 6,
-        "motor/srm_switched_reluctance_10": 10,
-        "motor/stepper_motor_10": 10,
-        "motor/wound_field_sync_10": 10
-      },
-      "case_paths": [
+        "motor/sr_motor_loop_10/srl004/srl004.mai",
         "motor/sr_motor_loop_10/srl005/srl005.mai",
         "motor/sr_motor_loop_10/srl006/srl006.mai",
         "motor/sr_motor_loop_10/srl007/srl007.mai",

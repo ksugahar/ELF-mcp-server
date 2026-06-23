@@ -24,8 +24,8 @@ VALIDATION_LEVEL_DESCRIPTIONS = {
         "energy sanity check was positive."
     ),
     "ngsolve_numeric_invariant": (
-        "ELF FLUM ratio/sign invariants and independent NGSolve proxy "
-        "invariants both passed for compact numeric anchor cases."
+        "ELF FLUM law invariants and independent NGSolve proxy invariants "
+        "both passed for numeric anchor cases."
     ),
 }
 
@@ -40,8 +40,8 @@ VALIDATION_LIMITATIONS = (
     "solver outputs, regression logs, private paths, and provenance are not bundled.",
     "`ngsolve_proxy_energy` is a broad independent proxy-field gate for deck "
     "sanity, not a full absolute field/force/torque/loss agreement suite.",
-    "`ngsolve_numeric_invariant` is currently reserved for the numeric anchor "
-    "family, where ELF FLUM invariants and NGSolve proxy invariants are both checked.",
+    "`ngsolve_numeric_invariant` is used for numeric anchor families where "
+    "ELF FLUM invariants and NGSolve proxy invariants are both checked.",
 )
 
 FAMILY_META = {
@@ -868,6 +868,28 @@ FAMILY_META.update(
             ),
             "hint": "Use for compact validation anchor decks where ELF FLUM invariants and independent NGSolve proxy invariants are both expected to pass.",
         },
+        "application/numeric_flum_law_64": {
+            "title": "Numeric FLUM law validation campaign",
+            "tags": (
+                "application",
+                "numeric-validation",
+                "flum-law",
+                "flux-linkage",
+                "validation-level:numeric-invariant",
+                "flum",
+                "ngsolve-crossval",
+                "ngsolve-numeric-invariant",
+                "current-linearity",
+                "turn-linearity",
+                "sign-reversal",
+                "distance-decay",
+                "mirror-symmetry",
+                "superposition",
+                "cancellation",
+                "mcl8t",
+            ),
+            "hint": "Use for FLUM law validation decks covering current, turns, sign, distance, symmetry, superposition, and cancellation invariants.",
+        },
         "motor/emdlab_bldc_outer_rotor_10": {
             "title": "EMDLAB-style BLDC outer-rotor campaign",
             "tags": ("motor", "emdlab-style", "bldc", "outer-rotor", "spm", "surface-pm", "pm", "mwl8t", "mmb8t", "mcl8t", "hbrm", "hbcn", "flum", "ngsolve-crossval"),
@@ -1112,6 +1134,25 @@ SAMPLE_ROUTE_RULES: tuple[dict[str, Any], ...] = (
 )
 
 SAMPLE_ROUTE_RULES = (
+    {
+        "intent": "Numeric FLUM law validation",
+        "family": "application/numeric_flum_law_64",
+        "query": "numeric FLUM law current turns symmetry superposition cancellation",
+        "recipe": "passive_flum_pickup",
+        "terms": (
+            "flum law",
+            "flux linkage law",
+            "numeric flum",
+            "current linearity",
+            "turn linearity",
+            "superposition",
+            "cancellation",
+            "mirror symmetry",
+            "pickup ratio",
+            "distance decay",
+        ),
+        "why": "Use these decks when the prompt asks which physical quantity is validated or needs FLUM law checks across current, turns, distance, symmetry, and superposition.",
+    },
     {
         "intent": "Numeric validation anchor",
         "family": "application/numeric_validation_anchors_10",
@@ -1436,7 +1477,9 @@ def build_validation_summary(
         "limitations": list(VALIDATION_LIMITATIONS),
         "recommended_calls": [
             'elf_sample_decks_validation(level="ngsolve_numeric_invariant")',
+            'elf_sample_decks_validation(family="numeric_flum_law")',
             'elf_sample_decks_validation(family="numeric_validation")',
+            'elf_sample_decks_route("FLUM law current linearity superposition")',
             'elf_sample_decks_route("numeric validation anchor FLUM invariant")',
         ],
     }

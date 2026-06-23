@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "policy": "Only validation-passed .mai/.meg input-deck pairs are listed here and bundled in the public package.",
-  "total_cases": 936,
-  "total_input_files": 1872,
+  "total_cases": 1000,
+  "total_input_files": 2000,
   "families": {
     "application/accelerator_corrector_10": {
       "cases": 10,
@@ -288,6 +288,22 @@
       ],
       "validation_level": "ngsolve_proxy_energy",
       "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
+    },
+    "application/numeric_flum_law_64": {
+      "cases": 64,
+      "input_files": 128,
+      "validation": "passed",
+      "validated_on": "2026-06-24",
+      "checks": [
+        "solver_returncode_zero",
+        "mag_output_created",
+        "no_error_markers",
+        "mai_meg_pair_present",
+        "elf_flux_invariants_passed",
+        "ngsolve_numeric_invariants_passed"
+      ],
+      "validation_level": "ngsolve_numeric_invariant",
+      "validation_scope": "ELF/MAGIC FLUM law invariants and independent NGSolve proxy invariants both passed for current, turns, sign, distance, symmetry, superposition, and cancellation checks."
     },
     "application/numeric_validation_anchors_10": {
       "cases": 10,
