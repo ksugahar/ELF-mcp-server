@@ -19,7 +19,7 @@ This server does **not** execute ELF600 simulations — it provides curated docu
 | `elf_usage(topic)` | 31 curated topics — high-level recipes | (knowledge.py) |
 | `elf_help_*(...)` | Help HTM files from `C:/ELF600/help/` | 1141 files, 1.18M chars |
 | `elf_examples_*(...)` | Example .mai/.mei/.txt plus 100-card playbook from `C:/ELF600/examples/` | 332 files, 533k chars |
-| `elf_sample_decks_*(...)` | Lab-authored ELF-runnable public `.mai`/`.meg` sample decks | 486 cases, 972 input files |
+| `elf_sample_decks_*(...)` | Lab-authored ELF-runnable public `.mai`/`.meg` sample decks | 536 cases, 1072 input files |
 | `elf_recipe_*(...)` | Workflow decision cards for elements, PRE/SOL blocks, outputs, checks, and pitfalls | public-safe recipes |
 | `elf_wiki_*(...)` | Vendor wiki pages from elf.co.jp PukiWiki | 146 pages, 211k chars |
 | `elf_python_*(...)` | Python ctypes API + configs from `C:/ELF600/bin/` | 15 files, 246k chars |
@@ -53,10 +53,13 @@ public boundary. The most useful calls while authoring ELF/MAGIC inputs are:
   motor cage decks with transient eddy-current pickup patterns
 - `elf_sample_decks_playbook(limit=20, family="application")` for transformer
   MRI gradient-coil, WPT coupled-coil, induction-heating, and accelerator
-  electromagnet application decks
+  electromagnet application decks, plus actuator, maglev, separator, brake,
+  and NDT probe decks
 - `elf_sample_decks_playbook(limit=20, query="Loop10")` for the 10-cycle
   learning-loop decks across WPT, MRI, SR motor, SPM, IH, reluctance motor,
   hysteresis motor, transformer, and accelerator electromagnet families
+- `elf_sample_decks_playbook(limit=20, query="Loop11")` for actuator,
+  maglev bearing, magnetic separator, eddy-current brake, and NDT probe decks
 - `elf_sample_decks_search("HBCN FLUM", ext="mai")` to find reusable input
   patterns
 - `elf_sample_decks_search("SPM HBRM FLUM", ext="mai")` to find surface-PM
@@ -73,6 +76,10 @@ public boundary. The most useful calls while authoring ELF/MAGIC inputs are:
   find coil/yoke electromagnet setup patterns
 - `elf_sample_decks_search("IH induction-heating MOMC", ext="mai")` to find
   induction-heating AC conductor setup patterns
+- `elf_sample_decks_search("Loop11 actuator plunger FLUM", ext="mai")` to find
+  solenoid/plunger actuator setup patterns
+- `elf_sample_decks_search("Loop11 NDT eddy-current probe OHM2", ext="mai")` to
+  find eddy-current inspection probe setup patterns
 - `elf_sample_decks_get("motor/pm_cosine_pickup_72/pm001/pm001.mai")` to open a
   concrete public deck
 - `elf_python_team28()` to inspect the Python-interface seed manifest
@@ -91,9 +98,11 @@ turns that knowledge into MCP tools:
   10 SRM switched-reluctance examples, 10 induction cage examples, plus
   loop-reviewed SPM, SR motor, synchronous-reluctance motor, and hysteresis
   motor families
-- 84 public application input-deck pairs covering transformer core/pickup
+- 134 public application input-deck pairs covering transformer core/pickup
   coupling, MRI gradient-coil/eddy-current shield patterns, WPT coupled coils,
-  IH induction-heating workpieces, and accelerator electromagnets
+  IH induction-heating workpieces, accelerator electromagnets, actuator
+  plungers, maglev bearings, magnetic separators, eddy-current brakes, and
+  NDT eddy-current probes
 - playbook cards that expose each deck's SOL blocks, PRE keywords, element
   families, feature tags, and reuse hints
 - curated motor topics for air-gap field, flux linkage/back-EMF pickup,
@@ -113,7 +122,25 @@ start with `elf_sample_decks_playbook(family="application")`,
 `elf_sample_decks_search("WPT MOMC FLUM")`, or
 `elf_sample_decks_search("MRI OHM2 FREQ")`,
 `elf_sample_decks_search("IH induction-heating MOMC")`, or
-`elf_sample_decks_search("accelerator electromagnet FLUM")`.
+`elf_sample_decks_search("accelerator electromagnet FLUM")`,
+`elf_sample_decks_search("Loop11 actuator plunger FLUM")`, or
+`elf_sample_decks_search("Loop11 NDT eddy-current probe OHM2")`.
+
+### Public `.meg` mesh generation
+
+For normal ELF/MAGIC authoring, the canonical mesh path is:
+
+```text
+.mei (mesh script) --> IEmesh / mesh750.exe --> .meg
+```
+
+For the bundled public sample corpus, the `.meg` files are generated as small
+ASCII ELF/MAGIC mesh decks directly by lab-authored Python generators. The
+writer emits `BOOK MEP 3.50`, `MGSC`, `MGR1` node records, and 8-node element
+connectivity records such as `MMB8T`, `MCL8T`, `MAB8T`, and `MWL8T`. Cubit is
+not used for these compact public examples. Cubit remains a useful route for
+larger CAD/mesh workflows via ELF-compatible `.meg` export, but the published
+examples keep the geometry deliberately inspectable and dependency-free.
 
 ### Public lint
 

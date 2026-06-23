@@ -514,6 +514,17 @@ MEG_FORMAT = """\
 The `.meg` file is fixed-format text output from IEmesh, containing node
 coordinates and element connectivity.
 
+## Generation routes
+
+- Standard ELF route: author `.mei`, then compile it with IEmesh/mesh750.exe
+  to produce `.meg`.
+- Cubit route: export an ELF-compatible `.meg` from a Cubit mesh when a larger
+  CAD/mesh workflow is useful.
+- Public sample corpus route: the bundled public `.mai`/`.meg` examples use
+  small lab-authored ASCII `.meg` writers that emit `BOOK MEP 3.50`, `MGSC`,
+  `MGR1` node records, and element connectivity directly. Cubit is not used
+  for those compact public examples.
+
 ## Structure
 
 ```

@@ -7,9 +7,10 @@ MAB/MAT/MBB elements).
 
 This server exposes 24 MCP tools plus one prompt: curated documentation,
 workflow recipes, public PM/SPM/SRM/reluctance/hysteresis motor and
-WPT/MRI/IH/transformer/accelerator-electromagnet sample-deck playbooks,
+WPT/MRI/IH/transformer/accelerator-electromagnet/actuator/maglev/brake/NDT
+sample-deck playbooks,
 bundled help/example/wiki/Python API search, and compact planning aids for
 authoring ELF input files.
 """
 
-__version__ = "1.41.0"
+__version__ = "1.42.0"

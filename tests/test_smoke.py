@@ -86,9 +86,9 @@ def test_public_sample_decks_are_runnable_inputs_only():
         get_sample_deck,
     )
     decks = list_sample_decks()
-    assert len(decks) == 972
-    assert sum(1 for d in decks if d["ext"] == "mai") == 486
-    assert sum(1 for d in decks if d["ext"] == "meg") == 486
+    assert len(decks) == 1072
+    assert sum(1 for d in decks if d["ext"] == "mai") == 536
+    assert sum(1 for d in decks if d["ext"] == "meg") == 536
     assert any(d["path"] == "motor/pm_cosine_pickup_72/pm001/pm001.mai" for d in decks)
     assert any(d["path"] == "motor/spm_surface_pm_10/spm001/spm001.mai" for d in decks)
     assert any(d["path"] == "motor/srm_switched_reluctance_10/srm001/srm001.mai" for d in decks)
@@ -109,6 +109,26 @@ def test_public_sample_decks_are_runnable_inputs_only():
     )
     assert any(
         d["path"] == "application/accelerator_magnet_10/acl001/acl001.mai"
+        for d in decks
+    )
+    assert any(
+        d["path"] == "application/actuator_plunger_10/atl001/atl001.mai"
+        for d in decks
+    )
+    assert any(
+        d["path"] == "application/maglev_bearing_10/mvl001/mvl001.mai"
+        for d in decks
+    )
+    assert any(
+        d["path"] == "application/magnetic_separator_10/msl001/msl001.mai"
+        for d in decks
+    )
+    assert any(
+        d["path"] == "application/eddy_current_brake_10/ebl001/ebl001.mai"
+        for d in decks
+    )
+    assert any(
+        d["path"] == "application/ndt_eddy_probe_10/ndl001/ndl001.mai"
         for d in decks
     )
     assert any(
@@ -171,14 +191,29 @@ def test_public_sample_decks_are_runnable_inputs_only():
     accelerator_hits = search_sample_decks("accelerator electromagnet FLUM", ext="mai")
     assert accelerator_hits
     assert accelerator_hits[0]["path"].startswith("application/accelerator_magnet_10")
+    actuator_hits = search_sample_decks("Loop11 actuator plunger FLUM", ext="mai")
+    assert actuator_hits
+    assert actuator_hits[0]["path"].startswith("application/actuator_plunger_10")
+    maglev_hits = search_sample_decks("Loop11 maglev bearing FLUM", ext="mai")
+    assert maglev_hits
+    assert maglev_hits[0]["path"].startswith("application/maglev_bearing_10")
+    separator_hits = search_sample_decks("Loop11 magnetic separator FLUM", ext="mai")
+    assert separator_hits
+    assert separator_hits[0]["path"].startswith("application/magnetic_separator_10")
+    brake_hits = search_sample_decks("Loop11 eddy-current brake OHM2", ext="mai")
+    assert brake_hits
+    assert brake_hits[0]["path"].startswith("application/eddy_current_brake_10")
+    ndt_hits = search_sample_decks("Loop11 NDT eddy-current probe OHM2", ext="mai")
+    assert ndt_hits
+    assert ndt_hits[0]["path"].startswith("application/ndt_eddy_probe_10")
     pm001 = get_sample_deck("motor/pm_cosine_pickup_72/pm001/pm001.mai")
     text = pm001["text"]
     assert "USE  MAGIC" in text
     assert "HBCN 1 0 1" in text
     assert "HBCN 2 0 2" in text
     assert "FLUM  49" in text
-    cards = build_sample_deck_cards(limit=486)
-    assert len(cards) == 486
+    cards = build_sample_deck_cards(limit=536)
+    assert len(cards) == 536
     spm_cards = build_sample_deck_cards(limit=20, family="spm_surface_pm_10")
     assert len(spm_cards) == 10
     assert "spm" in spm_cards[0]["tags"]
@@ -211,6 +246,11 @@ def test_public_sample_decks_are_runnable_inputs_only():
         ("motor/hysteresis_motor_10", "hysteresis", "MMB8T"),
         ("application/transformer_loop_10", "transformer", "MCL8T"),
         ("application/accelerator_magnet_10", "accelerator", "MMB8T"),
+        ("application/actuator_plunger_10", "actuator", "MMB8T"),
+        ("application/maglev_bearing_10", "maglev", "MMB8T"),
+        ("application/magnetic_separator_10", "separator", "MWL8T"),
+        ("application/eddy_current_brake_10", "brake", "MAB8T"),
+        ("application/ndt_eddy_probe_10", "ndt", "MAB8T"),
     ]
     for family, tag, element in loop_family_checks:
         family_cards = build_sample_deck_cards(limit=20, family=family)

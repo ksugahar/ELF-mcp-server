@@ -123,7 +123,7 @@ def elf_overview() -> dict:
                 "call": "elf_usage(topic='all') or elf_recipe_search(query)",
             },
             {
-                "goal": "Learn from the 486 public input-deck cases",
+                "goal": "Learn from the 536 public input-deck cases",
                 "call": "elf_sample_decks_playbook(limit=20, family='srm')",
             },
             {
@@ -414,7 +414,8 @@ def elf_sample_decks_index(family: str = "", case: str = "", ext: str = "") -> s
         family: Optional family substring, e.g. "motor", "pm_square",
                 "spm", "srm", "sr_motor", "induction", "reluctance",
                 "hysteresis", "application", "wpt", "mri", "ih",
-                "transformer", or "accelerator".
+                "transformer", "accelerator", "actuator", "maglev",
+                "separator", "brake", or "ndt".
         case: Optional case ID such as "pm001".
         ext: Optional file extension: "mai" or "meg".
 
@@ -497,7 +498,7 @@ def elf_sample_decks_get(path: str, max_chars: int = 60000) -> str:
 @mcp.tool()
 def elf_sample_decks_playbook(limit: int = 100, family: str = "", query: str = "") -> str:
     """
-    Build compact cards from the 486 public ELF-runnable `.mai`/`.meg` cases.
+    Build compact cards from the 536 public ELF-runnable `.mai`/`.meg` cases.
 
     Each card links the `.mai` and `.meg` pair and summarizes detected SOL
     blocks, PRE keywords, element types, feature tags, and a reuse hint. This
@@ -505,11 +506,12 @@ def elf_sample_decks_playbook(limit: int = 100, family: str = "", query: str = "
     every raw file.
 
     Args:
-        limit: Number of cards to return. Default 100. Max 486.
+        limit: Number of cards to return. Default 100. Max 536.
         family: Optional family substring, e.g. "pm_square", "cosine",
             "spm", "srm", "sr_motor", "induction", "reluctance",
             "hysteresis", "wpt", "mri", "ih", "transformer",
-            or "accelerator".
+            "accelerator", "actuator", "maglev", "separator",
+            "brake", or "ndt".
         query: Optional keyword filter across paths, tags, and deck text.
 
     Returns:
@@ -966,8 +968,13 @@ def main():
         assert "motor/hysteresis_motor_10/hyl001/hyl001.mai" in sd
         assert "application/transformer_loop_10/tfl001/tfl001.mai" in sd
         assert "application/accelerator_magnet_10/acl001/acl001.mai" in sd
+        assert "application/actuator_plunger_10/atl001/atl001.mai" in sd
+        assert "application/maglev_bearing_10/mvl001/mvl001.mai" in sd
+        assert "application/magnetic_separator_10/msl001/msl001.mai" in sd
+        assert "application/eddy_current_brake_10/ebl001/ebl001.mai" in sd
+        assert "application/ndt_eddy_probe_10/ndl001/ndl001.mai" in sd
         sd_mai = elf_sample_decks_index(ext="mai")
-        assert sd_mai.count(".mai") == 486, "Expected 486 public .mai decks"
+        assert sd_mai.count(".mai") == 536, "Expected 536 public .mai decks"
         sd_search = elf_sample_decks_search("HBCN FLUM", top_k=5, ext="mai")
         assert "pm001.mai" in sd_search and "No sample deck matches" not in sd_search
         sd_spm_search = elf_sample_decks_search("SPM HBRM FLUM", top_k=5, ext="mai")
@@ -998,6 +1005,16 @@ def main():
         assert "application/transformer_loop_10" in sd_transformer_loop_search
         sd_accelerator_search = elf_sample_decks_search("accelerator electromagnet FLUM", top_k=5, ext="mai")
         assert "application/accelerator_magnet_10" in sd_accelerator_search
+        sd_actuator_search = elf_sample_decks_search("Loop11 actuator plunger FLUM", top_k=5, ext="mai")
+        assert "application/actuator_plunger_10" in sd_actuator_search
+        sd_maglev_search = elf_sample_decks_search("Loop11 maglev bearing FLUM", top_k=5, ext="mai")
+        assert "application/maglev_bearing_10" in sd_maglev_search
+        sd_separator_search = elf_sample_decks_search("Loop11 magnetic separator FLUM", top_k=5, ext="mai")
+        assert "application/magnetic_separator_10" in sd_separator_search
+        sd_brake_search = elf_sample_decks_search("Loop11 eddy-current brake OHM2", top_k=5, ext="mai")
+        assert "application/eddy_current_brake_10" in sd_brake_search
+        sd_ndt_search = elf_sample_decks_search("Loop11 NDT eddy-current probe OHM2", top_k=5, ext="mai")
+        assert "application/ndt_eddy_probe_10" in sd_ndt_search
         sd_get = elf_sample_decks_get("motor/pm_cosine_pickup_72/pm001/pm001.mai")
         assert "HBCN 1 0 1" in sd_get and "HBCN 2 0 2" in sd_get
         sd_pb = elf_sample_decks_playbook(limit=28, family="pm_square")
@@ -1006,6 +1023,8 @@ def main():
         assert sd_app_pb.count("\n## ") == 12, "Expected 12 transformer sample cards"
         sd_loop_pb = elf_sample_decks_playbook(limit=20, family="accelerator_magnet_10")
         assert sd_loop_pb.count("\n## ") == 10, "Expected 10 accelerator sample cards"
+        sd_loop11_pb = elf_sample_decks_playbook(limit=20, family="actuator_plunger_10")
+        assert sd_loop11_pb.count("\n## ") == 10, "Expected 10 actuator sample cards"
         assert "Python-interface seed manifest" not in sd_pb, "Normal sample playbook must not claim team28"
         sample_text = (
             sd + sd_mai + sd_search + sd_spm_search + sd_srm_search
@@ -1013,11 +1032,13 @@ def main():
             + sd_wpt_loop_search + sd_mri_loop_search + sd_sr_loop_search
             + sd_spm_loop_search + sd_ih_search + sd_reluctance_search
             + sd_hysteresis_search + sd_transformer_loop_search
-            + sd_accelerator_search + sd_loop_pb
+            + sd_accelerator_search + sd_actuator_search + sd_maglev_search
+            + sd_separator_search + sd_brake_search + sd_ndt_search
+            + sd_loop_pb + sd_loop11_pb
         )
         forbidden_sample_markers = ("C:" + "\\temp", "S:" + "\\", "_cross" + "val", ".mag", ".mao")
         assert not any(marker in sample_text for marker in forbidden_sample_markers)
-        print("  486-case .mai/.meg sample deck corpus OK")
+        print("  536-case .mai/.meg sample deck corpus OK")
 
         # 10. Recipe tools
         print("[10/16] elf_recipe tools:")

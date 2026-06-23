@@ -1,0 +1,46 @@
+USE  MAGIC  3.50
+* Loop11 eddy-current brake sample 5.
+* AC excitation over a conducting plate, steel yoke, OHM2 resistivity, and FLUM pickup.
+
+PRE
+  HBUN 1 OE G
+  HBSC 1 1.0 1.0
+  HBCU 1 0.0 0.0
+  HBCU 1 900.0 13000.0
+  HBCU 1 1800.0 16500.0
+
+  OHM2 5 0 3.30000000E-08
+
+  COI1 10 0 48 6 6 A
+  AMP1 10 0 2.30000000E+01
+  AMP1I 10 0 0.00000000E+00
+
+  COI1 11 0 48 6 6 A
+  AMP1 11 0 -2.30000000E+01
+  AMP1I 11 0 0.00000000E+00
+
+  COI1 20 0 8 4 4 A
+  AMP1 20 0 0.00000000E+00
+  AMP1I 20 0 0.00000000E+00
+END
+
+SOL MOMC
+  NCPU  0
+  BLAS  8  32
+  TIME  1  1.0  1.0
+  FREQ  0  1.25000000E+02
+  FREQ  1  6.00000000E+02
+  DMEG
+END
+
+SOL FIEL
+  TIME  0  1
+  DMEG
+END
+
+SOL FIXA
+  TIME  0  1
+  FLUM  10
+  FLUM  11
+  FLUM  20
+END
