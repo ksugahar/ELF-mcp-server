@@ -41,8 +41,8 @@ VALIDATION_LIMITATIONS = (
     "`ngsolve_proxy_energy` is a broad independent proxy-field gate for deck "
     "sanity, not a full absolute field/force/torque/loss agreement suite.",
     "`ngsolve_numeric_invariant` is used for numeric anchor families where "
-    "ELF FLUM-derived flux, energy, force/torque-gradient invariants and "
-    "NGSolve proxy invariants are both checked.",
+    "ELF FLUM-derived flux, energy, force/torque-gradient, and AC-loss "
+    "invariants and NGSolve proxy invariants are both checked.",
 )
 
 FAMILY_META = {
@@ -916,6 +916,38 @@ FAMILY_META.update(
             ),
             "hint": "Use for FLUM-derived inductance L = Phi/I and co-energy W = 1/2 sum(I Phi) validation decks covering current, turns, distance, symmetry, superposition, and add/cancel energy invariants.",
         },
+        "application/numeric_ac_loss_100": {
+            "title": "Numeric AC loss and eddy-current scaling validation campaign",
+            "tags": (
+                "application",
+                "numeric-validation",
+                "ac-loss",
+                "eddy-current",
+                "frequency",
+                "freq",
+                "momc",
+                "ohm2",
+                "mab8t",
+                "resistivity",
+                "conductivity",
+                "loss-proxy",
+                "i2f2-over-rho",
+                "frequency-square",
+                "current-square",
+                "distance-decay",
+                "mirror-symmetry",
+                "lateral-symmetry",
+                "add-cancel",
+                "thickness-sweep",
+                "width-sweep",
+                "flum",
+                "ngsolve-crossval",
+                "ngsolve-numeric-invariant",
+                "validation-level:numeric-invariant",
+                "mcl8t",
+            ),
+            "hint": "Use for MOMC/FREQ/OHM2 AC-loss decks with FLUM checks and NGSolve proxy invariants covering P proportional to I^2 f^2 / rho, distance decay, symmetry, add/cancel, thickness, and width trends.",
+        },
         "application/numeric_force_torque_100": {
             "title": "Numeric force and torque-gradient validation campaign",
             "tags": (
@@ -1188,6 +1220,34 @@ SAMPLE_ROUTE_RULES: tuple[dict[str, Any], ...] = (
 )
 
 SAMPLE_ROUTE_RULES = (
+    {
+        "intent": "Numeric AC loss and eddy-current scaling validation",
+        "family": "application/numeric_ac_loss_100",
+        "query": "numeric AC loss eddy current MOMC FREQ OHM2 frequency square resistivity",
+        "recipe": "eddy_current_frequency_sweep",
+        "terms": (
+            "ac loss",
+            "eddy loss",
+            "eddy-current loss",
+            "eddy current loss",
+            "frequency square",
+            "frequency-square",
+            "current square",
+            "current-square",
+            "resistivity inverse",
+            "i2f2",
+            "i^2 f^2",
+            "ohm2",
+            "momc",
+            "freq",
+            "skin",
+            "conducting plate",
+            "loss proxy",
+            "add cancel",
+            "add/cancel",
+        ),
+        "why": "Use these decks when the prompt asks how to validate MOMC/FREQ/OHM2 AC-loss or eddy-current scaling behavior before moving to detailed loss post-processing.",
+    },
     {
         "intent": "Numeric force and torque-gradient validation",
         "family": "application/numeric_force_torque_100",
@@ -1582,10 +1642,12 @@ def build_validation_summary(
         "limitations": list(VALIDATION_LIMITATIONS),
         "recommended_calls": [
             'elf_sample_decks_validation(level="ngsolve_numeric_invariant")',
+            'elf_sample_decks_validation(family="numeric_ac_loss")',
             'elf_sample_decks_validation(family="numeric_force_torque")',
             'elf_sample_decks_validation(family="numeric_inductance_energy")',
             'elf_sample_decks_validation(family="numeric_flum_law")',
             'elf_sample_decks_validation(family="numeric_validation")',
+            'elf_sample_decks_route("AC loss frequency square OHM2")',
             'elf_sample_decks_route("force torque co-energy gradient")',
             'elf_sample_decks_route("inductance co-energy FLUM turn scaling")',
             'elf_sample_decks_route("FLUM law current linearity superposition")',

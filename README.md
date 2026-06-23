@@ -19,7 +19,7 @@ This server does **not** execute ELF600 simulations — it provides curated docu
 | `elf_usage(topic)` | 31 curated topics — high-level recipes | (knowledge.py) |
 | `elf_help_*(...)` | Help HTM files from `C:/ELF600/help/` | 1141 files, 1.18M chars |
 | `elf_examples_*(...)` | Example .mai/.mei/.txt plus 100-card playbook from `C:/ELF600/examples/` | 332 files, 533k chars |
-| `elf_sample_decks_*(...)` | Lab-authored ELF-runnable public `.mai`/`.meg` sample decks | 1200 cases, 2400 input files |
+| `elf_sample_decks_*(...)` | Lab-authored ELF-runnable public `.mai`/`.meg` sample decks | 1300 cases, 2600 input files |
 | `elf_recipe_*(...)` | Workflow decision cards for elements, PRE/SOL blocks, outputs, checks, and pitfalls | public-safe recipes |
 | `elf_wiki_*(...)` | Vendor wiki pages from elf.co.jp PukiWiki | 146 pages, 211k chars |
 | `elf_python_*(...)` | Python ctypes API + configs from `C:/ELF600/bin/` | 15 files, 246k chars |
@@ -101,6 +101,10 @@ public boundary. The most useful calls while authoring ELF/MAGIC inputs are:
   decks validating `FLUM`-derived co-energy force/torque-gradient behavior
   across distance-force sign, current-square scaling, mirror/lateral
   symmetry, angular `dW/dtheta`, and balanced-torque invariants
+- `elf_sample_decks_route("AC loss frequency square OHM2")` for 100 numeric
+  MOMC/FREQ/OHM2 decks validating AC-loss proxy behavior across frequency
+  square, current square, resistivity inverse, distance decay, symmetry,
+  add/cancel, thickness, width, and combined `I-f-rho` scaling invariants
 - `elf_sample_decks_search("HBCN FLUM", ext="mai")` to find reusable input
   patterns
 - `elf_sample_decks_search("SPM HBRM FLUM", ext="mai")` to find surface-PM
@@ -158,7 +162,7 @@ turns that knowledge into MCP tools:
   induction, IPM hairpin, SPMSM static torque, SynRM, SRM 6/4 through 12/16,
   and AFPM variants, plus Loop13 IPM, wound-field synchronous, axial-flux PM,
   linear PM, and stepper families
-- 548 public application input-deck pairs covering transformer core/pickup
+- 648 public application input-deck pairs covering transformer core/pickup
   coupling, MRI gradient-coil/eddy-current shield patterns, WPT coupled coils,
   IH induction-heating workpieces, accelerator electromagnets, actuator
   plungers, maglev bearings, magnetic separators, eddy-current brakes,
@@ -168,7 +172,8 @@ turns that knowledge into MCP tools:
   accelerator corrector magnets, 40 EMDLAB-style transformer/benchmark
   application decks, 10 compact numeric-validation anchor decks, and 64
   numeric FLUM-law validation decks, plus 100 numeric inductance/co-energy
-  validation decks and 100 numeric force/torque-gradient validation decks
+  validation decks, 100 numeric force/torque-gradient validation decks, and
+  100 numeric AC-loss validation decks
 - playbook cards that expose each deck's SOL blocks, PRE keywords, element
   families, feature tags, and reuse hints
 - curated motor topics for air-gap field, flux linkage/back-EMF pickup,
@@ -199,7 +204,8 @@ start with `elf_sample_decks_playbook(family="application")`,
 `elf_sample_decks_search("Loop13 WPT misalignment OHM2")`, or
 `elf_sample_decks_search("FLUM law superposition")`, or
 `elf_sample_decks_route("inductance co-energy FLUM turn scaling")`, or
-`elf_sample_decks_route("force torque co-energy gradient")`.
+`elf_sample_decks_route("force torque co-energy gradient")`, or
+`elf_sample_decks_route("AC loss frequency square OHM2")`.
 
 ### Public `.meg` mesh generation
 
@@ -240,20 +246,22 @@ inside the public sample decks, and exact agreement with
 `public_samples/PUBLICATION_BATCHES.json`. Only sample families marked
 `validation: passed` in that manifest are intended for publication.
 The manifest records the validation level for each family:
-`ngsolve_proxy_energy` or `ngsolve_numeric_invariant`. All 1200 public sample
+`ngsolve_proxy_energy` or `ngsolve_numeric_invariant`. All 1300 public sample
 decks are cross-checked with an independent NGSolve proxy-field energy gate
 before they are listed. The numeric-validation anchor decks and numeric
 FLUM-law decks go one level further; the numeric inductance/co-energy decks
 also require `FLUM`-derived `L = Phi/I` and `W = 1/2 sum(I Phi)` invariants.
 The numeric force/torque-gradient decks add `FLUM`-derived co-energy
 finite-difference checks for `dW/dx` and angular `dW/dtheta` trends.
+The numeric AC-loss decks add MOMC/FREQ/OHM2 decks with AC `FLUM` series
+checks and NGSolve proxy invariants for `P ~ I^2 f^2 / rho` trends.
 ELF `FLUM` invariants and independent NGSolve proxy invariants must both pass.
 MCP clients can inspect this contract with `elf_sample_decks_validation()`;
 the broad proxy gate is intentionally not claimed as a full absolute field,
 force, torque, or loss agreement suite.
 The publication batch manifest groups the validated baseline into deterministic
-100-case checkpoints: 12 full checkpoints, 1200 cases total.
-The next 100-case checkpoint is 1300 cases, so 100 additional validated cases
+100-case checkpoints: 13 full checkpoints, 1300 cases total.
+The next 100-case checkpoint is 1400 cases, so 100 additional validated cases
 are needed before the next clean 100-case publication increment.
 
 Bundled data (all generated from fresh ELF600 install via `scripts/crawl_*.py`):
