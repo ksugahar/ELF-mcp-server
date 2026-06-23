@@ -123,8 +123,8 @@ def elf_overview() -> dict:
                 "call": "elf_usage(topic='all') or elf_recipe_search(query)",
             },
             {
-                "goal": "Learn from the 376 public input-deck cases",
-                "call": "elf_sample_decks_playbook(limit=20, family='spm')",
+                "goal": "Learn from the 396 public input-deck cases",
+                "call": "elf_sample_decks_playbook(limit=20, family='srm')",
             },
             {
                 "goal": "Open a specific public .mai/.meg input deck",
@@ -412,7 +412,8 @@ def elf_sample_decks_index(family: str = "", case: str = "", ext: str = "") -> s
 
     Args:
         family: Optional family substring, e.g. "motor", "pm_square",
-                "spm", "induction", "application", "transformer", or "mri".
+                "spm", "srm", "induction", "application", "wpt",
+                "transformer", or "mri".
         case: Optional case ID such as "pm001".
         ext: Optional file extension: "mai" or "meg".
 
@@ -495,7 +496,7 @@ def elf_sample_decks_get(path: str, max_chars: int = 60000) -> str:
 @mcp.tool()
 def elf_sample_decks_playbook(limit: int = 100, family: str = "", query: str = "") -> str:
     """
-    Build compact cards from the 376 public ELF-runnable `.mai`/`.meg` cases.
+    Build compact cards from the 396 public ELF-runnable `.mai`/`.meg` cases.
 
     Each card links the `.mai` and `.meg` pair and summarizes detected SOL
     blocks, PRE keywords, element types, feature tags, and a reuse hint. This
@@ -503,9 +504,9 @@ def elf_sample_decks_playbook(limit: int = 100, family: str = "", query: str = "
     every raw file.
 
     Args:
-        limit: Number of cards to return. Default 100. Max 376.
+        limit: Number of cards to return. Default 100. Max 396.
         family: Optional family substring, e.g. "pm_square", "cosine",
-            "spm", "induction", "transformer", or "mri".
+            "spm", "srm", "induction", "wpt", "transformer", or "mri".
         query: Optional keyword filter across paths, tags, and deck text.
 
     Returns:
@@ -948,19 +949,25 @@ def main():
         assert "motor/pm_cosine_pickup_72/pm001/pm001.mai" in sd
         assert "motor/pm_cosine_pickup_72/pm001/pm001.meg" in sd
         assert "motor/spm_surface_pm_10/spm001/spm001.mai" in sd
+        assert "motor/srm_switched_reluctance_10/srm001/srm001.mai" in sd
         assert "motor/induction_cage_10/im001/im001.mai" in sd
         assert "application/transformer_core_pickup_12/tf001/tf001.mai" in sd
         assert "application/mri_gradient_shield_12/mri001/mri001.mai" in sd
+        assert "application/wpt_coupled_coils_10/wpt001/wpt001.mai" in sd
         sd_mai = elf_sample_decks_index(ext="mai")
-        assert sd_mai.count(".mai") == 376, "Expected 376 public .mai decks"
+        assert sd_mai.count(".mai") == 396, "Expected 396 public .mai decks"
         sd_search = elf_sample_decks_search("HBCN FLUM", top_k=5, ext="mai")
         assert "pm001.mai" in sd_search and "No sample deck matches" not in sd_search
         sd_spm_search = elf_sample_decks_search("SPM HBRM FLUM", top_k=5, ext="mai")
         assert "motor/spm_surface_pm_10" in sd_spm_search
+        sd_srm_search = elf_sample_decks_search("SRM reluctance FLUM", top_k=5, ext="mai")
+        assert "motor/srm_switched_reluctance_10" in sd_srm_search
         sd_im_search = elf_sample_decks_search("induction OHM2 FLUM", top_k=5, ext="mai")
         assert "motor/induction_cage_10" in sd_im_search
         sd_app_search = elf_sample_decks_search("MRI OHM2 FREQ", top_k=5, ext="mai")
         assert "application/mri_gradient_shield_12" in sd_app_search
+        sd_wpt_search = elf_sample_decks_search("WPT MOMC FLUM", top_k=5, ext="mai")
+        assert "application/wpt_coupled_coils_10" in sd_wpt_search
         sd_get = elf_sample_decks_get("motor/pm_cosine_pickup_72/pm001/pm001.mai")
         assert "HBCN 1 0 1" in sd_get and "HBCN 2 0 2" in sd_get
         sd_pb = elf_sample_decks_playbook(limit=28, family="pm_square")
@@ -968,10 +975,13 @@ def main():
         sd_app_pb = elf_sample_decks_playbook(limit=20, family="transformer")
         assert sd_app_pb.count("\n## ") == 12, "Expected 12 transformer sample cards"
         assert "Python-interface seed manifest" not in sd_pb, "Normal sample playbook must not claim team28"
-        sample_text = sd + sd_mai + sd_search + sd_spm_search + sd_im_search + sd_app_search + sd_get + sd_pb + sd_app_pb
+        sample_text = (
+            sd + sd_mai + sd_search + sd_spm_search + sd_srm_search
+            + sd_im_search + sd_app_search + sd_wpt_search + sd_get + sd_pb + sd_app_pb
+        )
         forbidden_sample_markers = ("C:" + "\\temp", "S:" + "\\", "_cross" + "val", ".mag", ".mao")
         assert not any(marker in sample_text for marker in forbidden_sample_markers)
-        print("  376-case .mai/.meg sample deck corpus OK")
+        print("  396-case .mai/.meg sample deck corpus OK")
 
         # 10. Recipe tools
         print("[10/16] elf_recipe tools:")

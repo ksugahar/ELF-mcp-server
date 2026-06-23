@@ -86,11 +86,12 @@ def test_public_sample_decks_are_runnable_inputs_only():
         get_sample_deck,
     )
     decks = list_sample_decks()
-    assert len(decks) == 752
-    assert sum(1 for d in decks if d["ext"] == "mai") == 376
-    assert sum(1 for d in decks if d["ext"] == "meg") == 376
+    assert len(decks) == 792
+    assert sum(1 for d in decks if d["ext"] == "mai") == 396
+    assert sum(1 for d in decks if d["ext"] == "meg") == 396
     assert any(d["path"] == "motor/pm_cosine_pickup_72/pm001/pm001.mai" for d in decks)
     assert any(d["path"] == "motor/spm_surface_pm_10/spm001/spm001.mai" for d in decks)
+    assert any(d["path"] == "motor/srm_switched_reluctance_10/srm001/srm001.mai" for d in decks)
     assert any(d["path"] == "motor/induction_cage_10/im001/im001.mai" for d in decks)
     assert any(
         d["path"] == "application/transformer_core_pickup_12/tf001/tf001.mai"
@@ -98,6 +99,10 @@ def test_public_sample_decks_are_runnable_inputs_only():
     )
     assert any(
         d["path"] == "application/mri_gradient_shield_12/mri001/mri001.mai"
+        for d in decks
+    )
+    assert any(
+        d["path"] == "application/wpt_coupled_coils_10/wpt001/wpt001.mai"
         for d in decks
     )
     hits = search_sample_decks("HBCN FLUM", ext="mai")
@@ -115,18 +120,28 @@ def test_public_sample_decks_are_runnable_inputs_only():
     spm_hits = search_sample_decks("SPM HBRM FLUM", ext="mai")
     assert spm_hits
     assert spm_hits[0]["path"].startswith("motor/spm_surface_pm_10")
+    srm_hits = search_sample_decks("SRM reluctance FLUM", ext="mai")
+    assert srm_hits
+    assert srm_hits[0]["path"].startswith("motor/srm_switched_reluctance_10")
+    wpt_hits = search_sample_decks("WPT MOMC FLUM", ext="mai")
+    assert wpt_hits
+    assert wpt_hits[0]["path"].startswith("application/wpt_coupled_coils_10")
     pm001 = get_sample_deck("motor/pm_cosine_pickup_72/pm001/pm001.mai")
     text = pm001["text"]
     assert "USE  MAGIC" in text
     assert "HBCN 1 0 1" in text
     assert "HBCN 2 0 2" in text
     assert "FLUM  49" in text
-    cards = build_sample_deck_cards(limit=376)
-    assert len(cards) == 376
+    cards = build_sample_deck_cards(limit=396)
+    assert len(cards) == 396
     spm_cards = build_sample_deck_cards(limit=20, family="spm")
     assert len(spm_cards) == 10
     assert "spm" in spm_cards[0]["tags"]
     assert "MWL8T" in spm_cards[0]["elements"]
+    srm_cards = build_sample_deck_cards(limit=20, family="srm")
+    assert len(srm_cards) == 10
+    assert "srm" in srm_cards[0]["tags"]
+    assert "MMB8T" in srm_cards[0]["elements"]
     induction_cards = build_sample_deck_cards(limit=20, family="induction")
     assert len(induction_cards) == 10
     assert "induction" in induction_cards[0]["tags"]
@@ -137,6 +152,10 @@ def test_public_sample_decks_are_runnable_inputs_only():
     mri_cards = build_sample_deck_cards(limit=20, query="MRI OHM2")
     assert len(mri_cards) == 12
     assert "MAB8T" in mri_cards[0]["elements"]
+    wpt_cards = build_sample_deck_cards(limit=20, family="wpt")
+    assert len(wpt_cards) == 10
+    assert "wpt" in wpt_cards[0]["tags"]
+    assert "MCL8T" in wpt_cards[0]["elements"]
     team28 = build_team28_cards()
     assert len(team28) == 28
     team28_text = format_team28_cards(team28)

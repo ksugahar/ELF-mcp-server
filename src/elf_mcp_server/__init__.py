@@ -6,9 +6,9 @@ BEAM particle tracking solvers, with eddy current support in MAGIC via
 MAB/MAT/MBB elements).
 
 This server exposes 24 MCP tools plus one prompt: curated documentation,
-workflow recipes, public PM/SPM motor/induction motor/transformer/MRI sample-deck playbooks,
+workflow recipes, public PM/SPM/SRM motor/induction motor/transformer/MRI/WPT sample-deck playbooks,
 bundled help/example/wiki/Python API search, and compact planning aids for
 authoring ELF input files.
 """
 
-__version__ = "1.39.0"
+__version__ = "1.40.0"
