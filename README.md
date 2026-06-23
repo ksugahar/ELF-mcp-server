@@ -19,7 +19,7 @@ This server does **not** execute ELF600 simulations — it provides curated docu
 | `elf_usage(topic)` | 31 curated topics — high-level recipes | (knowledge.py) |
 | `elf_help_*(...)` | Help HTM files from `C:/ELF600/help/` | 1141 files, 1.18M chars |
 | `elf_examples_*(...)` | Example .mai/.mei/.txt plus 100-card playbook from `C:/ELF600/examples/` | 332 files, 533k chars |
-| `elf_sample_decks_*(...)` | Lab-authored ELF-runnable public `.mai`/`.meg` sample decks | 356 cases, 712 input files |
+| `elf_sample_decks_*(...)` | Lab-authored ELF-runnable public `.mai`/`.meg` sample decks | 376 cases, 752 input files |
 | `elf_recipe_*(...)` | Workflow decision cards for elements, PRE/SOL blocks, outputs, checks, and pitfalls | public-safe recipes |
 | `elf_wiki_*(...)` | Vendor wiki pages from elf.co.jp PukiWiki | 146 pages, 211k chars |
 | `elf_python_*(...)` | Python ctypes API + configs from `C:/ELF600/bin/` | 15 files, 246k chars |
@@ -44,13 +44,21 @@ For MCP clients, start with `elf_overview()` to discover the server surface and
 public boundary. The most useful calls while authoring ELF/MAGIC inputs are:
 
 - `elf_sample_decks_playbook(limit=20, family="pm_square")` for compact cards
-  over the public motor decks
+  over the public PM motor decks
+- `elf_sample_decks_playbook(limit=20, family="spm")` for surface-PM motor
+  decks with stator coils, rotor/stator iron, and pickup coils
+- `elf_sample_decks_playbook(limit=20, family="induction")` for induction
+  motor cage decks with transient eddy-current pickup patterns
 - `elf_sample_decks_playbook(limit=20, family="application")` for transformer
   and MRI gradient-coil application decks
 - `elf_sample_decks_search("HBCN FLUM", ext="mai")` to find reusable input
   patterns
+- `elf_sample_decks_search("SPM HBRM FLUM", ext="mai")` to find surface-PM
+  motor setup patterns
 - `elf_sample_decks_search("MRI OHM2 FREQ", ext="mai")` to find AC shielding
   and eddy-current setup patterns
+- `elf_sample_decks_search("induction OHM2 FLUM", ext="mai")` to find
+  induction-motor cage and pickup setup patterns
 - `elf_sample_decks_get("motor/pm_cosine_pickup_72/pm001/pm001.mai")` to open a
   concrete public deck
 - `elf_python_team28()` to inspect the Python-interface seed manifest
@@ -64,8 +72,9 @@ ELF/MAGIC is useful for magnetostatic and AC magnetic input authoring when the
 model is expressed as `.mai` analysis control plus `.meg` mesh data. This server
 turns that knowledge into MCP tools:
 
-- 332 public motor input-deck pairs covering 2-pole, 4-pole, 6-pole, 8-pole,
-  and cosine-remanence PM pickup families
+- 352 public motor input-deck pairs covering 2-pole, 4-pole, 6-pole, 8-pole,
+  cosine-remanence PM pickup families, 10 explicit SPM motor examples, and
+  10 induction cage examples
 - 24 public application input-deck pairs covering transformer core/pickup
   coupling and MRI gradient-coil/eddy-current shield patterns
 - playbook cards that expose each deck's SOL blocks, PRE keywords, element
@@ -78,8 +87,10 @@ turns that knowledge into MCP tools:
 Useful entry points are `elf_usage(topic="ipm_motor")`,
 `elf_usage(topic="motor_radia_bridge")`,
 `elf_recipe_search("motor pickup")`, and
-`elf_sample_decks_playbook(limit=50, family="pm_square")`. For non-motor
-applications, start with `elf_sample_decks_playbook(family="application")`,
+`elf_sample_decks_playbook(limit=50, family="pm_square")`,
+`elf_sample_decks_playbook(family="spm")`, or
+`elf_sample_decks_playbook(family="induction")`. For non-motor applications,
+start with `elf_sample_decks_playbook(family="application")`,
 `elf_sample_decks_search("transformer FLUM")`, or
 `elf_sample_decks_search("MRI OHM2 FREQ")`.
 

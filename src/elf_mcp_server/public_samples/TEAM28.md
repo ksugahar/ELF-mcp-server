@@ -1,6 +1,6 @@
 # ELF Python-interface team28 seed manifest
 
-`team28` is a compact representative tour of the 332 public ELF/MAGIC motor
+`team28` is a compact representative tour of the 332 public ELF/MAGIC PM motor
 sample decks, but it is **not** a normal ELF GUI/CLI deck-execution workflow.
 
 team28 is a seed manifest for ELF Python-interface orchestration. The rows

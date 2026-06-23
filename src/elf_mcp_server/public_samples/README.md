@@ -19,8 +19,12 @@ ELF/MAGIC or bundle solver results.
 
 Current families:
 
-- `motor/`: 332 permanent-magnet pickup examples for motor-oriented input
-  authoring
+- `motor/`: 352 motor-oriented examples, including 332 permanent-magnet
+  pickup decks, 10 explicit SPM decks, and 10 induction cage decks
+- `motor/spm_surface_pm_10/`: 10 surface permanent-magnet motor examples
+  using `MWL8T` magnets, `MMB8T` iron, three-phase `MCL8T` coils, and `FLUM`
+- `motor/induction_cage_10/`: 10 induction motor cage examples using
+  three-phase coils, `MAB8T` conducting bars, `OHM2`, and transient `FLUM`
 - `application/transformer_core_pickup_12/`: 12 transformer core, primary,
   secondary, and passive pickup-coil examples
 - `application/mri_gradient_shield_12/`: 12 MRI gradient-coil and

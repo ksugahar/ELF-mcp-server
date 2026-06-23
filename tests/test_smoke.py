@@ -86,10 +86,12 @@ def test_public_sample_decks_are_runnable_inputs_only():
         get_sample_deck,
     )
     decks = list_sample_decks()
-    assert len(decks) == 712
-    assert sum(1 for d in decks if d["ext"] == "mai") == 356
-    assert sum(1 for d in decks if d["ext"] == "meg") == 356
+    assert len(decks) == 752
+    assert sum(1 for d in decks if d["ext"] == "mai") == 376
+    assert sum(1 for d in decks if d["ext"] == "meg") == 376
     assert any(d["path"] == "motor/pm_cosine_pickup_72/pm001/pm001.mai" for d in decks)
+    assert any(d["path"] == "motor/spm_surface_pm_10/spm001/spm001.mai" for d in decks)
+    assert any(d["path"] == "motor/induction_cage_10/im001/im001.mai" for d in decks)
     assert any(
         d["path"] == "application/transformer_core_pickup_12/tf001/tf001.mai"
         for d in decks
@@ -107,14 +109,28 @@ def test_public_sample_decks_are_runnable_inputs_only():
     mri_hits = search_sample_decks("MRI OHM2 FREQ", ext="mai")
     assert mri_hits
     assert mri_hits[0]["path"].startswith("application/mri")
+    im_hits = search_sample_decks("induction OHM2 FLUM", ext="mai")
+    assert im_hits
+    assert im_hits[0]["path"].startswith("motor/induction_cage_10")
+    spm_hits = search_sample_decks("SPM HBRM FLUM", ext="mai")
+    assert spm_hits
+    assert spm_hits[0]["path"].startswith("motor/spm_surface_pm_10")
     pm001 = get_sample_deck("motor/pm_cosine_pickup_72/pm001/pm001.mai")
     text = pm001["text"]
     assert "USE  MAGIC" in text
     assert "HBCN 1 0 1" in text
     assert "HBCN 2 0 2" in text
     assert "FLUM  49" in text
-    cards = build_sample_deck_cards(limit=356)
-    assert len(cards) == 356
+    cards = build_sample_deck_cards(limit=376)
+    assert len(cards) == 376
+    spm_cards = build_sample_deck_cards(limit=20, family="spm")
+    assert len(spm_cards) == 10
+    assert "spm" in spm_cards[0]["tags"]
+    assert "MWL8T" in spm_cards[0]["elements"]
+    induction_cards = build_sample_deck_cards(limit=20, family="induction")
+    assert len(induction_cards) == 10
+    assert "induction" in induction_cards[0]["tags"]
+    assert "MAB8T" in induction_cards[0]["elements"]
     transformer_cards = build_sample_deck_cards(limit=20, family="transformer")
     assert len(transformer_cards) == 12
     assert "transformer" in transformer_cards[0]["tags"]
