@@ -19,7 +19,7 @@ This server does **not** execute ELF600 simulations — it provides curated docu
 | `elf_usage(topic)` | 31 curated topics — high-level recipes | (knowledge.py) |
 | `elf_help_*(...)` | Help HTM files from `C:/ELF600/help/` | 1141 files, 1.18M chars |
 | `elf_examples_*(...)` | Example .mai/.mei/.txt plus 100-card playbook from `C:/ELF600/examples/` | 332 files, 533k chars |
-| `elf_sample_decks_*(...)` | Lab-authored ELF-runnable public `.mai`/`.meg` sample decks | 396 cases, 792 input files |
+| `elf_sample_decks_*(...)` | Lab-authored ELF-runnable public `.mai`/`.meg` sample decks | 486 cases, 972 input files |
 | `elf_recipe_*(...)` | Workflow decision cards for elements, PRE/SOL blocks, outputs, checks, and pitfalls | public-safe recipes |
 | `elf_wiki_*(...)` | Vendor wiki pages from elf.co.jp PukiWiki | 146 pages, 211k chars |
 | `elf_python_*(...)` | Python ctypes API + configs from `C:/ELF600/bin/` | 15 files, 246k chars |
@@ -49,10 +49,14 @@ public boundary. The most useful calls while authoring ELF/MAGIC inputs are:
   decks with stator coils, rotor/stator iron, and pickup coils
 - `elf_sample_decks_playbook(limit=20, family="srm")` for switched-reluctance
   motor decks with salient iron and phase-pair excitation
-- `elf_sample_decks_playbook(limit=20, family="induction")` for induction
+- `elf_sample_decks_playbook(limit=20, family="induction_cage_10")` for induction
   motor cage decks with transient eddy-current pickup patterns
 - `elf_sample_decks_playbook(limit=20, family="application")` for transformer
-  MRI gradient-coil, and WPT coupled-coil application decks
+  MRI gradient-coil, WPT coupled-coil, induction-heating, and accelerator
+  electromagnet application decks
+- `elf_sample_decks_playbook(limit=20, query="Loop10")` for the 10-cycle
+  learning-loop decks across WPT, MRI, SR motor, SPM, IH, reluctance motor,
+  hysteresis motor, transformer, and accelerator electromagnet families
 - `elf_sample_decks_search("HBCN FLUM", ext="mai")` to find reusable input
   patterns
 - `elf_sample_decks_search("SPM HBRM FLUM", ext="mai")` to find surface-PM
@@ -63,8 +67,12 @@ public boundary. The most useful calls while authoring ELF/MAGIC inputs are:
   power-transfer AC coupling patterns
 - `elf_sample_decks_search("MRI OHM2 FREQ", ext="mai")` to find AC shielding
   and eddy-current setup patterns
-- `elf_sample_decks_search("induction OHM2 FLUM", ext="mai")` to find
+- `elf_sample_decks_search("induction motor cage OHM2 FLUM", ext="mai")` to find
   induction-motor cage and pickup setup patterns
+- `elf_sample_decks_search("accelerator electromagnet FLUM", ext="mai")` to
+  find coil/yoke electromagnet setup patterns
+- `elf_sample_decks_search("IH induction-heating MOMC", ext="mai")` to find
+  induction-heating AC conductor setup patterns
 - `elf_sample_decks_get("motor/pm_cosine_pickup_72/pm001/pm001.mai")` to open a
   concrete public deck
 - `elf_python_team28()` to inspect the Python-interface seed manifest
@@ -78,12 +86,14 @@ ELF/MAGIC is useful for magnetostatic and AC magnetic input authoring when the
 model is expressed as `.mai` analysis control plus `.meg` mesh data. This server
 turns that knowledge into MCP tools:
 
-- 362 public motor input-deck pairs covering 2-pole, 4-pole, 6-pole, 8-pole,
+- 402 public motor input-deck pairs covering 2-pole, 4-pole, 6-pole, 8-pole,
   cosine-remanence PM pickup families, 10 explicit SPM motor examples, and
-  10 SRM switched-reluctance examples, and 10 induction cage examples
-- 34 public application input-deck pairs covering transformer core/pickup
-  coupling, MRI gradient-coil/eddy-current shield patterns, and WPT coupled
-  coils
+  10 SRM switched-reluctance examples, 10 induction cage examples, plus
+  loop-reviewed SPM, SR motor, synchronous-reluctance motor, and hysteresis
+  motor families
+- 84 public application input-deck pairs covering transformer core/pickup
+  coupling, MRI gradient-coil/eddy-current shield patterns, WPT coupled coils,
+  IH induction-heating workpieces, and accelerator electromagnets
 - playbook cards that expose each deck's SOL blocks, PRE keywords, element
   families, feature tags, and reuse hints
 - curated motor topics for air-gap field, flux linkage/back-EMF pickup,
@@ -97,11 +107,13 @@ Useful entry points are `elf_usage(topic="ipm_motor")`,
 `elf_sample_decks_playbook(limit=50, family="pm_square")`,
 `elf_sample_decks_playbook(family="spm")`, or
 `elf_sample_decks_playbook(family="srm")`, or
-`elf_sample_decks_playbook(family="induction")`. For non-motor applications,
+`elf_sample_decks_playbook(family="induction_cage_10")`. For non-motor applications,
 start with `elf_sample_decks_playbook(family="application")`,
 `elf_sample_decks_search("transformer FLUM")`,
 `elf_sample_decks_search("WPT MOMC FLUM")`, or
-`elf_sample_decks_search("MRI OHM2 FREQ")`.
+`elf_sample_decks_search("MRI OHM2 FREQ")`,
+`elf_sample_decks_search("IH induction-heating MOMC")`, or
+`elf_sample_decks_search("accelerator electromagnet FLUM")`.
 
 ### Public lint
 
