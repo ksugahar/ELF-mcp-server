@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "policy": "Only validation-passed .mai/.meg input-deck pairs are listed here and bundled in the public package.",
-  "total_cases": 926,
-  "total_input_files": 1852,
+  "total_cases": 936,
+  "total_input_files": 1872,
   "families": {
     "application/accelerator_corrector_10": {
       "cases": 10,
@@ -15,7 +15,9 @@
         "no_error_markers",
         "mai_meg_pair_present",
         "ngsolve_proxy_energy_positive"
-      ]
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "application/accelerator_magnet_10": {
       "cases": 10,
@@ -26,8 +28,11 @@
         "solver_returncode_zero",
         "mag_output_created",
         "no_error_markers",
-        "mai_meg_pair_present"
-      ]
+        "mai_meg_pair_present",
+        "ngsolve_proxy_energy_positive"
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "application/actuator_plunger_10": {
       "cases": 10,
@@ -38,8 +43,11 @@
         "solver_returncode_zero",
         "mag_output_created",
         "no_error_markers",
-        "mai_meg_pair_present"
-      ]
+        "mai_meg_pair_present",
+        "ngsolve_proxy_energy_positive"
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "application/eddy_current_brake_10": {
       "cases": 10,
@@ -50,8 +58,11 @@
         "solver_returncode_zero",
         "mag_output_created",
         "no_error_markers",
-        "mai_meg_pair_present"
-      ]
+        "mai_meg_pair_present",
+        "ngsolve_proxy_energy_positive"
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "application/electromagnetic_clutch_10": {
       "cases": 10,
@@ -62,8 +73,11 @@
         "solver_returncode_zero",
         "mag_output_created",
         "no_error_markers",
-        "mai_meg_pair_present"
-      ]
+        "mai_meg_pair_present",
+        "ngsolve_proxy_energy_positive"
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "application/emdlab_1ph_transformer_static_10": {
       "cases": 10,
@@ -76,7 +90,9 @@
         "no_error_markers",
         "mai_meg_pair_present",
         "ngsolve_proxy_energy_positive"
-      ]
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "application/emdlab_benchmark_ccore_10": {
       "cases": 10,
@@ -89,7 +105,9 @@
         "no_error_markers",
         "mai_meg_pair_present",
         "ngsolve_proxy_energy_positive"
-      ]
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "application/emdlab_benchmark_geometry_10": {
       "cases": 10,
@@ -102,7 +120,9 @@
         "no_error_markers",
         "mai_meg_pair_present",
         "ngsolve_proxy_energy_positive"
-      ]
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "application/emdlab_benchmark_magnet_10": {
       "cases": 10,
@@ -115,7 +135,9 @@
         "no_error_markers",
         "mai_meg_pair_present",
         "ngsolve_proxy_energy_positive"
-      ]
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "application/hall_sensor_fixture_10": {
       "cases": 10,
@@ -126,8 +148,11 @@
         "solver_returncode_zero",
         "mag_output_created",
         "no_error_markers",
-        "mai_meg_pair_present"
-      ]
+        "mai_meg_pair_present",
+        "ngsolve_proxy_energy_positive"
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "application/ih_induction_heating_10": {
       "cases": 10,
@@ -138,8 +163,11 @@
         "solver_returncode_zero",
         "mag_output_created",
         "no_error_markers",
-        "mai_meg_pair_present"
-      ]
+        "mai_meg_pair_present",
+        "ngsolve_proxy_energy_positive"
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "application/ih_susceptor_ring_10": {
       "cases": 10,
@@ -152,7 +180,9 @@
         "no_error_markers",
         "mai_meg_pair_present",
         "ngsolve_proxy_energy_positive"
-      ]
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "application/maglev_bearing_10": {
       "cases": 10,
@@ -163,8 +193,11 @@
         "solver_returncode_zero",
         "mag_output_created",
         "no_error_markers",
-        "mai_meg_pair_present"
-      ]
+        "mai_meg_pair_present",
+        "ngsolve_proxy_energy_positive"
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "application/magnetic_gear_10": {
       "cases": 10,
@@ -175,8 +208,11 @@
         "solver_returncode_zero",
         "mag_output_created",
         "no_error_markers",
-        "mai_meg_pair_present"
-      ]
+        "mai_meg_pair_present",
+        "ngsolve_proxy_energy_positive"
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "application/magnetic_separator_10": {
       "cases": 10,
@@ -187,8 +223,11 @@
         "solver_returncode_zero",
         "mag_output_created",
         "no_error_markers",
-        "mai_meg_pair_present"
-      ]
+        "mai_meg_pair_present",
+        "ngsolve_proxy_energy_positive"
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "application/mri_gradient_sequence_10": {
       "cases": 10,
@@ -201,7 +240,9 @@
         "no_error_markers",
         "mai_meg_pair_present",
         "ngsolve_proxy_energy_positive"
-      ]
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "application/mri_gradient_shield_12": {
       "cases": 12,
@@ -212,8 +253,11 @@
         "solver_returncode_zero",
         "mag_output_created",
         "no_error_markers",
-        "mai_meg_pair_present"
-      ]
+        "mai_meg_pair_present",
+        "ngsolve_proxy_energy_positive"
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "application/mri_loop_10": {
       "cases": 10,
@@ -224,8 +268,11 @@
         "solver_returncode_zero",
         "mag_output_created",
         "no_error_markers",
-        "mai_meg_pair_present"
-      ]
+        "mai_meg_pair_present",
+        "ngsolve_proxy_energy_positive"
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "application/ndt_eddy_probe_10": {
       "cases": 10,
@@ -236,8 +283,27 @@
         "solver_returncode_zero",
         "mag_output_created",
         "no_error_markers",
-        "mai_meg_pair_present"
-      ]
+        "mai_meg_pair_present",
+        "ngsolve_proxy_energy_positive"
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
+    },
+    "application/numeric_validation_anchors_10": {
+      "cases": 10,
+      "input_files": 20,
+      "validation": "passed",
+      "validated_on": "2026-06-24",
+      "checks": [
+        "solver_returncode_zero",
+        "mag_output_created",
+        "no_error_markers",
+        "mai_meg_pair_present",
+        "elf_flux_invariants_passed",
+        "ngsolve_numeric_invariants_passed"
+      ],
+      "validation_level": "ngsolve_numeric_invariant",
+      "validation_scope": "ELF/MAGIC FLUM invariants and independent NGSolve proxy invariants both passed for numeric anchor cases."
     },
     "application/relay_solenoid_10": {
       "cases": 10,
@@ -248,8 +314,11 @@
         "solver_returncode_zero",
         "mag_output_created",
         "no_error_markers",
-        "mai_meg_pair_present"
-      ]
+        "mai_meg_pair_present",
+        "ngsolve_proxy_energy_positive"
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "application/transformer_core_pickup_12": {
       "cases": 12,
@@ -260,8 +329,11 @@
         "solver_returncode_zero",
         "mag_output_created",
         "no_error_markers",
-        "mai_meg_pair_present"
-      ]
+        "mai_meg_pair_present",
+        "ngsolve_proxy_energy_positive"
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "application/transformer_leakage_10": {
       "cases": 10,
@@ -274,7 +346,9 @@
         "no_error_markers",
         "mai_meg_pair_present",
         "ngsolve_proxy_energy_positive"
-      ]
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "application/transformer_loop_10": {
       "cases": 10,
@@ -285,8 +359,11 @@
         "solver_returncode_zero",
         "mag_output_created",
         "no_error_markers",
-        "mai_meg_pair_present"
-      ]
+        "mai_meg_pair_present",
+        "ngsolve_proxy_energy_positive"
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "application/voice_coil_10": {
       "cases": 10,
@@ -297,8 +374,11 @@
         "solver_returncode_zero",
         "mag_output_created",
         "no_error_markers",
-        "mai_meg_pair_present"
-      ]
+        "mai_meg_pair_present",
+        "ngsolve_proxy_energy_positive"
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "application/wpt_coupled_coils_10": {
       "cases": 10,
@@ -309,8 +389,11 @@
         "solver_returncode_zero",
         "mag_output_created",
         "no_error_markers",
-        "mai_meg_pair_present"
-      ]
+        "mai_meg_pair_present",
+        "ngsolve_proxy_energy_positive"
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "application/wpt_loop_10": {
       "cases": 10,
@@ -321,8 +404,11 @@
         "solver_returncode_zero",
         "mag_output_created",
         "no_error_markers",
-        "mai_meg_pair_present"
-      ]
+        "mai_meg_pair_present",
+        "ngsolve_proxy_energy_positive"
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "application/wpt_misalignment_10": {
       "cases": 10,
@@ -335,7 +421,9 @@
         "no_error_markers",
         "mai_meg_pair_present",
         "ngsolve_proxy_energy_positive"
-      ]
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "motor/axial_flux_pm_10": {
       "cases": 10,
@@ -348,7 +436,9 @@
         "no_error_markers",
         "mai_meg_pair_present",
         "ngsolve_proxy_energy_positive"
-      ]
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "motor/emdlab_afpm_linearized_10": {
       "cases": 10,
@@ -361,7 +451,9 @@
         "no_error_markers",
         "mai_meg_pair_present",
         "ngsolve_proxy_energy_positive"
-      ]
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "motor/emdlab_bldc_outer_rotor_10": {
       "cases": 10,
@@ -374,7 +466,9 @@
         "no_error_markers",
         "mai_meg_pair_present",
         "ngsolve_proxy_energy_positive"
-      ]
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "motor/emdlab_bldc_spm_10": {
       "cases": 10,
@@ -387,7 +481,9 @@
         "no_error_markers",
         "mai_meg_pair_present",
         "ngsolve_proxy_energy_positive"
-      ]
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "motor/emdlab_induction_bar_10": {
       "cases": 10,
@@ -400,7 +496,9 @@
         "no_error_markers",
         "mai_meg_pair_present",
         "ngsolve_proxy_energy_positive"
-      ]
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "motor/emdlab_induction_fraction_10": {
       "cases": 10,
@@ -413,7 +511,9 @@
         "no_error_markers",
         "mai_meg_pair_present",
         "ngsolve_proxy_energy_positive"
-      ]
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "motor/emdlab_ipm_hairpin_10": {
       "cases": 10,
@@ -426,7 +526,9 @@
         "no_error_markers",
         "mai_meg_pair_present",
         "ngsolve_proxy_energy_positive"
-      ]
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "motor/emdlab_ipm_hairpin_fraction_10": {
       "cases": 10,
@@ -439,7 +541,9 @@
         "no_error_markers",
         "mai_meg_pair_present",
         "ngsolve_proxy_energy_positive"
-      ]
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "motor/emdlab_spmsm_10": {
       "cases": 10,
@@ -452,7 +556,9 @@
         "no_error_markers",
         "mai_meg_pair_present",
         "ngsolve_proxy_energy_positive"
-      ]
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "motor/emdlab_spmsm_fraction_10": {
       "cases": 10,
@@ -465,7 +571,9 @@
         "no_error_markers",
         "mai_meg_pair_present",
         "ngsolve_proxy_energy_positive"
-      ]
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "motor/emdlab_spmsm_static_torque_10": {
       "cases": 10,
@@ -478,7 +586,9 @@
         "no_error_markers",
         "mai_meg_pair_present",
         "ngsolve_proxy_energy_positive"
-      ]
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "motor/emdlab_srm1216_outer_rotor_10": {
       "cases": 10,
@@ -491,7 +601,9 @@
         "no_error_markers",
         "mai_meg_pair_present",
         "ngsolve_proxy_energy_positive"
-      ]
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "motor/emdlab_srm128_10": {
       "cases": 10,
@@ -504,7 +616,9 @@
         "no_error_markers",
         "mai_meg_pair_present",
         "ngsolve_proxy_energy_positive"
-      ]
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "motor/emdlab_srm64_10": {
       "cases": 10,
@@ -517,7 +631,9 @@
         "no_error_markers",
         "mai_meg_pair_present",
         "ngsolve_proxy_energy_positive"
-      ]
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "motor/emdlab_srm86_10": {
       "cases": 10,
@@ -530,7 +646,9 @@
         "no_error_markers",
         "mai_meg_pair_present",
         "ngsolve_proxy_energy_positive"
-      ]
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "motor/emdlab_srm86_fraction_10": {
       "cases": 10,
@@ -543,7 +661,9 @@
         "no_error_markers",
         "mai_meg_pair_present",
         "ngsolve_proxy_energy_positive"
-      ]
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "motor/emdlab_srm86_static_torque_10": {
       "cases": 10,
@@ -556,7 +676,9 @@
         "no_error_markers",
         "mai_meg_pair_present",
         "ngsolve_proxy_energy_positive"
-      ]
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "motor/emdlab_srm_pole_variants_10": {
       "cases": 10,
@@ -569,7 +691,9 @@
         "no_error_markers",
         "mai_meg_pair_present",
         "ngsolve_proxy_energy_positive"
-      ]
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "motor/emdlab_synrm_flux_barrier_10": {
       "cases": 10,
@@ -582,7 +706,9 @@
         "no_error_markers",
         "mai_meg_pair_present",
         "ngsolve_proxy_energy_positive"
-      ]
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "motor/emdlab_synrm_fraction_static_torque_10": {
       "cases": 10,
@@ -595,7 +721,9 @@
         "no_error_markers",
         "mai_meg_pair_present",
         "ngsolve_proxy_energy_positive"
-      ]
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "motor/emdlab_synrm_static_torque_10": {
       "cases": 10,
@@ -608,7 +736,9 @@
         "no_error_markers",
         "mai_meg_pair_present",
         "ngsolve_proxy_energy_positive"
-      ]
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "motor/hysteresis_motor_10": {
       "cases": 10,
@@ -619,8 +749,11 @@
         "solver_returncode_zero",
         "mag_output_created",
         "no_error_markers",
-        "mai_meg_pair_present"
-      ]
+        "mai_meg_pair_present",
+        "ngsolve_proxy_energy_positive"
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "motor/induction_cage_10": {
       "cases": 10,
@@ -631,8 +764,11 @@
         "solver_returncode_zero",
         "mag_output_created",
         "no_error_markers",
-        "mai_meg_pair_present"
-      ]
+        "mai_meg_pair_present",
+        "ngsolve_proxy_energy_positive"
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "motor/ipm_interior_pm_10": {
       "cases": 10,
@@ -645,7 +781,9 @@
         "no_error_markers",
         "mai_meg_pair_present",
         "ngsolve_proxy_energy_positive"
-      ]
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "motor/linear_pm_motor_10": {
       "cases": 10,
@@ -658,7 +796,9 @@
         "no_error_markers",
         "mai_meg_pair_present",
         "ngsolve_proxy_energy_positive"
-      ]
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "motor/pm_cosine_pickup_72": {
       "cases": 72,
@@ -669,8 +809,11 @@
         "solver_returncode_zero",
         "mag_output_created",
         "no_error_markers",
-        "mai_meg_pair_present"
-      ]
+        "mai_meg_pair_present",
+        "ngsolve_proxy_energy_positive"
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "motor/pm_square_2pole_pickup_100": {
       "cases": 100,
@@ -681,8 +824,11 @@
         "solver_returncode_zero",
         "mag_output_created",
         "no_error_markers",
-        "mai_meg_pair_present"
-      ]
+        "mai_meg_pair_present",
+        "ngsolve_proxy_energy_positive"
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "motor/pm_square_4pole_pickup_60": {
       "cases": 60,
@@ -693,8 +839,11 @@
         "solver_returncode_zero",
         "mag_output_created",
         "no_error_markers",
-        "mai_meg_pair_present"
-      ]
+        "mai_meg_pair_present",
+        "ngsolve_proxy_energy_positive"
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "motor/pm_square_6pole_pickup_72": {
       "cases": 72,
@@ -705,8 +854,11 @@
         "solver_returncode_zero",
         "mag_output_created",
         "no_error_markers",
-        "mai_meg_pair_present"
-      ]
+        "mai_meg_pair_present",
+        "ngsolve_proxy_energy_positive"
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "motor/pm_square_8pole_pickup_28": {
       "cases": 28,
@@ -717,8 +869,11 @@
         "solver_returncode_zero",
         "mag_output_created",
         "no_error_markers",
-        "mai_meg_pair_present"
-      ]
+        "mai_meg_pair_present",
+        "ngsolve_proxy_energy_positive"
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "motor/reluctance_motor_10": {
       "cases": 10,
@@ -729,8 +884,11 @@
         "solver_returncode_zero",
         "mag_output_created",
         "no_error_markers",
-        "mai_meg_pair_present"
-      ]
+        "mai_meg_pair_present",
+        "ngsolve_proxy_energy_positive"
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "motor/spm_loop_10": {
       "cases": 10,
@@ -741,8 +899,11 @@
         "solver_returncode_zero",
         "mag_output_created",
         "no_error_markers",
-        "mai_meg_pair_present"
-      ]
+        "mai_meg_pair_present",
+        "ngsolve_proxy_energy_positive"
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "motor/spm_surface_pm_10": {
       "cases": 10,
@@ -753,8 +914,11 @@
         "solver_returncode_zero",
         "mag_output_created",
         "no_error_markers",
-        "mai_meg_pair_present"
-      ]
+        "mai_meg_pair_present",
+        "ngsolve_proxy_energy_positive"
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "motor/sr_motor_loop_10": {
       "cases": 10,
@@ -765,8 +929,11 @@
         "solver_returncode_zero",
         "mag_output_created",
         "no_error_markers",
-        "mai_meg_pair_present"
-      ]
+        "mai_meg_pair_present",
+        "ngsolve_proxy_energy_positive"
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "motor/srm_switched_reluctance_10": {
       "cases": 10,
@@ -777,8 +944,11 @@
         "solver_returncode_zero",
         "mag_output_created",
         "no_error_markers",
-        "mai_meg_pair_present"
-      ]
+        "mai_meg_pair_present",
+        "ngsolve_proxy_energy_positive"
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "motor/stepper_motor_10": {
       "cases": 10,
@@ -791,7 +961,9 @@
         "no_error_markers",
         "mai_meg_pair_present",
         "ngsolve_proxy_energy_positive"
-      ]
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     },
     "motor/wound_field_sync_10": {
       "cases": 10,
@@ -804,7 +976,9 @@
         "no_error_markers",
         "mai_meg_pair_present",
         "ngsolve_proxy_energy_positive"
-      ]
+      ],
+      "validation_level": "ngsolve_proxy_energy",
+      "validation_scope": "ELF/MAGIC run completed and an independent NGSolve proxy-field energy sanity check was positive."
     }
   }
 }

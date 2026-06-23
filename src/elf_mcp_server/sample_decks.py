@@ -8,11 +8,41 @@ from __future__ import annotations
 from dataclasses import dataclass
 from functools import lru_cache
 from importlib import resources
+import json
 import re
 from typing import Any
 
 
 ROOT = "public_samples"
+
+VALIDATION_LEVEL_DESCRIPTIONS = {
+    "solver_smoke": (
+        "ELF/MAGIC input-pair presence and local solver-run smoke checks passed."
+    ),
+    "ngsolve_proxy_energy": (
+        "ELF/MAGIC run checks passed, and an independent NGSolve proxy-field "
+        "energy sanity check was positive."
+    ),
+    "ngsolve_numeric_invariant": (
+        "ELF FLUM ratio/sign invariants and independent NGSolve proxy "
+        "invariants both passed for compact numeric anchor cases."
+    ),
+}
+
+VALIDATION_LEVEL_ORDER = (
+    "ngsolve_numeric_invariant",
+    "ngsolve_proxy_energy",
+    "solver_smoke",
+)
+
+VALIDATION_LIMITATIONS = (
+    "The public package bundles input decks and validation metadata only; "
+    "solver outputs, regression logs, private paths, and provenance are not bundled.",
+    "`ngsolve_proxy_energy` is a broad independent proxy-field gate for deck "
+    "sanity, not a full absolute field/force/torque/loss agreement suite.",
+    "`ngsolve_numeric_invariant` is currently reserved for the numeric anchor "
+    "family, where ELF FLUM invariants and NGSolve proxy invariants are both checked.",
+)
 
 FAMILY_META = {
     "application/mri_gradient_shield_12": {
@@ -819,6 +849,25 @@ FAMILY_META.update(
             "tags": ("application", "emdlab-style", "benchmark", "magnet", "pm", "mwl8t", "mmb8t", "hbrm", "hbcn", "flum", "ngsolve-crossval"),
             "hint": "Use for benchmark magnet decks with opposed PM blocks, yoke steel, and pickup FLUM.",
         },
+        "application/numeric_validation_anchors_10": {
+            "title": "Numeric validation anchor campaign",
+            "tags": (
+                "application",
+                "numeric-validation",
+                "anchor",
+                "validation-level:numeric-invariant",
+                "flum",
+                "ngsolve-crossval",
+                "ngsolve-numeric-invariant",
+                "current-scaling",
+                "sign-reversal",
+                "distance-decay",
+                "symmetry",
+                "cancellation",
+                "mcl8t",
+            ),
+            "hint": "Use for compact validation anchor decks where ELF FLUM invariants and independent NGSolve proxy invariants are both expected to pass.",
+        },
         "motor/emdlab_bldc_outer_rotor_10": {
             "title": "EMDLAB-style BLDC outer-rotor campaign",
             "tags": ("motor", "emdlab-style", "bldc", "outer-rotor", "spm", "surface-pm", "pm", "mwl8t", "mmb8t", "mcl8t", "hbrm", "hbcn", "flum", "ngsolve-crossval"),
@@ -1064,6 +1113,25 @@ SAMPLE_ROUTE_RULES: tuple[dict[str, Any], ...] = (
 
 SAMPLE_ROUTE_RULES = (
     {
+        "intent": "Numeric validation anchor",
+        "family": "application/numeric_validation_anchors_10",
+        "query": "numeric-validation anchor FLUM NGSolve invariant",
+        "recipe": "passive_flum_pickup",
+        "terms": (
+            "numeric validation",
+            "validation anchor",
+            "ngsolve invariant",
+            "flux invariant",
+            "flum invariant",
+            "current scaling",
+            "sign reversal",
+            "distance decay",
+            "symmetry check",
+            "cancellation check",
+        ),
+        "why": "Use these decks when the prompt asks whether validation is stronger than a simple run/pass or proxy-energy gate.",
+    },
+    {
         "intent": "BLDC outer-rotor motor",
         "family": "motor/emdlab_bldc_outer_rotor_10",
         "query": "EMDLAB-style BLDC outer-rotor surface-pm FLUM",
@@ -1226,6 +1294,246 @@ def _sample_root():
     return resources.files("elf_mcp_server").joinpath(ROOT)
 
 
+@lru_cache(maxsize=1)
+def load_validated_manifest() -> dict[str, Any]:
+    """Load the public validation manifest for sample deck families."""
+    path = _sample_root().joinpath("VALIDATED_MANIFEST.json")
+    return json.loads(path.read_text(encoding="ascii"))
+
+
+@lru_cache(maxsize=1)
+def load_publication_batches() -> dict[str, Any]:
+    """Load the public 100-case publication checkpoint manifest."""
+    path = _sample_root().joinpath("PUBLICATION_BATCHES.json")
+    return json.loads(path.read_text(encoding="ascii"))
+
+
+def _validation_counts(families: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    counts: dict[str, dict[str, Any]] = {}
+    for entry in families.values():
+        level = entry.get("validation_level") or "unknown"
+        bucket = counts.setdefault(
+            level,
+            {
+                "families": 0,
+                "cases": 0,
+                "input_files": 0,
+                "description": VALIDATION_LEVEL_DESCRIPTIONS.get(level, ""),
+            },
+        )
+        bucket["families"] += 1
+        bucket["cases"] += int(entry.get("cases", 0))
+        bucket["input_files"] += int(entry.get("input_files", 0))
+    return counts
+
+
+def validation_level_counts() -> dict[str, dict[str, Any]]:
+    """Return validation-level counts for all public sample families."""
+    families = load_validated_manifest().get("families", {})
+    return _validation_counts(families)
+
+
+def build_publication_batch_summary() -> dict[str, Any]:
+    """Return public-safe 100-case checkpoint metadata."""
+    batches = load_publication_batches()
+    return {
+        "checkpoint_size": int(batches.get("checkpoint_size", 0)),
+        "total_cases": int(batches.get("total_cases", 0)),
+        "total_batches": int(batches.get("total_batches", 0)),
+        "full_100_case_batches": int(batches.get("full_100_case_batches", 0)),
+        "remainder_cases": int(batches.get("remainder_cases", 0)),
+        "next_checkpoint_cases": int(batches.get("next_checkpoint_cases", 0)),
+        "additional_cases_needed_for_next_100_case_checkpoint": int(
+            batches.get("additional_cases_needed_for_next_100_case_checkpoint", 0)
+        ),
+        "batches": [
+            {
+                "batch_id": batch.get("batch_id", ""),
+                "batch_kind": batch.get("batch_kind", ""),
+                "status": batch.get("status", ""),
+                "case_count": int(batch.get("case_count", 0)),
+                "case_start": int(batch.get("case_start", 0)),
+                "case_end": int(batch.get("case_end", 0)),
+                "validation_level_counts": dict(batch.get("validation_level_counts", {})),
+            }
+            for batch in batches.get("batches", [])
+        ],
+    }
+
+
+def get_family_validation(family: str) -> dict[str, Any]:
+    """Return public validation metadata for one sample family."""
+    entry = load_validated_manifest().get("families", {}).get(family)
+    if entry is None:
+        return {
+            "family": family,
+            "validation": "unknown",
+            "validation_level": "unknown",
+            "validation_scope": "No public validation manifest entry found.",
+            "checks": [],
+            "cases": 0,
+            "input_files": 0,
+        }
+    return {
+        "family": family,
+        "validation": entry.get("validation", ""),
+        "validation_level": entry.get("validation_level", ""),
+        "validation_scope": entry.get("validation_scope", ""),
+        "checks": list(entry.get("checks", [])),
+        "cases": int(entry.get("cases", 0)),
+        "input_files": int(entry.get("input_files", 0)),
+        "validated_on": entry.get("validated_on", ""),
+    }
+
+
+def build_validation_summary(
+    family: str | None = None,
+    level: str | None = None,
+) -> dict[str, Any]:
+    """Build a public validation summary for MCP clients."""
+    manifest = load_validated_manifest()
+    all_families = manifest.get("families", {})
+    family_filter = family.lower() if family else None
+    level_filter = level.strip() if level else None
+
+    selected: dict[str, dict[str, Any]] = {}
+    for name, entry in sorted(all_families.items()):
+        if family_filter and family_filter not in name.lower():
+            continue
+        if level_filter and entry.get("validation_level") != level_filter:
+            continue
+        selected[name] = entry
+
+    family_rows = []
+    for name, entry in selected.items():
+        family_rows.append(
+            {
+                "family": name,
+                "cases": int(entry.get("cases", 0)),
+                "input_files": int(entry.get("input_files", 0)),
+                "validation": entry.get("validation", ""),
+                "validation_level": entry.get("validation_level", ""),
+                "validation_scope": entry.get("validation_scope", ""),
+                "checks": list(entry.get("checks", [])),
+                "validated_on": entry.get("validated_on", ""),
+            }
+        )
+
+    return {
+        "schema_version": manifest.get("schema_version"),
+        "total_cases": int(manifest.get("total_cases", 0)),
+        "total_input_files": int(manifest.get("total_input_files", 0)),
+        "total_families": len(all_families),
+        "level_counts": _validation_counts(all_families),
+        "selected_cases": sum(row["cases"] for row in family_rows),
+        "selected_input_files": sum(row["input_files"] for row in family_rows),
+        "selected_family_count": len(family_rows),
+        "selected_level_counts": _validation_counts(selected),
+        "families": family_rows,
+        "publication_batches": build_publication_batch_summary(),
+        "family_filter": family or "",
+        "level_filter": level or "",
+        "limitations": list(VALIDATION_LIMITATIONS),
+        "recommended_calls": [
+            'elf_sample_decks_validation(level="ngsolve_numeric_invariant")',
+            'elf_sample_decks_validation(family="numeric_validation")',
+            'elf_sample_decks_route("numeric validation anchor FLUM invariant")',
+        ],
+    }
+
+
+def _ordered_levels(counts: dict[str, dict[str, Any]]) -> list[str]:
+    ordered = [level for level in VALIDATION_LEVEL_ORDER if level in counts]
+    ordered.extend(sorted(level for level in counts if level not in ordered))
+    return ordered
+
+
+def format_validation_summary(summary: dict[str, Any], max_families: int = 20) -> str:
+    """Format public validation metadata as Markdown."""
+    lines = [
+        "# Public sample-deck validation",
+        "",
+        f"- manifest schema: {summary['schema_version']}",
+        (
+            f"- public corpus: {summary['total_cases']} cases, "
+            f"{summary['total_input_files']} input files, "
+            f"{summary['total_families']} families"
+        ),
+        "- publication rule: only manifest-listed `validation: passed` families are bundled",
+        "",
+        "## Validation levels",
+    ]
+    for level in _ordered_levels(summary["level_counts"]):
+        count = summary["level_counts"][level]
+        description = count.get("description") or VALIDATION_LEVEL_DESCRIPTIONS.get(level, "")
+        lines.append(
+            f"- `{level}`: {count['families']} families, "
+            f"{count['cases']} cases, {count['input_files']} input files"
+        )
+        if description:
+            lines.append(f"  scope: {description}")
+
+    lines.extend(["", "## Selected families"])
+    filter_bits = []
+    if summary["family_filter"]:
+        filter_bits.append(f"family contains `{summary['family_filter']}`")
+    if summary["level_filter"]:
+        filter_bits.append(f"level is `{summary['level_filter']}`")
+    if filter_bits:
+        lines.append(f"- filter: {', '.join(filter_bits)}")
+    else:
+        lines.append("- filter: none")
+    lines.append(
+        f"- selected: {summary['selected_family_count']} families, "
+        f"{summary['selected_cases']} cases, "
+        f"{summary['selected_input_files']} input files"
+    )
+
+    shown = summary["families"][: max(0, max_families)]
+    for row in shown:
+        lines.append(
+            f"- `{row['family']}`: {row['cases']} cases, "
+            f"level `{row['validation_level']}`, checks: {', '.join(row['checks'])}"
+        )
+        if row.get("validation_scope"):
+            lines.append(f"  scope: {row['validation_scope']}")
+    hidden = summary["selected_family_count"] - len(shown)
+    if hidden > 0:
+        lines.append(f"- ... {hidden} more families. Narrow with `family=` or `level=`.")
+
+    lines.extend(["", "## Limits"])
+    lines.extend(f"- {item}" for item in summary["limitations"])
+    batches = summary.get("publication_batches", {})
+    if batches:
+        lines.extend(["", "## 100-case publication checkpoints"])
+        lines.append(f"- checkpoint size: {batches['checkpoint_size']} cases")
+        lines.append(
+            f"- baseline: {batches['full_100_case_batches']} full checkpoints "
+            f"+ {batches['remainder_cases']} release-remainder cases "
+            f"({batches['total_cases']} cases total)"
+        )
+        lines.append(
+            f"- next checkpoint: {batches['next_checkpoint_cases']} cases; "
+            f"{batches['additional_cases_needed_for_next_100_case_checkpoint']} "
+            "additional validated cases needed"
+        )
+        for batch in batches["batches"][:5]:
+            level_bits = ", ".join(
+                f"{name}:{count}"
+                for name, count in sorted(batch["validation_level_counts"].items())
+            )
+            lines.append(
+                f"- `{batch['batch_id']}`: {batch['case_start']}-{batch['case_end']} "
+                f"({batch['case_count']} cases, {batch['batch_kind']}, {level_bits})"
+            )
+        hidden_batches = batches["total_batches"] - min(5, len(batches["batches"]))
+        if hidden_batches > 0:
+            lines.append(f"- ... {hidden_batches} more checkpoint batches.")
+    lines.extend(["", "## Recommended MCP calls"])
+    lines.extend(f"- `{call}`" for call in summary["recommended_calls"])
+    return "\n".join(lines).rstrip()
+
+
 def _walk_files(node, prefix: str = "") -> list[tuple[str, Any]]:
     files: list[tuple[str, Any]] = []
     for child in sorted(node.iterdir(), key=lambda p: p.name):
@@ -1352,6 +1660,7 @@ def route_sample_decks(goal: str, limit: int = 5) -> list[dict[str, Any]]:
     for score, _index, rule in scored[:max_routes]:
         family = rule["family"]
         meta = _family_meta(family)
+        validation = get_family_validation(family)
         examples = [d["path"] for d in list_sample_decks(family=family, ext="mai")[:3]]
         routes.append(
             {
@@ -1360,11 +1669,14 @@ def route_sample_decks(goal: str, limit: int = 5) -> list[dict[str, Any]]:
                 "family": family,
                 "title": meta["title"],
                 "tags": list(meta["tags"]),
+                "validation_level": validation["validation_level"],
+                "validation_scope": validation["validation_scope"],
                 "why": rule["why"],
                 "query": rule["query"],
                 "recipe": rule["recipe"],
                 "representative_decks": examples,
                 "next_calls": [
+                    f'elf_sample_decks_validation(family="{family.rsplit("/", 1)[-1]}")',
                     f'elf_sample_decks_playbook(limit=10, family="{family.rsplit("/", 1)[-1]}")',
                     f'elf_sample_decks_search("{rule["query"]}", ext="mai")',
                     f'elf_recipe_get("{rule["recipe"]}")',
@@ -1388,6 +1700,11 @@ def format_sample_deck_routes(routes: list[dict[str, Any]], goal: str) -> str:
         lines.append(f"## {i}. {route['intent']}  (score={route['score']})")
         lines.append(f"- family: `{route['family']}`")
         lines.append(f"- title: {route['title']}")
+        if route.get("validation_level"):
+            lines.append(
+                f"- validation: `{route['validation_level']}` - "
+                f"{route.get('validation_scope', '')}"
+            )
         lines.append(f"- why: {route['why']}")
         lines.append(f"- tags: {', '.join(route['tags'][:10])}")
         lines.append("- next calls:")
@@ -1488,6 +1805,7 @@ def build_sample_deck_cards(
         elements = _uniq(ELEMENT_RE.findall(meg.text if meg else ""))
         tags = list(meta["tags"])
         hint = meta["hint"]
+        validation = get_family_validation(mai.family)
         if team28:
             hint = (
                 "Use as a Python-interface seed/inspection deck; team28 is "
@@ -1505,6 +1823,8 @@ def build_sample_deck_cards(
                 "sol_blocks": sol_blocks,
                 "pre_keywords": pre_keywords,
                 "elements": elements,
+                "validation_level": validation["validation_level"],
+                "validation_scope": validation["validation_scope"],
                 "char_count": mai.char_count + (meg.char_count if meg else 0),
                 "hint": hint,
             }
@@ -1533,6 +1853,9 @@ def format_sample_deck_cards(cards: list[dict[str, Any]], title: str = "ELF publ
         lines.append(f"- SOL: {', '.join(card['sol_blocks']) if card['sol_blocks'] else '(none)'}")
         lines.append(f"- PRE: {', '.join(card['pre_keywords']) if card['pre_keywords'] else '(none)'}")
         lines.append(f"- elements: {', '.join(card['elements']) if card['elements'] else '(none)'}")
+        lines.append(
+            f"- validation: `{card['validation_level']}` - {card['validation_scope']}"
+        )
         lines.append(f"- hint: {card['hint']}")
         lines.append("")
     return "\n".join(lines).rstrip()

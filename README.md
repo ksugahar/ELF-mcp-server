@@ -12,14 +12,14 @@ This server does **not** execute ELF600 simulations — it provides curated docu
 
 ## Features
 
-**25 tools + 1 prompt** providing curated docs, workflow recipes, ELF-runnable public sample decks, prompt-to-sample routing, and raw access to ELF600 help HTM, example inputs, vendor wiki, and Python ctypes API:
+**26 tools + 1 prompt** providing curated docs, workflow recipes, ELF-runnable public sample decks, prompt-to-sample routing, validation summaries, and raw access to ELF600 help HTM, example inputs, vendor wiki, and Python ctypes API:
 
 | Tool family | Purpose | Files |
 |---|---|---|
 | `elf_usage(topic)` | 31 curated topics — high-level recipes | (knowledge.py) |
 | `elf_help_*(...)` | Help HTM files from `C:/ELF600/help/` | 1141 files, 1.18M chars |
 | `elf_examples_*(...)` | Example .mai/.mei/.txt plus 100-card playbook from `C:/ELF600/examples/` | 332 files, 533k chars |
-| `elf_sample_decks_*(...)` | Lab-authored ELF-runnable public `.mai`/`.meg` sample decks | 926 cases, 1852 input files |
+| `elf_sample_decks_*(...)` | Lab-authored ELF-runnable public `.mai`/`.meg` sample decks | 936 cases, 1872 input files |
 | `elf_recipe_*(...)` | Workflow decision cards for elements, PRE/SOL blocks, outputs, checks, and pitfalls | public-safe recipes |
 | `elf_wiki_*(...)` | Vendor wiki pages from elf.co.jp PukiWiki | 146 pages, 211k chars |
 | `elf_python_*(...)` | Python ctypes API + configs from `C:/ELF600/bin/` | 15 files, 246k chars |
@@ -30,11 +30,14 @@ summarizes 100 `.mai` examples as compact cards with detected SOL blocks,
 element families, feature tags, companion `.mei/.model` files, and reuse hints.
 The recipe family also has `elf_plan_workflow(goal)`, which chooses a short
 public-safe recipe sequence from a natural-language analysis goal.
-The sample deck family has `elf_sample_decks_index/search/route/get/playbook`
+The sample deck family has `elf_sample_decks_index/search/route/validation/get/playbook`
 for ELF-runnable public `.mai`/`.meg` decks. `elf_sample_decks_route(goal)`
 maps a user prompt such as "IPM hairpin motor flux linkage" or
 "WPT misalignment" to the most relevant public deck families, follow-up MCP
-calls, and representative `.mai` files. The Python family also has
+calls, validation levels, and representative `.mai` files.
+`elf_sample_decks_validation()` summarizes the validation level and public
+limitations for the corpus before an agent claims a deck is validated.
+The Python family also has
 `elf_python_team28()`: a compact 28-case seed manifest from the public motor
 cases for ELF Python-interface orchestration. `team28` is not a normal
 ELF GUI/CLI deck-execution workflow. Solver outputs, comparison metrics,
@@ -49,6 +52,8 @@ public boundary. The most useful calls while authoring ELF/MAGIC inputs are:
 - `elf_sample_decks_route("IPM hairpin motor flux linkage")` to map a user
   prompt to the right sample family, playbook call, recipe, and representative
   `.mai` decks
+- `elf_sample_decks_validation()` to check the public validation levels,
+  counts, and limitations before claiming a deck is validated
 - `elf_plan_workflow("WPT misalignment with conducting shield")` to get both
   a recipe-level plan and related public sample-deck routes
 - `elf_sample_decks_playbook(limit=20, family="pm_square")` for compact cards
@@ -81,6 +86,9 @@ public boundary. The most useful calls while authoring ELF/MAGIC inputs are:
 - `elf_sample_decks_playbook(limit=20, query="Loop13 application")` for WPT
   misalignment, MRI gradient sequence, transformer leakage, IH susceptor, and
   accelerator corrector decks
+- `elf_sample_decks_route("numeric validation anchor FLUM invariant")` for
+  decks whose ELF `FLUM` ratios/signs and independent NGSolve proxy invariants
+  are both checked
 - `elf_sample_decks_search("HBCN FLUM", ext="mai")` to find reusable input
   patterns
 - `elf_sample_decks_search("SPM HBRM FLUM", ext="mai")` to find surface-PM
@@ -138,15 +146,15 @@ turns that knowledge into MCP tools:
   induction, IPM hairpin, SPMSM static torque, SynRM, SRM 6/4 through 12/16,
   and AFPM variants, plus Loop13 IPM, wound-field synchronous, axial-flux PM,
   linear PM, and stepper families
-- 274 public application input-deck pairs covering transformer core/pickup
+- 284 public application input-deck pairs covering transformer core/pickup
   coupling, MRI gradient-coil/eddy-current shield patterns, WPT coupled coils,
   IH induction-heating workpieces, accelerator electromagnets, actuator
   plungers, maglev bearings, magnetic separators, eddy-current brakes,
   NDT eddy-current probes, magnetic gears, voice-coil actuators,
   relay solenoids, Hall-sensor fixtures, electromagnetic clutches, WPT
   misalignment, MRI gradient sequences, transformer leakage, IH susceptors,
-  accelerator corrector magnets, and 40 EMDLAB-style transformer/benchmark
-  application decks
+  accelerator corrector magnets, 40 EMDLAB-style transformer/benchmark
+  application decks, and 10 numeric-validation anchor decks
 - playbook cards that expose each deck's SOL blocks, PRE keywords, element
   families, feature tags, and reuse hints
 - curated motor topics for air-gap field, flux linkage/back-EMF pickup,
@@ -211,11 +219,21 @@ elf-mcp-policy-lint
 `elf-mcp-policy-lint` checks the public package boundary: no private validation
 paths, no unrelated commercial-tool references, no bundled solver outputs
 inside the public sample decks, and exact agreement with
-`public_samples/VALIDATED_MANIFEST.json`. Only sample families marked
-`validation: passed` in that manifest are intended for publication. The
-The 240 EMDLAB-style decks and Loop13 motor/application additions are also
-cross-checked with an independent NGSolve proxy-field energy gate before they
-are listed.
+`public_samples/VALIDATED_MANIFEST.json` and
+`public_samples/PUBLICATION_BATCHES.json`. Only sample families marked
+`validation: passed` in that manifest are intended for publication.
+The manifest records the validation level for each family:
+`ngsolve_proxy_energy` or `ngsolve_numeric_invariant`. All 936 public sample
+decks are cross-checked with an independent NGSolve proxy-field energy gate
+before they are listed. The numeric-validation anchor decks go one level
+further: ELF `FLUM` invariants and independent NGSolve proxy invariants must
+both pass. MCP clients can inspect this contract with
+`elf_sample_decks_validation()`; the broad proxy gate is intentionally not
+claimed as a full absolute field, force, torque, or loss agreement suite.
+The publication batch manifest groups the validated baseline into deterministic
+100-case checkpoints: 9 full checkpoints plus a 36-case release-remainder batch.
+The next 100-case checkpoint is 1000 cases, so 64 additional validated cases are
+needed before the next clean 100-case publication increment.
 
 Bundled data (all generated from fresh ELF600 install via `scripts/crawl_*.py`):
 - `help_dump.json` — Shift_JIS HTM decoded + HTML-stripped

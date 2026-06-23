@@ -4,6 +4,12 @@ This directory contains lab-authored ELF-runnable ELF/MAGIC input decks.
 Only validation-passed input-deck pairs are published here; candidate,
 failed, or unverified cases stay outside this directory until they pass the
 public sample validation gate and are listed in `VALIDATED_MANIFEST.json`.
+All published cases have an independent NGSolve proxy-field gate; the numeric
+anchor family additionally carries ELF `FLUM` and NGSolve invariant checks.
+The machine-readable contract is `VALIDATED_MANIFEST.json`; MCP clients can
+summarize it through `elf_sample_decks_validation()`.
+`PUBLICATION_BATCHES.json` records deterministic 100-case publication
+checkpoints for the validated baseline.
 
 Included files are input decks only:
 
@@ -15,6 +21,22 @@ Excluded files:
 - solver outputs such as `.mag`, `.mao`, `.mat`, `.mac`
 - comparison tables, benchmark metrics, or regression summaries
 - machine-local paths or private provenance
+
+Validation levels:
+
+- `ngsolve_proxy_energy`: broad independent proxy-field energy sanity gate for
+  the published deck family; this is not a full absolute field/force/torque/loss
+  agreement suite.
+- `ngsolve_numeric_invariant`: stronger compact-anchor gate with ELF `FLUM`
+  ratio/sign invariants plus independent NGSolve proxy invariants.
+
+Publication cadence:
+
+- validated decks are reviewed in 100-case checkpoints
+- this baseline contains 9 full checkpoints plus a 36-case release-remainder
+  batch
+- the next clean checkpoint is 1000 cases, so 64 additional validated cases are
+  needed before the next 100-case publication increment
 
 The decks are intended as public examples that users can inspect, copy, and run
 with their own ELF/MAGIC installation. The MCP server itself does not execute
@@ -88,13 +110,14 @@ Current families:
   saliency, phase excitation, and passive pickup coils
 - `motor/hysteresis_motor_10/`: 10 high-coercivity hysteresis-motor input-deck
   proxy examples using origin-starting B-H curves and pickup coils
-- `application/`: 274 application examples covering transformers, MRI,
+- `application/`: 284 application examples covering transformers, MRI,
   wireless power transfer, induction heating, accelerator electromagnets,
   actuator plungers, maglev bearings, magnetic separators, eddy-current
   brakes, NDT eddy-current probes, magnetic gears, voice-coil actuators,
   relay solenoids, Hall-sensor fixtures, electromagnetic clutches, WPT
   misalignment, MRI gradient sequences, transformer leakage, IH susceptors,
-  accelerator corrector magnets, and EMDLAB-style transformer/benchmark decks
+  accelerator corrector magnets, EMDLAB-style transformer/benchmark decks, and
+  numeric-validation anchors
 - `application/emdlab_1ph_transformer_static_10/`: 10 EMDLAB-style
   single-phase transformer static examples with core limbs, primary/secondary
   coils, and `FLUM`
@@ -102,6 +125,9 @@ Current families:
   `application/emdlab_benchmark_geometry_10/`, and
   `application/emdlab_benchmark_magnet_10/`: 30 EMDLAB-style benchmark
   examples covering C-core, geometry, and magnet patterns
+- `application/numeric_validation_anchors_10/`: 10 compact numeric anchor
+  examples for current scaling, sign reversal, distance decay, symmetry, and
+  cancellation checks using ELF `FLUM` and NGSolve proxy invariants
 - `application/transformer_core_pickup_12/`: 12 transformer core, primary,
   secondary, and passive pickup-coil examples
 - `application/transformer_loop_10/`: 10 loop-reviewed transformer core,

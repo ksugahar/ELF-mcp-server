@@ -38,9 +38,11 @@ from .sample_decks import (
     route_sample_decks,
     build_sample_deck_cards,
     build_team28_cards,
+    build_validation_summary,
     format_sample_deck_cards,
     format_sample_deck_routes,
     format_team28_cards,
+    format_validation_summary,
 )
 from .recipes import (
     list_recipes,
@@ -75,10 +77,11 @@ _TOOL_CATALOG = [
     ("elf_examples_index / search / get / playbook", "C:/ELF600/examples/ "
                                                        "(332 .mai/.mei/.txt, 533 KB) "
                                                        "plus 100 compact example cards"),
-    ("elf_sample_decks_index / search / route / get / playbook",
+    ("elf_sample_decks_index / search / route / validation / get / playbook",
                                               "Lab-authored ELF-runnable "
                                               "public .mai/.meg input decks "
-                                              "(input files only; no solver outputs)"),
+                                              "(input files only; no solver outputs; "
+                                              "machine-readable validation levels)"),
     ("elf_recipe_index / search / get / plan", "Public-safe workflow "
                                                 "recipes for choosing ELF "
                                                 "elements, PRE/SOL blocks, "
@@ -100,16 +103,16 @@ _RELATED_PUBLIC_PACKAGES = [
 
 @mcp.tool()
 def elf_overview() -> dict:
-    """RECOMMENDED FIRST CALL. Catalog of ELF MCP's 25 tools + 1
+    """RECOMMENDED FIRST CALL. Catalog of ELF MCP's 26 tools + 1
     prompt, with public-safe routing hints for MCP clients.
 
     Returns:
-        dict with `tool_families` (curated 25-tool grouping), `n_tools`,
+        dict with `tool_families` (curated 26-tool grouping), `n_tools`,
         public boundary notes, recommended calls, and public companion package
         hints.
     """
     return {
-        "n_tools": 25,
+        "n_tools": 26,
         "n_prompts": 1,
         "tool_families": [
             {"signature": sig, "description": desc}
@@ -129,8 +132,12 @@ def elf_overview() -> dict:
                 "call": "elf_sample_decks_route('IPM hairpin motor flux linkage')",
             },
             {
-                "goal": "Learn from the 926 public input-deck cases",
+                "goal": "Learn from the 936 public input-deck cases",
                 "call": "elf_sample_decks_playbook(limit=20, query='Loop13 motor')",
+            },
+            {
+                "goal": "Check validation levels before claiming a deck is validated",
+                "call": "elf_sample_decks_validation()",
             },
             {
                 "goal": "Open a specific public .mai/.meg input deck",
@@ -156,6 +163,7 @@ def elf_overview() -> dict:
             "catalogue, elf_plan_workflow('goal') for a workflow plan, "
             "elf_recipe_search('keyword') for decision cards, or "
             "elf_sample_decks_playbook() for ELF-runnable public .mai/.meg decks, "
+            "elf_sample_decks_validation() for public validation levels and limits, "
             "elf_python_team28() for the Python-interface team28 seed manifest, "
             "elf_help_search('keyword') / "
             "elf_examples_search('keyword') for raw access, or "
@@ -531,7 +539,7 @@ def elf_sample_decks_get(path: str, max_chars: int = 60000) -> str:
 @mcp.tool()
 def elf_sample_decks_playbook(limit: int = 100, family: str = "", query: str = "") -> str:
     """
-    Build compact cards from the 926 public ELF-runnable `.mai`/`.meg` cases.
+    Build compact cards from the 936 public ELF-runnable `.mai`/`.meg` cases.
 
     Each card links the `.mai` and `.meg` pair and summarizes detected SOL
     blocks, PRE keywords, element types, feature tags, and a reuse hint. This
@@ -539,7 +547,7 @@ def elf_sample_decks_playbook(limit: int = 100, family: str = "", query: str = "
     every raw file.
 
     Args:
-        limit: Number of cards to return. Default 100. Max 926.
+        limit: Number of cards to return. Default 100. Max 936.
         family: Optional family substring, e.g. "pm_square", "cosine",
             "spm", "srm", "sr_motor", "induction", "ipm",
             "emdlab", "afpm", "linear_pm", "stepper", "wound_field",
@@ -547,7 +555,8 @@ def elf_sample_decks_playbook(limit: int = 100, family: str = "", query: str = "
             "wpt", "mri", "ih", "transformer",
             "accelerator", "actuator", "maglev", "separator",
             "brake", "ndt", "magnetic_gear", "voice_coil",
-            "relay_solenoid", "hall_sensor", or "clutch".
+            "relay_solenoid", "hall_sensor", "clutch", or
+            "numeric_validation".
         query: Optional keyword filter across paths, tags, and deck text.
 
     Returns:
@@ -556,6 +565,29 @@ def elf_sample_decks_playbook(limit: int = 100, family: str = "", query: str = "
     """
     cards = build_sample_deck_cards(limit=limit, family=family or None, query=query or None)
     return format_sample_deck_cards(cards)
+
+
+@mcp.tool()
+def elf_sample_decks_validation(family: str = "", level: str = "") -> str:
+    """
+    Summarize public validation levels and limitations for sample decks.
+
+    Use this before claiming validation strength. The result distinguishes
+    broad NGSolve proxy-field energy gates from the stronger numeric invariant
+    anchors, and states what is not bundled in the public package.
+
+    Args:
+        family: Optional family substring such as "numeric_validation",
+            "emdlab_ipm", "wpt", or "motor".
+        level: Optional exact validation level, e.g.
+            "ngsolve_proxy_energy" or "ngsolve_numeric_invariant".
+
+    Returns:
+        Markdown summary of validation counts, selected families, checks,
+        scopes, and public limitations.
+    """
+    summary = build_validation_summary(family=family or None, level=level or None)
+    return format_validation_summary(summary)
 
 
 @mcp.tool()
@@ -1037,8 +1069,9 @@ def main():
         assert "motor/emdlab_srm1216_outer_rotor_10/ero001/ero001.mai" in sd
         assert "application/emdlab_1ph_transformer_static_10/ept001/ept001.mai" in sd
         assert "application/emdlab_benchmark_ccore_10/ecc001/ecc001.mai" in sd
+        assert "application/numeric_validation_anchors_10/nva001/nva001.mai" in sd
         sd_mai = elf_sample_decks_index(ext="mai")
-        assert sd_mai.count(".mai") == 926, "Expected 926 public .mai decks"
+        assert sd_mai.count(".mai") == 936, "Expected 936 public .mai decks"
         sd_search = elf_sample_decks_search("HBCN FLUM", top_k=5, ext="mai")
         assert "pm001.mai" in sd_search and "No sample deck matches" not in sd_search
         sd_spm_search = elf_sample_decks_search("SPM HBRM FLUM", top_k=5, ext="mai")
@@ -1076,6 +1109,8 @@ def main():
         assert "application/emdlab_1ph_transformer_static_10" in sd_transformer_static_route
         sd_ccore_route = elf_sample_decks_route("benchmark C-core magnet", limit=2)
         assert "application/emdlab_benchmark_ccore_10" in sd_ccore_route
+        sd_numeric_route = elf_sample_decks_route("numeric validation anchor FLUM invariant", limit=2)
+        assert "application/numeric_validation_anchors_10" in sd_numeric_route
         sd_app_search = elf_sample_decks_search("MRI OHM2 FREQ", top_k=5, ext="mai")
         assert "application/mri" in sd_app_search
         sd_wpt_search = elf_sample_decks_search("WPT MOMC FLUM", top_k=5, ext="mai")
@@ -1133,6 +1168,21 @@ def main():
         sd_emdlab_pb = elf_sample_decks_playbook(limit=240, query="EMDLAB-style")
         assert sd_emdlab_pb.count("\n## ") == 240, "Expected EMDLAB-style sample cards"
         assert "emdlab_ipm_hairpin_10" in sd_emdlab_pb
+        sd_numeric_pb = elf_sample_decks_playbook(limit=20, family="numeric_validation")
+        assert sd_numeric_pb.count("\n## ") == 10, "Expected numeric validation anchor cards"
+        sd_validation = elf_sample_decks_validation()
+        assert "936 cases" in sd_validation
+        assert "ngsolve_proxy_energy" in sd_validation
+        assert "ngsolve_numeric_invariant" in sd_validation
+        assert "not a full absolute field/force/torque/loss agreement suite" in sd_validation
+        assert "100-case publication checkpoints" in sd_validation
+        assert "64 additional validated cases needed" in sd_validation
+        sd_numeric_validation = elf_sample_decks_validation(family="numeric_validation")
+        assert "application/numeric_validation_anchors_10" in sd_numeric_validation
+        assert "elf_flux_invariants_passed" in sd_numeric_validation
+        sd_invariant_validation = elf_sample_decks_validation(level="ngsolve_numeric_invariant")
+        assert "10 cases" in sd_invariant_validation
+        assert "application/numeric_validation_anchors_10" in sd_invariant_validation
         sd_loop13_motor_pb = elf_sample_decks_playbook(limit=50, query="Loop13 motor")
         assert sd_loop13_motor_pb.count("\n## ") == 50, "Expected Loop13 motor sample cards"
         assert "wound_field_sync_10" in sd_loop13_motor_pb
@@ -1147,7 +1197,8 @@ def main():
             + sd_loop13_wound_search + sd_loop13_stepper_search
             + sd_loop13_wpt_search + sd_loop13_mri_search
             + sd_route + sd_wpt_route + sd_outer_route
-            + sd_transformer_static_route + sd_ccore_route
+            + sd_transformer_static_route + sd_ccore_route + sd_numeric_route
+            + sd_validation + sd_numeric_validation + sd_invariant_validation
             + sd_loop13_motor_pb + sd_loop13_app_pb
             + sd_wpt_loop_search + sd_mri_loop_search + sd_sr_loop_search
             + sd_spm_loop_search + sd_ih_search + sd_reluctance_search
@@ -1156,11 +1207,11 @@ def main():
             + sd_separator_search + sd_brake_search + sd_ndt_search
             + sd_gear_search + sd_voice_search + sd_relay_search
             + sd_hall_search + sd_clutch_search + sd_loop_pb + sd_loop11_pb
-            + sd_loop12_pb
+            + sd_loop12_pb + sd_numeric_pb
         )
         forbidden_sample_markers = ("C:" + "\\temp", "S:" + "\\", "_cross" + "val", ".mag", ".mao")
         assert not any(marker in sample_text for marker in forbidden_sample_markers)
-        print("  926-case .mai/.meg sample deck corpus OK")
+        print("  936-case .mai/.meg sample deck corpus OK")
 
         # 10. Recipe tools
         print("[10/16] elf_recipe tools:")
