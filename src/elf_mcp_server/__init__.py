@@ -13,4 +13,4 @@ bundled help/example/wiki/Python API search, and compact planning aids for
 authoring ELF input files.
 """
 
-__version__ = "1.42.0"
+__version__ = "1.42.1"
