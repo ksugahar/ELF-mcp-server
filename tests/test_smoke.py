@@ -8,6 +8,7 @@ work-examples family stays OUT (publish-boundary regression guard).
 import os
 import sys
 import asyncio
+import json
 import tomllib
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
@@ -86,9 +87,9 @@ def test_public_sample_decks_are_runnable_inputs_only():
         get_sample_deck,
     )
     decks = list_sample_decks()
-    assert len(decks) == 1072
-    assert sum(1 for d in decks if d["ext"] == "mai") == 536
-    assert sum(1 for d in decks if d["ext"] == "meg") == 536
+    assert len(decks) == 1172
+    assert sum(1 for d in decks if d["ext"] == "mai") == 586
+    assert sum(1 for d in decks if d["ext"] == "meg") == 586
     assert any(d["path"] == "motor/pm_cosine_pickup_72/pm001/pm001.mai" for d in decks)
     assert any(d["path"] == "motor/spm_surface_pm_10/spm001/spm001.mai" for d in decks)
     assert any(d["path"] == "motor/srm_switched_reluctance_10/srm001/srm001.mai" for d in decks)
@@ -143,6 +144,37 @@ def test_public_sample_decks_are_runnable_inputs_only():
         d["path"] == "application/wpt_coupled_coils_10/wpt001/wpt001.mai"
         for d in decks
     )
+    assert any(
+        d["path"] == "application/magnetic_gear_10/mgl001/mgl001.mai"
+        for d in decks
+    )
+    assert any(d["path"] == "application/voice_coil_10/vcl001/vcl001.mai" for d in decks)
+    assert any(
+        d["path"] == "application/relay_solenoid_10/rsl001/rsl001.mai"
+        for d in decks
+    )
+    assert any(
+        d["path"] == "application/hall_sensor_fixture_10/hsl001/hsl001.mai"
+        for d in decks
+    )
+    assert any(
+        d["path"] == "application/electromagnetic_clutch_10/ecl001/ecl001.mai"
+        for d in decks
+    )
+    manifest_path = os.path.join(
+        os.path.dirname(__file__),
+        "..",
+        "src",
+        "elf_mcp_server",
+        "public_samples",
+        "VALIDATED_MANIFEST.json",
+    )
+    with open(manifest_path, encoding="ascii") as f:
+        manifest = json.load(f)
+    assert manifest["total_cases"] == 586
+    assert manifest["total_input_files"] == 1172
+    assert len(manifest["families"]) == 30
+    assert all(v["validation"] == "passed" for v in manifest["families"].values())
     hits = search_sample_decks("HBCN FLUM", ext="mai")
     assert hits
     assert hits[0]["path"].endswith(".mai")
@@ -206,14 +238,29 @@ def test_public_sample_decks_are_runnable_inputs_only():
     ndt_hits = search_sample_decks("Loop11 NDT eddy-current probe OHM2", ext="mai")
     assert ndt_hits
     assert ndt_hits[0]["path"].startswith("application/ndt_eddy_probe_10")
+    gear_hits = search_sample_decks("Loop12 magnetic gear HBCN FLUM", ext="mai")
+    assert gear_hits
+    assert gear_hits[0]["path"].startswith("application/magnetic_gear_10")
+    voice_hits = search_sample_decks("Loop12 voice-coil actuator FLUM", ext="mai")
+    assert voice_hits
+    assert voice_hits[0]["path"].startswith("application/voice_coil_10")
+    relay_hits = search_sample_decks("Loop12 relay solenoid FLUM", ext="mai")
+    assert relay_hits
+    assert relay_hits[0]["path"].startswith("application/relay_solenoid_10")
+    hall_hits = search_sample_decks("Loop12 Hall-sensor fixture FLUM", ext="mai")
+    assert hall_hits
+    assert hall_hits[0]["path"].startswith("application/hall_sensor_fixture_10")
+    clutch_hits = search_sample_decks("Loop12 electromagnetic clutch OHM2", ext="mai")
+    assert clutch_hits
+    assert clutch_hits[0]["path"].startswith("application/electromagnetic_clutch_10")
     pm001 = get_sample_deck("motor/pm_cosine_pickup_72/pm001/pm001.mai")
     text = pm001["text"]
     assert "USE  MAGIC" in text
     assert "HBCN 1 0 1" in text
     assert "HBCN 2 0 2" in text
     assert "FLUM  49" in text
-    cards = build_sample_deck_cards(limit=536)
-    assert len(cards) == 536
+    cards = build_sample_deck_cards(limit=586)
+    assert len(cards) == 586
     spm_cards = build_sample_deck_cards(limit=20, family="spm_surface_pm_10")
     assert len(spm_cards) == 10
     assert "spm" in spm_cards[0]["tags"]
@@ -251,6 +298,11 @@ def test_public_sample_decks_are_runnable_inputs_only():
         ("application/magnetic_separator_10", "separator", "MWL8T"),
         ("application/eddy_current_brake_10", "brake", "MAB8T"),
         ("application/ndt_eddy_probe_10", "ndt", "MAB8T"),
+        ("application/magnetic_gear_10", "magnetic-gear", "MWL8T"),
+        ("application/voice_coil_10", "voice-coil", "MCL8T"),
+        ("application/relay_solenoid_10", "relay", "MMB8T"),
+        ("application/hall_sensor_fixture_10", "hall-sensor", "MWL8T"),
+        ("application/electromagnetic_clutch_10", "clutch", "MAB8T"),
     ]
     for family, tag, element in loop_family_checks:
         family_cards = build_sample_deck_cards(limit=20, family=family)

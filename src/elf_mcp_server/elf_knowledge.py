@@ -518,8 +518,11 @@ coordinates and element connectivity.
 
 - Standard ELF route: author `.mei`, then compile it with IEmesh/mesh750.exe
   to produce `.meg`.
-- Cubit route: export an ELF-compatible `.meg` from a Cubit mesh when a larger
-  CAD/mesh workflow is useful.
+- Cubit route: `cubit_mesh_export` can emit ELF-compatible `.meg` meshes when a
+  larger CAD/mesh workflow is useful. Common helper calls are
+  `cubit_mesh_export.export_meg(cubit, "model.meg", DIM="T")` and
+  `cubit_mesh_export.export_3D_meg(cubit, "model")`; command-style
+  `radia_export meg ...` workflows may wrap the same idea.
 - Public sample corpus route: the bundled public `.mai`/`.meg` examples use
   small lab-authored ASCII `.meg` writers that emit `BOOK MEP 3.50`, `MGSC`,
   `MGR1` node records, and element connectivity directly. Cubit is not used
@@ -1650,9 +1653,23 @@ ERROR_MESSAGES = """\
 # ============================================================
 
 MEG_EXPORT = """\
-# MEG Export from Cubit
+# MEG Export from Cubit / cubit_mesh_export
 
-The Cubit mesh export tool (`radia_export meg`) generates ELF-compatible .meg files.
+Cubit-side `cubit_mesh_export` supports ELF-compatible `.meg` export for larger
+CAD/mesh workflows. The command-style `radia_export meg` route is also useful
+when labels and DIM selection should be specified from a shell or script.
+
+## Python helpers
+```python
+import cubit_mesh_export
+
+cubit_mesh_export.export_meg(cubit, "model.meg", DIM="T")
+cubit_mesh_export.export_3D_meg(cubit, "model")
+```
+
+`DIM="T"` is the usual full-3D MAGIC route. Use Cubit headless/batch execution
+for automated workflows, then inspect the resulting `.meg` as an ELF input
+deck.
 
 ## Command
 ```

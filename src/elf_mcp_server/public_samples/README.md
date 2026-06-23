@@ -1,6 +1,9 @@
 # Public ELF/MAGIC Sample Decks
 
 This directory contains lab-authored ELF-runnable ELF/MAGIC input decks.
+Only validation-passed input-deck pairs are published here; candidate,
+failed, or unverified cases stay outside this directory until they pass the
+public sample validation gate and are listed in `VALIDATED_MANIFEST.json`.
 
 Included files are input decks only:
 
@@ -20,7 +23,9 @@ ELF/MAGIC or bundle solver results.
 For these compact public examples, `.meg` files are generated as small ASCII
 ELF/MAGIC mesh decks directly by lab-authored Python generators. They are not
 generated through Cubit. The normal ELF authoring route remains `.mei` through
-IEmesh/mesh750.exe, and Cubit remains useful for larger CAD/mesh workflows.
+IEmesh/mesh750.exe. Cubit also remains useful for larger CAD/mesh workflows:
+`cubit_mesh_export.export_meg(...)` and `cubit_mesh_export.export_3D_meg(...)`
+can emit ELF-compatible `.meg` meshes when that route is appropriate.
 
 Current families:
 
@@ -42,10 +47,11 @@ Current families:
   saliency, phase excitation, and passive pickup coils
 - `motor/hysteresis_motor_10/`: 10 high-coercivity hysteresis-motor input-deck
   proxy examples using origin-starting B-H curves and pickup coils
-- `application/`: 134 application examples covering transformers, MRI,
+- `application/`: 184 application examples covering transformers, MRI,
   wireless power transfer, induction heating, accelerator electromagnets,
   actuator plungers, maglev bearings, magnetic separators, eddy-current
-  brakes, and NDT eddy-current probes
+  brakes, NDT eddy-current probes, magnetic gears, voice-coil actuators,
+  relay solenoids, Hall-sensor fixtures, and electromagnetic clutches
 - `application/transformer_core_pickup_12/`: 12 transformer core, primary,
   secondary, and passive pickup-coil examples
 - `application/transformer_loop_10/`: 10 loop-reviewed transformer core,
@@ -74,3 +80,13 @@ Current families:
   conducting plates, `OHM2`, AC `SOL MOMC`, and pickup coils
 - `application/ndt_eddy_probe_10/`: 10 NDT eddy-current probe examples with
   conductive plates, local flaw-property patches, `OHM2`, and `FLUM`
+- `application/magnetic_gear_10/`: 10 magnetic gear examples with alternating
+  PM teeth, soft yokes, relative tooth offsets, `HBCN`, and `FLUM`
+- `application/voice_coil_10/`: 10 voice-coil actuator examples with PM bias
+  fields, moving differential coils, return iron, and `FLUM`
+- `application/relay_solenoid_10/`: 10 relay/solenoid examples with U-cores,
+  armature gaps, twin coil legs, and `FLUM`
+- `application/hall_sensor_fixture_10/`: 10 Hall-sensor fixture examples with
+  opposed PM blocks, flux concentrator yokes, probe coils, and `FLUM`
+- `application/electromagnetic_clutch_10/`: 10 electromagnetic clutch examples
+  with AC coils, steel plates, conducting armatures, `OHM2`, and `FLUM`

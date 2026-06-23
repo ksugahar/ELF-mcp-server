@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ELF-mcp-server"
-version = "1.42.1"
-description = "MCP server for ELF600 electromagnetic analysis docs, workflow recipes, and 536 public ELF/MAGIC .mai/.meg sample decks for motors, WPT, MRI, IH, transformers, accelerators, actuators, maglev, brakes, and NDT."
+version = "1.43.0"
+description = "MCP server for ELF600 electromagnetic analysis docs, workflow recipes, Cubit MEG export notes, and 586 verified public ELF/MAGIC .mai/.meg sample decks."
 readme = "README.md"
 license = {text = "BSD-3-Clause"}
 requires-python = ">=3.10"

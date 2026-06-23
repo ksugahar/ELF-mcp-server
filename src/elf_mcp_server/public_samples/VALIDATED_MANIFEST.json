@@ -1,0 +1,368 @@
+{
+  "schema_version": 1,
+  "policy": "Only validation-passed .mai/.meg input-deck pairs are listed here and bundled in the public package.",
+  "total_cases": 586,
+  "total_input_files": 1172,
+  "families": {
+    "application/accelerator_magnet_10": {
+      "cases": 10,
+      "input_files": 20,
+      "validation": "passed",
+      "validated_on": "2026-06-24",
+      "checks": [
+        "solver_returncode_zero",
+        "mag_output_created",
+        "no_error_markers",
+        "mai_meg_pair_present"
+      ]
+    },
+    "application/actuator_plunger_10": {
+      "cases": 10,
+      "input_files": 20,
+      "validation": "passed",
+      "validated_on": "2026-06-24",
+      "checks": [
+        "solver_returncode_zero",
+        "mag_output_created",
+        "no_error_markers",
+        "mai_meg_pair_present"
+      ]
+    },
+    "application/eddy_current_brake_10": {
+      "cases": 10,
+      "input_files": 20,
+      "validation": "passed",
+      "validated_on": "2026-06-24",
+      "checks": [
+        "solver_returncode_zero",
+        "mag_output_created",
+        "no_error_markers",
+        "mai_meg_pair_present"
+      ]
+    },
+    "application/electromagnetic_clutch_10": {
+      "cases": 10,
+      "input_files": 20,
+      "validation": "passed",
+      "validated_on": "2026-06-24",
+      "checks": [
+        "solver_returncode_zero",
+        "mag_output_created",
+        "no_error_markers",
+        "mai_meg_pair_present"
+      ]
+    },
+    "application/hall_sensor_fixture_10": {
+      "cases": 10,
+      "input_files": 20,
+      "validation": "passed",
+      "validated_on": "2026-06-24",
+      "checks": [
+        "solver_returncode_zero",
+        "mag_output_created",
+        "no_error_markers",
+        "mai_meg_pair_present"
+      ]
+    },
+    "application/ih_induction_heating_10": {
+      "cases": 10,
+      "input_files": 20,
+      "validation": "passed",
+      "validated_on": "2026-06-24",
+      "checks": [
+        "solver_returncode_zero",
+        "mag_output_created",
+        "no_error_markers",
+        "mai_meg_pair_present"
+      ]
+    },
+    "application/maglev_bearing_10": {
+      "cases": 10,
+      "input_files": 20,
+      "validation": "passed",
+      "validated_on": "2026-06-24",
+      "checks": [
+        "solver_returncode_zero",
+        "mag_output_created",
+        "no_error_markers",
+        "mai_meg_pair_present"
+      ]
+    },
+    "application/magnetic_gear_10": {
+      "cases": 10,
+      "input_files": 20,
+      "validation": "passed",
+      "validated_on": "2026-06-24",
+      "checks": [
+        "solver_returncode_zero",
+        "mag_output_created",
+        "no_error_markers",
+        "mai_meg_pair_present"
+      ]
+    },
+    "application/magnetic_separator_10": {
+      "cases": 10,
+      "input_files": 20,
+      "validation": "passed",
+      "validated_on": "2026-06-24",
+      "checks": [
+        "solver_returncode_zero",
+        "mag_output_created",
+        "no_error_markers",
+        "mai_meg_pair_present"
+      ]
+    },
+    "application/mri_gradient_shield_12": {
+      "cases": 12,
+      "input_files": 24,
+      "validation": "passed",
+      "validated_on": "2026-06-24",
+      "checks": [
+        "solver_returncode_zero",
+        "mag_output_created",
+        "no_error_markers",
+        "mai_meg_pair_present"
+      ]
+    },
+    "application/mri_loop_10": {
+      "cases": 10,
+      "input_files": 20,
+      "validation": "passed",
+      "validated_on": "2026-06-24",
+      "checks": [
+        "solver_returncode_zero",
+        "mag_output_created",
+        "no_error_markers",
+        "mai_meg_pair_present"
+      ]
+    },
+    "application/ndt_eddy_probe_10": {
+      "cases": 10,
+      "input_files": 20,
+      "validation": "passed",
+      "validated_on": "2026-06-24",
+      "checks": [
+        "solver_returncode_zero",
+        "mag_output_created",
+        "no_error_markers",
+        "mai_meg_pair_present"
+      ]
+    },
+    "application/relay_solenoid_10": {
+      "cases": 10,
+      "input_files": 20,
+      "validation": "passed",
+      "validated_on": "2026-06-24",
+      "checks": [
+        "solver_returncode_zero",
+        "mag_output_created",
+        "no_error_markers",
+        "mai_meg_pair_present"
+      ]
+    },
+    "application/transformer_core_pickup_12": {
+      "cases": 12,
+      "input_files": 24,
+      "validation": "passed",
+      "validated_on": "2026-06-24",
+      "checks": [
+        "solver_returncode_zero",
+        "mag_output_created",
+        "no_error_markers",
+        "mai_meg_pair_present"
+      ]
+    },
+    "application/transformer_loop_10": {
+      "cases": 10,
+      "input_files": 20,
+      "validation": "passed",
+      "validated_on": "2026-06-24",
+      "checks": [
+        "solver_returncode_zero",
+        "mag_output_created",
+        "no_error_markers",
+        "mai_meg_pair_present"
+      ]
+    },
+    "application/voice_coil_10": {
+      "cases": 10,
+      "input_files": 20,
+      "validation": "passed",
+      "validated_on": "2026-06-24",
+      "checks": [
+        "solver_returncode_zero",
+        "mag_output_created",
+        "no_error_markers",
+        "mai_meg_pair_present"
+      ]
+    },
+    "application/wpt_coupled_coils_10": {
+      "cases": 10,
+      "input_files": 20,
+      "validation": "passed",
+      "validated_on": "2026-06-24",
+      "checks": [
+        "solver_returncode_zero",
+        "mag_output_created",
+        "no_error_markers",
+        "mai_meg_pair_present"
+      ]
+    },
+    "application/wpt_loop_10": {
+      "cases": 10,
+      "input_files": 20,
+      "validation": "passed",
+      "validated_on": "2026-06-24",
+      "checks": [
+        "solver_returncode_zero",
+        "mag_output_created",
+        "no_error_markers",
+        "mai_meg_pair_present"
+      ]
+    },
+    "motor/hysteresis_motor_10": {
+      "cases": 10,
+      "input_files": 20,
+      "validation": "passed",
+      "validated_on": "2026-06-24",
+      "checks": [
+        "solver_returncode_zero",
+        "mag_output_created",
+        "no_error_markers",
+        "mai_meg_pair_present"
+      ]
+    },
+    "motor/induction_cage_10": {
+      "cases": 10,
+      "input_files": 20,
+      "validation": "passed",
+      "validated_on": "2026-06-24",
+      "checks": [
+        "solver_returncode_zero",
+        "mag_output_created",
+        "no_error_markers",
+        "mai_meg_pair_present"
+      ]
+    },
+    "motor/pm_cosine_pickup_72": {
+      "cases": 72,
+      "input_files": 144,
+      "validation": "passed",
+      "validated_on": "2026-06-24",
+      "checks": [
+        "solver_returncode_zero",
+        "mag_output_created",
+        "no_error_markers",
+        "mai_meg_pair_present"
+      ]
+    },
+    "motor/pm_square_2pole_pickup_100": {
+      "cases": 100,
+      "input_files": 200,
+      "validation": "passed",
+      "validated_on": "2026-06-24",
+      "checks": [
+        "solver_returncode_zero",
+        "mag_output_created",
+        "no_error_markers",
+        "mai_meg_pair_present"
+      ]
+    },
+    "motor/pm_square_4pole_pickup_60": {
+      "cases": 60,
+      "input_files": 120,
+      "validation": "passed",
+      "validated_on": "2026-06-24",
+      "checks": [
+        "solver_returncode_zero",
+        "mag_output_created",
+        "no_error_markers",
+        "mai_meg_pair_present"
+      ]
+    },
+    "motor/pm_square_6pole_pickup_72": {
+      "cases": 72,
+      "input_files": 144,
+      "validation": "passed",
+      "validated_on": "2026-06-24",
+      "checks": [
+        "solver_returncode_zero",
+        "mag_output_created",
+        "no_error_markers",
+        "mai_meg_pair_present"
+      ]
+    },
+    "motor/pm_square_8pole_pickup_28": {
+      "cases": 28,
+      "input_files": 56,
+      "validation": "passed",
+      "validated_on": "2026-06-24",
+      "checks": [
+        "solver_returncode_zero",
+        "mag_output_created",
+        "no_error_markers",
+        "mai_meg_pair_present"
+      ]
+    },
+    "motor/reluctance_motor_10": {
+      "cases": 10,
+      "input_files": 20,
+      "validation": "passed",
+      "validated_on": "2026-06-24",
+      "checks": [
+        "solver_returncode_zero",
+        "mag_output_created",
+        "no_error_markers",
+        "mai_meg_pair_present"
+      ]
+    },
+    "motor/spm_loop_10": {
+      "cases": 10,
+      "input_files": 20,
+      "validation": "passed",
+      "validated_on": "2026-06-24",
+      "checks": [
+        "solver_returncode_zero",
+        "mag_output_created",
+        "no_error_markers",
+        "mai_meg_pair_present"
+      ]
+    },
+    "motor/spm_surface_pm_10": {
+      "cases": 10,
+      "input_files": 20,
+      "validation": "passed",
+      "validated_on": "2026-06-24",
+      "checks": [
+        "solver_returncode_zero",
+        "mag_output_created",
+        "no_error_markers",
+        "mai_meg_pair_present"
+      ]
+    },
+    "motor/sr_motor_loop_10": {
+      "cases": 10,
+      "input_files": 20,
+      "validation": "passed",
+      "validated_on": "2026-06-24",
+      "checks": [
+        "solver_returncode_zero",
+        "mag_output_created",
+        "no_error_markers",
+        "mai_meg_pair_present"
+      ]
+    },
+    "motor/srm_switched_reluctance_10": {
+      "cases": 10,
+      "input_files": 20,
+      "validation": "passed",
+      "validated_on": "2026-06-24",
+      "checks": [
+        "solver_returncode_zero",
+        "mag_output_created",
+        "no_error_markers",
+        "mai_meg_pair_present"
+      ]
+    }
+  }
+}
