@@ -12,14 +12,14 @@ This server does **not** execute ELF600 simulations — it provides curated docu
 
 ## Features
 
-**24 tools + 1 prompt** providing curated docs, workflow recipes, ELF-runnable public sample decks, and raw access to ELF600 help HTM, example inputs, vendor wiki, and Python ctypes API:
+**25 tools + 1 prompt** providing curated docs, workflow recipes, ELF-runnable public sample decks, prompt-to-sample routing, and raw access to ELF600 help HTM, example inputs, vendor wiki, and Python ctypes API:
 
 | Tool family | Purpose | Files |
 |---|---|---|
 | `elf_usage(topic)` | 31 curated topics — high-level recipes | (knowledge.py) |
 | `elf_help_*(...)` | Help HTM files from `C:/ELF600/help/` | 1141 files, 1.18M chars |
 | `elf_examples_*(...)` | Example .mai/.mei/.txt plus 100-card playbook from `C:/ELF600/examples/` | 332 files, 533k chars |
-| `elf_sample_decks_*(...)` | Lab-authored ELF-runnable public `.mai`/`.meg` sample decks | 586 cases, 1172 input files |
+| `elf_sample_decks_*(...)` | Lab-authored ELF-runnable public `.mai`/`.meg` sample decks | 926 cases, 1852 input files |
 | `elf_recipe_*(...)` | Workflow decision cards for elements, PRE/SOL blocks, outputs, checks, and pitfalls | public-safe recipes |
 | `elf_wiki_*(...)` | Vendor wiki pages from elf.co.jp PukiWiki | 146 pages, 211k chars |
 | `elf_python_*(...)` | Python ctypes API + configs from `C:/ELF600/bin/` | 15 files, 246k chars |
@@ -30,8 +30,11 @@ summarizes 100 `.mai` examples as compact cards with detected SOL blocks,
 element families, feature tags, companion `.mei/.model` files, and reuse hints.
 The recipe family also has `elf_plan_workflow(goal)`, which chooses a short
 public-safe recipe sequence from a natural-language analysis goal.
-The sample deck family has `elf_sample_decks_index/search/get/playbook`
-for ELF-runnable public `.mai`/`.meg` decks. The Python family also has
+The sample deck family has `elf_sample_decks_index/search/route/get/playbook`
+for ELF-runnable public `.mai`/`.meg` decks. `elf_sample_decks_route(goal)`
+maps a user prompt such as "IPM hairpin motor flux linkage" or
+"WPT misalignment" to the most relevant public deck families, follow-up MCP
+calls, and representative `.mai` files. The Python family also has
 `elf_python_team28()`: a compact 28-case seed manifest from the public motor
 cases for ELF Python-interface orchestration. `team28` is not a normal
 ELF GUI/CLI deck-execution workflow. Solver outputs, comparison metrics,
@@ -43,6 +46,11 @@ bundled.
 For MCP clients, start with `elf_overview()` to discover the server surface and
 public boundary. The most useful calls while authoring ELF/MAGIC inputs are:
 
+- `elf_sample_decks_route("IPM hairpin motor flux linkage")` to map a user
+  prompt to the right sample family, playbook call, recipe, and representative
+  `.mai` decks
+- `elf_plan_workflow("WPT misalignment with conducting shield")` to get both
+  a recipe-level plan and related public sample-deck routes
 - `elf_sample_decks_playbook(limit=20, family="pm_square")` for compact cards
   over the public PM motor decks
 - `elf_sample_decks_playbook(limit=20, family="spm")` for surface-PM motor
@@ -51,6 +59,12 @@ public boundary. The most useful calls while authoring ELF/MAGIC inputs are:
   motor decks with salient iron and phase-pair excitation
 - `elf_sample_decks_playbook(limit=20, family="induction_cage_10")` for induction
   motor cage decks with transient eddy-current pickup patterns
+- `elf_sample_decks_playbook(limit=20, query="EMDLAB-style")` for 240
+  EMDLAB-style decks covering BLDC/SPM, BLDC outer-rotor, SPM static-torque,
+  IPM hairpin, induction, SynRM, SRM, AFPM, transformer, and benchmark
+  patterns
+- `elf_sample_decks_playbook(limit=20, query="Loop13 motor")` for extra IPM,
+  wound-field synchronous, axial-flux PM, linear PM, and stepper motor decks
 - `elf_sample_decks_playbook(limit=20, family="application")` for transformer
   MRI gradient-coil, WPT coupled-coil, induction-heating, and accelerator
   electromagnet application decks, plus actuator, maglev, separator, brake,
@@ -64,6 +78,9 @@ public boundary. The most useful calls while authoring ELF/MAGIC inputs are:
 - `elf_sample_decks_playbook(limit=20, query="Loop12")` for magnetic gear,
   voice-coil actuator, relay solenoid, Hall-sensor fixture, and
   electromagnetic-clutch decks
+- `elf_sample_decks_playbook(limit=20, query="Loop13 application")` for WPT
+  misalignment, MRI gradient sequence, transformer leakage, IH susceptor, and
+  accelerator corrector decks
 - `elf_sample_decks_search("HBCN FLUM", ext="mai")` to find reusable input
   patterns
 - `elf_sample_decks_search("SPM HBRM FLUM", ext="mai")` to find surface-PM
@@ -76,6 +93,16 @@ public boundary. The most useful calls while authoring ELF/MAGIC inputs are:
   and eddy-current setup patterns
 - `elf_sample_decks_search("induction motor cage OHM2 FLUM", ext="mai")` to find
   induction-motor cage and pickup setup patterns
+- `elf_sample_decks_search("EMDLAB-style IPM hairpin FLUM", ext="mai")` to find
+  IPM hairpin motor setup patterns
+- `elf_sample_decks_search("EMDLAB-style SynRM flux-barrier FLUM", ext="mai")`
+  to find synchronous-reluctance flux-barrier setup patterns
+- `elf_sample_decks_search("EMDLAB-style AFPM linearized-airgap FLUM", ext="mai")`
+  to find axial-flux PM line-airgap setup patterns
+- `elf_sample_decks_search("Loop13 wound-field synchronous FLUM", ext="mai")`
+  to find wound-field synchronous motor setup patterns
+- `elf_sample_decks_search("Loop13 stepper motor detent FLUM", ext="mai")` to
+  find stepper motor setup patterns
 - `elf_sample_decks_search("accelerator electromagnet FLUM", ext="mai")` to
   find coil/yoke electromagnet setup patterns
 - `elf_sample_decks_search("IH induction-heating MOMC", ext="mai")` to find
@@ -88,6 +115,8 @@ public boundary. The most useful calls while authoring ELF/MAGIC inputs are:
   find PM magnetic-gear setup patterns
 - `elf_sample_decks_search("Loop12 electromagnetic clutch OHM2", ext="mai")` to
   find AC clutch and conducting-plate setup patterns
+- `elf_sample_decks_search("Loop13 WPT misalignment OHM2", ext="mai")` to find
+  wireless-power-transfer misalignment setup patterns
 - `elf_sample_decks_get("motor/pm_cosine_pickup_72/pm001/pm001.mai")` to open a
   concrete public deck
 - `elf_python_team28()` to inspect the Python-interface seed manifest
@@ -101,17 +130,23 @@ ELF/MAGIC is useful for magnetostatic and AC magnetic input authoring when the
 model is expressed as `.mai` analysis control plus `.meg` mesh data. This server
 turns that knowledge into MCP tools:
 
-- 402 public motor input-deck pairs covering 2-pole, 4-pole, 6-pole, 8-pole,
+- 652 public motor input-deck pairs covering 2-pole, 4-pole, 6-pole, 8-pole,
   cosine-remanence PM pickup families, 10 explicit SPM motor examples, and
   10 SRM switched-reluctance examples, 10 induction cage examples, plus
-  loop-reviewed SPM, SR motor, synchronous-reluctance motor, and hysteresis
-  motor families
-- 184 public application input-deck pairs covering transformer core/pickup
+  loop-reviewed SPM, SR motor, synchronous-reluctance motor, hysteresis motor,
+  and 200 EMDLAB-style motor cases spanning BLDC/SPM, BLDC outer-rotor,
+  induction, IPM hairpin, SPMSM static torque, SynRM, SRM 6/4 through 12/16,
+  and AFPM variants, plus Loop13 IPM, wound-field synchronous, axial-flux PM,
+  linear PM, and stepper families
+- 274 public application input-deck pairs covering transformer core/pickup
   coupling, MRI gradient-coil/eddy-current shield patterns, WPT coupled coils,
   IH induction-heating workpieces, accelerator electromagnets, actuator
   plungers, maglev bearings, magnetic separators, eddy-current brakes,
   NDT eddy-current probes, magnetic gears, voice-coil actuators,
-  relay solenoids, Hall-sensor fixtures, and electromagnetic clutches
+  relay solenoids, Hall-sensor fixtures, electromagnetic clutches, WPT
+  misalignment, MRI gradient sequences, transformer leakage, IH susceptors,
+  accelerator corrector magnets, and 40 EMDLAB-style transformer/benchmark
+  application decks
 - playbook cards that expose each deck's SOL blocks, PRE keywords, element
   families, feature tags, and reuse hints
 - curated motor topics for air-gap field, flux linkage/back-EMF pickup,
@@ -122,10 +157,13 @@ turns that knowledge into MCP tools:
 Useful entry points are `elf_usage(topic="ipm_motor")`,
 `elf_usage(topic="motor_radia_bridge")`,
 `elf_recipe_search("motor pickup")`, and
+`elf_sample_decks_route("IPM hairpin motor flux linkage")`,
 `elf_sample_decks_playbook(limit=50, family="pm_square")`,
 `elf_sample_decks_playbook(family="spm")`, or
 `elf_sample_decks_playbook(family="srm")`, or
-`elf_sample_decks_playbook(family="induction_cage_10")`. For non-motor applications,
+`elf_sample_decks_playbook(family="induction_cage_10")`, or
+`elf_sample_decks_playbook(query="EMDLAB-style")`, or
+`elf_sample_decks_playbook(query="Loop13 motor")`. For non-motor applications,
 start with `elf_sample_decks_playbook(family="application")`,
 `elf_sample_decks_search("transformer FLUM")`,
 `elf_sample_decks_search("WPT MOMC FLUM")`, or
@@ -135,7 +173,8 @@ start with `elf_sample_decks_playbook(family="application")`,
 `elf_sample_decks_search("Loop11 actuator plunger FLUM")`, or
 `elf_sample_decks_search("Loop11 NDT eddy-current probe OHM2")`,
 `elf_sample_decks_search("Loop12 magnetic gear HBCN FLUM")`, or
-`elf_sample_decks_search("Loop12 electromagnetic clutch OHM2")`.
+`elf_sample_decks_search("Loop12 electromagnetic clutch OHM2")`, or
+`elf_sample_decks_search("Loop13 WPT misalignment OHM2")`.
 
 ### Public `.meg` mesh generation
 
@@ -173,7 +212,10 @@ elf-mcp-policy-lint
 paths, no unrelated commercial-tool references, no bundled solver outputs
 inside the public sample decks, and exact agreement with
 `public_samples/VALIDATED_MANIFEST.json`. Only sample families marked
-`validation: passed` in that manifest are intended for publication.
+`validation: passed` in that manifest are intended for publication. The
+The 240 EMDLAB-style decks and Loop13 motor/application additions are also
+cross-checked with an independent NGSolve proxy-field energy gate before they
+are listed.
 
 Bundled data (all generated from fresh ELF600 install via `scripts/crawl_*.py`):
 - `help_dump.json` — Shift_JIS HTM decoded + HTML-stripped

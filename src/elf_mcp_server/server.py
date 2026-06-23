@@ -35,9 +35,11 @@ from .sample_decks import (
     list_sample_decks,
     search_sample_decks,
     get_sample_deck,
+    route_sample_decks,
     build_sample_deck_cards,
     build_team28_cards,
     format_sample_deck_cards,
+    format_sample_deck_routes,
     format_team28_cards,
 )
 from .recipes import (
@@ -73,7 +75,7 @@ _TOOL_CATALOG = [
     ("elf_examples_index / search / get / playbook", "C:/ELF600/examples/ "
                                                        "(332 .mai/.mei/.txt, 533 KB) "
                                                        "plus 100 compact example cards"),
-    ("elf_sample_decks_index / search / get / playbook",
+    ("elf_sample_decks_index / search / route / get / playbook",
                                               "Lab-authored ELF-runnable "
                                               "public .mai/.meg input decks "
                                               "(input files only; no solver outputs)"),
@@ -98,16 +100,16 @@ _RELATED_PUBLIC_PACKAGES = [
 
 @mcp.tool()
 def elf_overview() -> dict:
-    """RECOMMENDED FIRST CALL. Catalog of ELF MCP's 24 tools + 1
+    """RECOMMENDED FIRST CALL. Catalog of ELF MCP's 25 tools + 1
     prompt, with public-safe routing hints for MCP clients.
 
     Returns:
-        dict with `tool_families` (curated 24-tool grouping), `n_tools`,
+        dict with `tool_families` (curated 25-tool grouping), `n_tools`,
         public boundary notes, recommended calls, and public companion package
         hints.
     """
     return {
-        "n_tools": 24,
+        "n_tools": 25,
         "n_prompts": 1,
         "tool_families": [
             {"signature": sig, "description": desc}
@@ -123,8 +125,12 @@ def elf_overview() -> dict:
                 "call": "elf_usage(topic='all') or elf_recipe_search(query)",
             },
             {
-                "goal": "Learn from the 586 public input-deck cases",
-                "call": "elf_sample_decks_playbook(limit=20, family='srm')",
+                "goal": "Route a user prompt to the right public input-deck family",
+                "call": "elf_sample_decks_route('IPM hairpin motor flux linkage')",
+            },
+            {
+                "goal": "Learn from the 926 public input-deck cases",
+                "call": "elf_sample_decks_playbook(limit=20, query='Loop13 motor')",
             },
             {
                 "goal": "Open a specific public .mai/.meg input deck",
@@ -412,7 +418,9 @@ def elf_sample_decks_index(family: str = "", case: str = "", ext: str = "") -> s
 
     Args:
         family: Optional family substring, e.g. "motor", "pm_square",
-                "spm", "srm", "sr_motor", "induction", "reluctance",
+            "spm", "srm", "sr_motor", "induction", "ipm",
+                "emdlab", "afpm", "linear_pm", "stepper",
+                "wound_field", "synrm", "reluctance",
                 "hysteresis", "application", "wpt", "mri", "ih",
                 "transformer", "accelerator", "actuator", "maglev",
                 "separator", "brake", "ndt", "magnetic_gear",
@@ -473,6 +481,29 @@ def elf_sample_decks_search(query: str, top_k: int = 10, ext: str = "") -> str:
 
 
 @mcp.tool()
+def elf_sample_decks_route(goal: str, limit: int = 5) -> str:
+    """
+    Route a natural-language engineering goal to public sample-deck families.
+
+    Use this before raw search when a user prompt says things like
+    "IPM hairpin motor", "WPT misalignment", "SynRM flux barrier",
+    "stepper detent", or "transformer leakage". The router returns the
+    recommended family, why it matches, next MCP calls, and representative
+    `.mai` decks to inspect.
+
+    Args:
+        goal: Natural-language target or prompt fragment.
+        limit: Maximum routes to return. Default 5. Max 12.
+
+    Returns:
+        Markdown routing cards with follow-up `elf_sample_decks_playbook`,
+        `elf_sample_decks_search`, `elf_sample_decks_get`, and recipe hints.
+    """
+    routes = route_sample_decks(goal, limit=limit)
+    return format_sample_deck_routes(routes, goal)
+
+
+@mcp.tool()
 def elf_sample_decks_get(path: str, max_chars: int = 60000) -> str:
     """
     Get full text of a public runnable ELF/MAGIC sample deck.
@@ -500,7 +531,7 @@ def elf_sample_decks_get(path: str, max_chars: int = 60000) -> str:
 @mcp.tool()
 def elf_sample_decks_playbook(limit: int = 100, family: str = "", query: str = "") -> str:
     """
-    Build compact cards from the 586 public ELF-runnable `.mai`/`.meg` cases.
+    Build compact cards from the 926 public ELF-runnable `.mai`/`.meg` cases.
 
     Each card links the `.mai` and `.meg` pair and summarizes detected SOL
     blocks, PRE keywords, element types, feature tags, and a reuse hint. This
@@ -508,10 +539,12 @@ def elf_sample_decks_playbook(limit: int = 100, family: str = "", query: str = "
     every raw file.
 
     Args:
-        limit: Number of cards to return. Default 100. Max 586.
+        limit: Number of cards to return. Default 100. Max 926.
         family: Optional family substring, e.g. "pm_square", "cosine",
-            "spm", "srm", "sr_motor", "induction", "reluctance",
-            "hysteresis", "wpt", "mri", "ih", "transformer",
+            "spm", "srm", "sr_motor", "induction", "ipm",
+            "emdlab", "afpm", "linear_pm", "stepper", "wound_field",
+            "synrm", "reluctance", "hysteresis",
+            "wpt", "mri", "ih", "transformer",
             "accelerator", "actuator", "maglev", "separator",
             "brake", "ndt", "magnetic_gear", "voice_coil",
             "relay_solenoid", "hall_sensor", or "clutch".
@@ -618,7 +651,9 @@ def elf_plan_workflow(goal: str) -> str:
     Returns:
         Markdown plan with recipe sequence and drilldown command.
     """
-    return plan_workflow(goal)
+    plan = plan_workflow(goal)
+    routes = route_sample_decks(goal, limit=3)
+    return plan + "\n\n" + format_sample_deck_routes(routes, goal)
 
 
 @mcp.tool()
@@ -959,6 +994,17 @@ def main():
         assert "motor/spm_surface_pm_10/spm001/spm001.mai" in sd
         assert "motor/srm_switched_reluctance_10/srm001/srm001.mai" in sd
         assert "motor/induction_cage_10/im001/im001.mai" in sd
+        assert "motor/emdlab_bldc_spm_10/ebl001/ebl001.mai" in sd
+        assert "motor/emdlab_ipm_hairpin_10/eip001/eip001.mai" in sd
+        assert "motor/emdlab_induction_bar_10/eim001/eim001.mai" in sd
+        assert "motor/emdlab_synrm_flux_barrier_10/esr001/esr001.mai" in sd
+        assert "motor/emdlab_srm_pole_variants_10/esm001/esm001.mai" in sd
+        assert "motor/emdlab_afpm_linearized_10/eaf001/eaf001.mai" in sd
+        assert "motor/ipm_interior_pm_10/ipm001/ipm001.mai" in sd
+        assert "motor/wound_field_sync_10/wfs001/wfs001.mai" in sd
+        assert "motor/axial_flux_pm_10/afm001/afm001.mai" in sd
+        assert "motor/linear_pm_motor_10/lpm001/lpm001.mai" in sd
+        assert "motor/stepper_motor_10/stm001/stm001.mai" in sd
         assert "application/transformer_core_pickup_12/tf001/tf001.mai" in sd
         assert "application/mri_gradient_shield_12/mri001/mri001.mai" in sd
         assert "application/wpt_coupled_coils_10/wpt001/wpt001.mai" in sd
@@ -981,8 +1027,18 @@ def main():
         assert "application/relay_solenoid_10/rsl001/rsl001.mai" in sd
         assert "application/hall_sensor_fixture_10/hsl001/hsl001.mai" in sd
         assert "application/electromagnetic_clutch_10/ecl001/ecl001.mai" in sd
+        assert "application/wpt_misalignment_10/wpm001/wpm001.mai" in sd
+        assert "application/mri_gradient_sequence_10/mgs001/mgs001.mai" in sd
+        assert "application/transformer_leakage_10/tlg001/tlg001.mai" in sd
+        assert "application/ih_susceptor_ring_10/ihr001/ihr001.mai" in sd
+        assert "application/accelerator_corrector_10/acm001/acm001.mai" in sd
+        assert "motor/emdlab_bldc_outer_rotor_10/ebo001/ebo001.mai" in sd
+        assert "motor/emdlab_spmsm_static_torque_10/eptq001/eptq001.mai" in sd
+        assert "motor/emdlab_srm1216_outer_rotor_10/ero001/ero001.mai" in sd
+        assert "application/emdlab_1ph_transformer_static_10/ept001/ept001.mai" in sd
+        assert "application/emdlab_benchmark_ccore_10/ecc001/ecc001.mai" in sd
         sd_mai = elf_sample_decks_index(ext="mai")
-        assert sd_mai.count(".mai") == 586, "Expected 586 public .mai decks"
+        assert sd_mai.count(".mai") == 926, "Expected 926 public .mai decks"
         sd_search = elf_sample_decks_search("HBCN FLUM", top_k=5, ext="mai")
         assert "pm001.mai" in sd_search and "No sample deck matches" not in sd_search
         sd_spm_search = elf_sample_decks_search("SPM HBRM FLUM", top_k=5, ext="mai")
@@ -991,10 +1047,39 @@ def main():
         assert "motor/srm_switched_reluctance_10" in sd_srm_search
         sd_im_search = elf_sample_decks_search("induction motor cage OHM2 FLUM", top_k=5, ext="mai")
         assert "motor/induction_cage_10" in sd_im_search
+        sd_emdlab_ipm_search = elf_sample_decks_search("EMDLAB-style IPM hairpin FLUM", top_k=5, ext="mai")
+        assert "motor/emdlab_ipm_hairpin_10" in sd_emdlab_ipm_search
+        sd_emdlab_im_search = elf_sample_decks_search("induction-machine bar OHM2 FLUM", top_k=5, ext="mai")
+        assert "motor/emdlab_induction_bar_10" in sd_emdlab_im_search
+        sd_emdlab_synrm_search = elf_sample_decks_search("EMDLAB-style SynRM flux-barrier FLUM", top_k=5, ext="mai")
+        assert "motor/emdlab_synrm_flux_barrier_10" in sd_emdlab_synrm_search
+        sd_emdlab_srm_search = elf_sample_decks_search("EMDLAB-style SRM pole-variant FLUM", top_k=5, ext="mai")
+        assert "motor/emdlab_srm_pole_variants_10" in sd_emdlab_srm_search
+        sd_emdlab_afpm_search = elf_sample_decks_search("EMDLAB-style AFPM linearized-airgap FLUM", top_k=5, ext="mai")
+        assert "motor/emdlab_afpm_linearized_10" in sd_emdlab_afpm_search
+        sd_loop13_wound_search = elf_sample_decks_search("Loop13 wound-field synchronous FLUM", top_k=5, ext="mai")
+        assert "motor/wound_field_sync_10" in sd_loop13_wound_search
+        sd_loop13_stepper_search = elf_sample_decks_search("Loop13 stepper motor detent FLUM", top_k=5, ext="mai")
+        assert "motor/stepper_motor_10" in sd_loop13_stepper_search
+        sd_loop13_wpt_search = elf_sample_decks_search("Loop13 WPT misalignment OHM2", top_k=5, ext="mai")
+        assert "application/wpt_misalignment_10" in sd_loop13_wpt_search
+        sd_loop13_mri_search = elf_sample_decks_search("Loop13 MRI gradient sequence OHM2", top_k=5, ext="mai")
+        assert "application/mri_gradient_sequence_10" in sd_loop13_mri_search
+        sd_route = elf_sample_decks_route("IPM hairpin motor flux linkage", limit=3)
+        assert "motor/emdlab_ipm_hairpin_10" in sd_route
+        assert "elf_sample_decks_playbook" in sd_route
+        sd_wpt_route = elf_sample_decks_route("WPT misalignment with conducting shield", limit=2)
+        assert "application/wpt_misalignment_10" in sd_wpt_route
+        sd_outer_route = elf_sample_decks_route("BLDC outer rotor motor", limit=2)
+        assert "motor/emdlab_bldc_outer_rotor_10" in sd_outer_route
+        sd_transformer_static_route = elf_sample_decks_route("single phase transformer static", limit=2)
+        assert "application/emdlab_1ph_transformer_static_10" in sd_transformer_static_route
+        sd_ccore_route = elf_sample_decks_route("benchmark C-core magnet", limit=2)
+        assert "application/emdlab_benchmark_ccore_10" in sd_ccore_route
         sd_app_search = elf_sample_decks_search("MRI OHM2 FREQ", top_k=5, ext="mai")
-        assert "application/mri_gradient_shield_12" in sd_app_search
+        assert "application/mri" in sd_app_search
         sd_wpt_search = elf_sample_decks_search("WPT MOMC FLUM", top_k=5, ext="mai")
-        assert "application/wpt_coupled_coils_10" in sd_wpt_search
+        assert "application/wpt" in sd_wpt_search
         sd_wpt_loop_search = elf_sample_decks_search("Loop10 WPT MOMC FLUM", top_k=5, ext="mai")
         assert "application/wpt_loop_10" in sd_wpt_loop_search
         sd_mri_loop_search = elf_sample_decks_search("Loop10 MRI OHM2 FREQ", top_k=5, ext="mai")
@@ -1045,10 +1130,25 @@ def main():
         assert sd_loop11_pb.count("\n## ") == 10, "Expected 10 actuator sample cards"
         sd_loop12_pb = elf_sample_decks_playbook(limit=20, family="magnetic_gear_10")
         assert sd_loop12_pb.count("\n## ") == 10, "Expected 10 magnetic-gear sample cards"
+        sd_emdlab_pb = elf_sample_decks_playbook(limit=240, query="EMDLAB-style")
+        assert sd_emdlab_pb.count("\n## ") == 240, "Expected EMDLAB-style sample cards"
+        assert "emdlab_ipm_hairpin_10" in sd_emdlab_pb
+        sd_loop13_motor_pb = elf_sample_decks_playbook(limit=50, query="Loop13 motor")
+        assert sd_loop13_motor_pb.count("\n## ") == 50, "Expected Loop13 motor sample cards"
+        assert "wound_field_sync_10" in sd_loop13_motor_pb
+        sd_loop13_app_pb = elf_sample_decks_playbook(limit=50, query="Loop13")
+        assert "wpt_misalignment_10" in sd_loop13_app_pb
         assert "Python-interface seed manifest" not in sd_pb, "Normal sample playbook must not claim team28"
         sample_text = (
             sd + sd_mai + sd_search + sd_spm_search + sd_srm_search
             + sd_im_search + sd_app_search + sd_wpt_search + sd_get + sd_pb + sd_app_pb
+            + sd_emdlab_ipm_search + sd_emdlab_im_search + sd_emdlab_synrm_search
+            + sd_emdlab_srm_search + sd_emdlab_afpm_search + sd_emdlab_pb
+            + sd_loop13_wound_search + sd_loop13_stepper_search
+            + sd_loop13_wpt_search + sd_loop13_mri_search
+            + sd_route + sd_wpt_route + sd_outer_route
+            + sd_transformer_static_route + sd_ccore_route
+            + sd_loop13_motor_pb + sd_loop13_app_pb
             + sd_wpt_loop_search + sd_mri_loop_search + sd_sr_loop_search
             + sd_spm_loop_search + sd_ih_search + sd_reluctance_search
             + sd_hysteresis_search + sd_transformer_loop_search
@@ -1060,7 +1160,7 @@ def main():
         )
         forbidden_sample_markers = ("C:" + "\\temp", "S:" + "\\", "_cross" + "val", ".mag", ".mao")
         assert not any(marker in sample_text for marker in forbidden_sample_markers)
-        print("  586-case .mai/.meg sample deck corpus OK")
+        print("  926-case .mai/.meg sample deck corpus OK")
 
         # 10. Recipe tools
         print("[10/16] elf_recipe tools:")

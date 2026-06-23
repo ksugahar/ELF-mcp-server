@@ -53,18 +53,19 @@ def test_tool_surface_and_no_work_family():
     from elf_mcp_server.server import mcp, elf_overview
     tools = asyncio.run(mcp.list_tools())
     names = [t.name for t in tools]
-    assert len(names) >= 24
+    assert len(names) >= 25
     assert "elf_examples_playbook" in names
     assert "elf_recipe_search" in names
     assert "elf_recipe_get" in names
     assert "elf_plan_workflow" in names
     assert "elf_sample_decks_index" in names
     assert "elf_sample_decks_get" in names
+    assert "elf_sample_decks_route" in names
     assert "elf_sample_decks_playbook" in names
     assert "elf_python_team28" in names
     overview = elf_overview()
     overview_text = str(overview)
-    assert overview["n_tools"] == 24
+    assert overview["n_tools"] == 25
     assert "public_boundary" in overview
     assert "recommended_calls" in overview
     assert "COMSOL" not in overview_text
@@ -83,17 +84,43 @@ def test_public_sample_decks_are_runnable_inputs_only():
         build_team28_cards,
         format_team28_cards,
         list_sample_decks,
+        route_sample_decks,
+        format_sample_deck_routes,
         search_sample_decks,
         get_sample_deck,
     )
     decks = list_sample_decks()
-    assert len(decks) == 1172
-    assert sum(1 for d in decks if d["ext"] == "mai") == 586
-    assert sum(1 for d in decks if d["ext"] == "meg") == 586
+    assert len(decks) == 1852
+    assert sum(1 for d in decks if d["ext"] == "mai") == 926
+    assert sum(1 for d in decks if d["ext"] == "meg") == 926
     assert any(d["path"] == "motor/pm_cosine_pickup_72/pm001/pm001.mai" for d in decks)
     assert any(d["path"] == "motor/spm_surface_pm_10/spm001/spm001.mai" for d in decks)
     assert any(d["path"] == "motor/srm_switched_reluctance_10/srm001/srm001.mai" for d in decks)
     assert any(d["path"] == "motor/induction_cage_10/im001/im001.mai" for d in decks)
+    assert any(d["path"] == "motor/emdlab_bldc_spm_10/ebl001/ebl001.mai" for d in decks)
+    assert any(d["path"] == "motor/emdlab_ipm_hairpin_10/eip001/eip001.mai" for d in decks)
+    assert any(d["path"] == "motor/emdlab_induction_bar_10/eim001/eim001.mai" for d in decks)
+    assert any(d["path"] == "motor/emdlab_synrm_flux_barrier_10/esr001/esr001.mai" for d in decks)
+    assert any(d["path"] == "motor/emdlab_srm_pole_variants_10/esm001/esm001.mai" for d in decks)
+    assert any(d["path"] == "motor/emdlab_afpm_linearized_10/eaf001/eaf001.mai" for d in decks)
+    assert any(d["path"] == "motor/emdlab_bldc_outer_rotor_10/ebo001/ebo001.mai" for d in decks)
+    assert any(d["path"] == "motor/emdlab_induction_fraction_10/eif001/eif001.mai" for d in decks)
+    assert any(d["path"] == "motor/emdlab_spmsm_static_torque_10/eptq001/eptq001.mai" for d in decks)
+    assert any(d["path"] == "motor/emdlab_srm1216_outer_rotor_10/ero001/ero001.mai" for d in decks)
+    assert any(d["path"] == "motor/emdlab_synrm_fraction_static_torque_10/eyf001/eyf001.mai" for d in decks)
+    assert any(
+        d["path"] == "application/emdlab_1ph_transformer_static_10/ept001/ept001.mai"
+        for d in decks
+    )
+    assert any(
+        d["path"] == "application/emdlab_benchmark_ccore_10/ecc001/ecc001.mai"
+        for d in decks
+    )
+    assert any(d["path"] == "motor/ipm_interior_pm_10/ipm001/ipm001.mai" for d in decks)
+    assert any(d["path"] == "motor/wound_field_sync_10/wfs001/wfs001.mai" for d in decks)
+    assert any(d["path"] == "motor/axial_flux_pm_10/afm001/afm001.mai" for d in decks)
+    assert any(d["path"] == "motor/linear_pm_motor_10/lpm001/lpm001.mai" for d in decks)
+    assert any(d["path"] == "motor/stepper_motor_10/stm001/stm001.mai" for d in decks)
     assert any(d["path"] == "application/wpt_loop_10/wpl001/wpl001.mai" for d in decks)
     assert any(d["path"] == "application/mri_loop_10/mrl001/mrl001.mai" for d in decks)
     assert any(d["path"] == "motor/sr_motor_loop_10/srl001/srl001.mai" for d in decks)
@@ -161,6 +188,20 @@ def test_public_sample_decks_are_runnable_inputs_only():
         d["path"] == "application/electromagnetic_clutch_10/ecl001/ecl001.mai"
         for d in decks
     )
+    assert any(d["path"] == "application/wpt_misalignment_10/wpm001/wpm001.mai" for d in decks)
+    assert any(
+        d["path"] == "application/mri_gradient_sequence_10/mgs001/mgs001.mai"
+        for d in decks
+    )
+    assert any(
+        d["path"] == "application/transformer_leakage_10/tlg001/tlg001.mai"
+        for d in decks
+    )
+    assert any(d["path"] == "application/ih_susceptor_ring_10/ihr001/ihr001.mai" for d in decks)
+    assert any(
+        d["path"] == "application/accelerator_corrector_10/acm001/acm001.mai"
+        for d in decks
+    )
     manifest_path = os.path.join(
         os.path.dirname(__file__),
         "..",
@@ -171,28 +212,81 @@ def test_public_sample_decks_are_runnable_inputs_only():
     )
     with open(manifest_path, encoding="ascii") as f:
         manifest = json.load(f)
-    assert manifest["total_cases"] == 586
-    assert manifest["total_input_files"] == 1172
-    assert len(manifest["families"]) == 30
+    assert manifest["total_cases"] == 926
+    assert manifest["total_input_files"] == 1852
+    assert len(manifest["families"]) == 64
     assert all(v["validation"] == "passed" for v in manifest["families"].values())
+    assert "ngsolve_proxy_energy_positive" in manifest["families"][
+        "motor/emdlab_ipm_hairpin_10"
+    ]["checks"]
+    assert "ngsolve_proxy_energy_positive" in manifest["families"][
+        "application/emdlab_benchmark_ccore_10"
+    ]["checks"]
+    assert "ngsolve_proxy_energy_positive" in manifest["families"][
+        "motor/wound_field_sync_10"
+    ]["checks"]
     hits = search_sample_decks("HBCN FLUM", ext="mai")
     assert hits
     assert hits[0]["path"].endswith(".mai")
     transformer_hits = search_sample_decks("transformer FLUM", ext="mai")
     assert transformer_hits
-    assert transformer_hits[0]["path"].startswith("application/transformer")
+    assert transformer_hits[0]["path"].startswith(
+        ("application/transformer", "application/emdlab_1ph_transformer_static_10")
+    )
     mri_hits = search_sample_decks("MRI OHM2 FREQ", ext="mai")
     assert mri_hits
     assert mri_hits[0]["path"].startswith("application/mri")
-    im_hits = search_sample_decks("induction motor cage OHM2 FLUM", ext="mai")
+    im_hits = search_sample_decks("induction motor cage OHM2 FLUM", top_k=20, ext="mai")
     assert im_hits
-    assert im_hits[0]["path"].startswith("motor/induction_cage_10")
-    spm_hits = search_sample_decks("SPM HBRM FLUM", ext="mai")
+    assert any(h["path"].startswith("motor/induction_cage_10") for h in im_hits)
+    spm_hits = search_sample_decks("SPM HBRM FLUM", top_k=20, ext="mai")
     assert spm_hits
-    assert spm_hits[0]["path"].startswith("motor/spm_surface_pm_10")
-    srm_hits = search_sample_decks("SRM reluctance FLUM", ext="mai")
+    assert any(h["path"].startswith("motor/spm_surface_pm_10") for h in spm_hits)
+    srm_hits = search_sample_decks("SRM reluctance FLUM", top_k=20, ext="mai")
     assert srm_hits
-    assert srm_hits[0]["path"].startswith("motor/srm_switched_reluctance_10")
+    assert any(h["path"].startswith("motor/srm_switched_reluctance_10") for h in srm_hits)
+    emdlab_ipm_hits = search_sample_decks("EMDLAB-style IPM hairpin FLUM", ext="mai")
+    assert emdlab_ipm_hits
+    assert emdlab_ipm_hits[0]["path"].startswith("motor/emdlab_ipm_hairpin_10")
+    emdlab_im_hits = search_sample_decks("induction-machine bar OHM2 FLUM", ext="mai")
+    assert emdlab_im_hits
+    assert emdlab_im_hits[0]["path"].startswith("motor/emdlab_induction_bar_10")
+    emdlab_synrm_hits = search_sample_decks("EMDLAB-style SynRM flux-barrier FLUM", ext="mai")
+    assert emdlab_synrm_hits
+    assert emdlab_synrm_hits[0]["path"].startswith("motor/emdlab_synrm_flux_barrier_10")
+    emdlab_srm_hits = search_sample_decks("EMDLAB-style SRM pole-variant FLUM", ext="mai")
+    assert emdlab_srm_hits
+    assert emdlab_srm_hits[0]["path"].startswith("motor/emdlab_srm_pole_variants_10")
+    emdlab_afpm_hits = search_sample_decks("EMDLAB-style AFPM linearized-airgap FLUM", ext="mai")
+    assert emdlab_afpm_hits
+    assert emdlab_afpm_hits[0]["path"].startswith("motor/emdlab_afpm_linearized_10")
+    emdlab_spmsm_static_hits = search_sample_decks("EMDLAB-style SPM static-torque FLUM", ext="mai")
+    assert emdlab_spmsm_static_hits
+    assert emdlab_spmsm_static_hits[0]["path"].startswith("motor/emdlab_spmsm_static_torque_10")
+    emdlab_transformer_hits = search_sample_decks("EMDLAB-style single-phase transformer static FLUM", ext="mai")
+    assert emdlab_transformer_hits
+    assert emdlab_transformer_hits[0]["path"].startswith("application/emdlab_1ph_transformer_static_10")
+    emdlab_ccore_hits = search_sample_decks("EMDLAB-style benchmark C-core FLUM", ext="mai")
+    assert emdlab_ccore_hits
+    assert emdlab_ccore_hits[0]["path"].startswith("application/emdlab_benchmark_ccore_10")
+    route = route_sample_decks("I want an IPM hairpin motor flux linkage deck", limit=3)
+    assert route
+    assert route[0]["family"] == "motor/emdlab_ipm_hairpin_10"
+    route_text = format_sample_deck_routes(route, "IPM hairpin motor flux linkage")
+    assert "elf_sample_decks_playbook" in route_text
+    assert "motor/emdlab_ipm_hairpin_10/eip001/eip001.mai" in route_text
+    wpt_route = route_sample_decks("WPT misalignment with a conducting shield", limit=2)
+    assert wpt_route[0]["family"] == "application/wpt_misalignment_10"
+    outer_route = route_sample_decks("BLDC outer rotor motor", limit=2)
+    assert outer_route[0]["family"] == "motor/emdlab_bldc_outer_rotor_10"
+    transformer_static_route = route_sample_decks("single phase transformer static", limit=2)
+    assert transformer_static_route[0]["family"] == "application/emdlab_1ph_transformer_static_10"
+    ccore_route = route_sample_decks("benchmark C-core magnet", limit=2)
+    assert ccore_route[0]["family"] == "application/emdlab_benchmark_ccore_10"
+    wound_route = route_sample_decks("wound-field synchronous motor rotor field", limit=2)
+    assert wound_route[0]["family"] == "motor/wound_field_sync_10"
+    stepper_route = route_sample_decks("stepper motor detent angle", limit=2)
+    assert stepper_route[0]["family"] == "motor/stepper_motor_10"
     wpt_hits = search_sample_decks("WPT MOMC FLUM", ext="mai")
     assert wpt_hits
     assert wpt_hits[0]["path"].startswith("application/wpt_coupled_coils_10")
@@ -259,8 +353,8 @@ def test_public_sample_decks_are_runnable_inputs_only():
     assert "HBCN 1 0 1" in text
     assert "HBCN 2 0 2" in text
     assert "FLUM  49" in text
-    cards = build_sample_deck_cards(limit=586)
-    assert len(cards) == 586
+    cards = build_sample_deck_cards(limit=926)
+    assert len(cards) == 926
     spm_cards = build_sample_deck_cards(limit=20, family="spm_surface_pm_10")
     assert len(spm_cards) == 10
     assert "spm" in spm_cards[0]["tags"]
@@ -303,6 +397,28 @@ def test_public_sample_decks_are_runnable_inputs_only():
         ("application/relay_solenoid_10", "relay", "MMB8T"),
         ("application/hall_sensor_fixture_10", "hall-sensor", "MWL8T"),
         ("application/electromagnetic_clutch_10", "clutch", "MAB8T"),
+        ("motor/emdlab_bldc_spm_10", "bldc", "MWL8T"),
+        ("motor/emdlab_ipm_hairpin_10", "ipm", "MWL8T"),
+        ("motor/emdlab_induction_bar_10", "rotor-bar", "MAB8T"),
+        ("motor/emdlab_synrm_flux_barrier_10", "synrm", "MMB8T"),
+        ("motor/emdlab_srm_pole_variants_10", "pole-variant", "MMB8T"),
+        ("motor/emdlab_afpm_linearized_10", "afpm", "MWL8T"),
+        ("motor/emdlab_bldc_outer_rotor_10", "outer-rotor", "MWL8T"),
+        ("motor/emdlab_spmsm_static_torque_10", "static-torque", "MWL8T"),
+        ("motor/emdlab_srm1216_outer_rotor_10", "12-16", "MMB8T"),
+        ("motor/emdlab_synrm_fraction_static_torque_10", "fractional-sector", "MMB8T"),
+        ("application/emdlab_1ph_transformer_static_10", "single-phase", "MMB8T"),
+        ("application/emdlab_benchmark_ccore_10", "c-core", "MMB8T"),
+        ("motor/ipm_interior_pm_10", "ipm", "MWL8T"),
+        ("motor/wound_field_sync_10", "wound-field", "MCL8T"),
+        ("motor/axial_flux_pm_10", "afpm", "MWL8T"),
+        ("motor/linear_pm_motor_10", "linear-pm", "MWL8T"),
+        ("motor/stepper_motor_10", "stepper", "MWL8T"),
+        ("application/wpt_misalignment_10", "misalignment", "MAB8T"),
+        ("application/mri_gradient_sequence_10", "gradient-sequence", "MAB8T"),
+        ("application/transformer_leakage_10", "leakage", "MMB8T"),
+        ("application/ih_susceptor_ring_10", "susceptor", "MAB8T"),
+        ("application/accelerator_corrector_10", "corrector", "MMB8T"),
     ]
     for family, tag, element in loop_family_checks:
         family_cards = build_sample_deck_cards(limit=20, family=family)
