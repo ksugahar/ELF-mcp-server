@@ -1,0 +1,46 @@
+USE  MAGIC  3.50
+* Numeric transformer-coupling anchor ntc094: secondary drive buck/boost ratio -0.5.
+* Evaluation quantities: primary/secondary FLUM, apparent turns ratio, leakage pickup, co-energy, and NGSolve transformer proxy.
+* Validation laws: current/turn scaling, core B-H slope, air-gap leakage, span, core area/depth, secondary offset symmetry, and buck/boost superposition.
+
+PRE
+  HBUN 1 OE G
+  HBSC 1 1.0 1.0
+  HBCU 1 0.0 0.0
+  HBCU 1 900.0 1.30000000E+04
+  HBCU 1 1800.0 1.62500000E+04
+
+  COI1 10 0 72 4 4 A
+  AMP1 10 0 8.0000000000000E+00
+
+  COI1 11 0 72 4 4 A
+  AMP1 11 0 -4.0000000000000E+00
+
+  COI1 20 0 36 4 4 A
+  AMP1 20 0 0.00000000E+00
+
+  COI1 21 0 12 4 4 A
+  AMP1 21 0 0.00000000E+00
+
+END
+
+SOL MOME
+  NCPU  0
+  BLAS  8  32
+  TIME  0
+  NONL  80  0.01
+  DMEG
+END
+
+SOL FIEL
+  TIME  0
+  DMEG
+END
+
+SOL FIXA
+  TIME  0
+  FLUM  10
+  FLUM  11
+  FLUM  20
+  FLUM  21
+END

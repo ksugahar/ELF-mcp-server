@@ -32,18 +32,51 @@ Validation levels:
   ratio/sign/law invariants, `FLUM`-derived inductance/co-energy invariants,
   `FLUM`-derived force/torque-gradient invariants, AC-loss proxy invariants,
   magnetic-circuit proxy invariants, permanent-magnet proxy invariants, and
-  independent NGSolve proxy invariants.
+  transformer-coupling proxy invariants, and independent NGSolve proxy
+  invariants.
 
 Publication cadence:
 
 - validated decks are reviewed in 100-case checkpoints
-- this baseline contains 15 full checkpoints and no release-remainder batch
-- the next clean checkpoint is 1600 cases, so 100 additional validated cases are
-  needed before the next 100-case publication increment
+- this baseline contains 16 full checkpoints and no release-remainder batch
+- no additional cases are required for this baseline; a future optional
+  100-case checkpoint would be 1700 cases
 
 The decks are intended as public examples that users can inspect, copy, and run
 with their own ELF/MAGIC installation. The MCP server itself does not execute
 ELF/MAGIC or bundle solver results.
+
+Quality labels used by the MCP tools:
+
+- `gold_numeric_invariant`: 674 numeric-anchor cases where ELF `FLUM`-derived
+  scaling/sign/energy/loss/coupling invariants and independent NGSolve proxy
+  invariants both passed.
+- `silver_proxy_energy`: 926 broader runnable authoring-pattern cases where
+  ELF/MAGIC run checks passed and an independent NGSolve proxy-field energy
+  sanity gate was positive. This is useful for authoring patterns, but is not
+  a claim of full absolute field/force/torque/loss agreement.
+
+Representative routing:
+
+- `elf_sample_decks_representatives()` returns a curated first-stop tour across
+  motors, non-motor applications, and numeric validation anchors.
+- `elf_sample_decks_route(goal)` uses these representative decks where possible
+  before falling back to the first cases in a matching family.
+- `elf_sample_decks_quality(label="gold")` is the recommended way to find the
+  strongest public numeric-invariant families before making validation claims.
+  It also reports publication gates for `.mai/.meg` pairing, manifest and
+  100-case checkpoint coverage, public-boundary hygiene, solver-output
+  exclusion, `application/motor` hierarchy, and representative-path resolution.
+- `elf_sample_decks_physics(quantity="force")` maps decks to physical
+  quantities before an agent chooses examples. The public map covers FLUM-based
+  flux linkage, inductance/co-energy, force/torque-gradient, AC-loss,
+  magnetic-circuit, permanent-magnet, transformer-coupling, WPT, MRI,
+  actuator, and accelerator quantities without bundling solver outputs.
+- `elf_sample_decks_cross_validation()` audits the validation contract across
+  all 1600 cases. It requires every family to have an independent NGSolve
+  cross-check, reports that no family is missing one, and separates stronger
+  `gold_numeric_invariant` families from broader `silver_proxy_energy`
+  proxy-check families.
 
 For these compact public examples, `.meg` files are generated as small ASCII
 ELF/MAGIC mesh decks directly by lab-authored Python generators. They are not
@@ -54,66 +87,66 @@ can emit ELF-compatible `.meg` meshes when that route is appropriate.
 
 Current families:
 
-- `motor/`: 652 motor-oriented examples, including 332 permanent-magnet
+- `application/motor/`: 652 motor-oriented examples, including 332 permanent-magnet
   pickup decks, 10 explicit SPM decks, 10 SRM switched-reluctance decks,
   10 induction cage decks, and 40 loop-reviewed SR/SPM/reluctance/hysteresis
   motor decks, plus 200 EMDLAB-style motor decks covering all bundled EMDLAB
   v0.2.0 motor example scripts, plus 50 Loop13 IPM, wound-field synchronous,
   axial-flux PM, linear PM, and stepper motor decks
-- `motor/emdlab_bldc_spm_10/`: 10 EMDLAB-style BLDC/SPM examples using
+- `application/motor/emdlab_bldc_spm_10/`: 10 EMDLAB-style BLDC/SPM examples using
   slotted stator iron, surface PM rotor proxies, phase coils, and `FLUM`
-- `motor/emdlab_ipm_hairpin_10/`: 10 EMDLAB-style IPM hairpin examples with
+- `application/motor/emdlab_ipm_hairpin_10/`: 10 EMDLAB-style IPM hairpin examples with
   buried PM rotor proxies, hairpin-conductor proxy counts, and `FLUM`
-- `motor/emdlab_induction_bar_10/`: 10 EMDLAB-style induction-machine rotor-bar
+- `application/motor/emdlab_induction_bar_10/`: 10 EMDLAB-style induction-machine rotor-bar
   examples using phase coils, conductive bar proxies, `OHM2`, and `FLUM`
-- `motor/emdlab_synrm_flux_barrier_10/`: 10 EMDLAB-style SynRM flux-barrier
+- `application/motor/emdlab_synrm_flux_barrier_10/`: 10 EMDLAB-style SynRM flux-barrier
   examples with saliency, rotor-angle proxies, and `FLUM`
-- `motor/emdlab_srm_pole_variants_10/`: 10 EMDLAB-style SRM pole-variant
+- `application/motor/emdlab_srm_pole_variants_10/`: 10 EMDLAB-style SRM pole-variant
   examples covering 6/4, 8/6, 12/8, and 12/16 pole proxy patterns
-- `motor/emdlab_afpm_linearized_10/`: 10 EMDLAB-style AFPM linearized-airgap
+- `application/motor/emdlab_afpm_linearized_10/`: 10 EMDLAB-style AFPM linearized-airgap
   examples with unfolded pole pitch, face magnets, stator coils, and `FLUM`
-- `motor/emdlab_bldc_outer_rotor_10/`: 10 EMDLAB-style BLDC outer-rotor
+- `application/motor/emdlab_bldc_outer_rotor_10/`: 10 EMDLAB-style BLDC outer-rotor
   examples with surface PM proxies, stator iron, phase coils, and `FLUM`
-- `motor/emdlab_induction_fraction_10/`: 10 EMDLAB-style fractional-sector
+- `application/motor/emdlab_induction_fraction_10/`: 10 EMDLAB-style fractional-sector
   induction-machine examples with phase coils, conducting bars, and `OHM2`
-- `motor/emdlab_ipm_hairpin_fraction_10/`: 10 EMDLAB-style fractional-sector
+- `application/motor/emdlab_ipm_hairpin_fraction_10/`: 10 EMDLAB-style fractional-sector
   IPM hairpin examples with buried PMs, hairpin proxies, and `FLUM`
-- `motor/emdlab_spmsm_10/`, `motor/emdlab_spmsm_fraction_10/`, and
-  `motor/emdlab_spmsm_static_torque_10/`: 30 EMDLAB-style SPMSM examples
+- `application/motor/emdlab_spmsm_10/`, `application/motor/emdlab_spmsm_fraction_10/`, and
+  `application/motor/emdlab_spmsm_static_torque_10/`: 30 EMDLAB-style SPMSM examples
   covering full, fractional-sector, and static-torque variants
-- `motor/emdlab_srm64_10/`, `motor/emdlab_srm86_10/`,
-  `motor/emdlab_srm86_fraction_10/`, `motor/emdlab_srm86_static_torque_10/`,
-  `motor/emdlab_srm128_10/`, and `motor/emdlab_srm1216_outer_rotor_10/`: 60
+- `application/motor/emdlab_srm64_10/`, `application/motor/emdlab_srm86_10/`,
+  `application/motor/emdlab_srm86_fraction_10/`, `application/motor/emdlab_srm86_static_torque_10/`,
+  `application/motor/emdlab_srm128_10/`, and `application/motor/emdlab_srm1216_outer_rotor_10/`: 60
   EMDLAB-style SRM examples covering 6/4, 8/6, 12/8, and 12/16 proxy patterns
-- `motor/emdlab_synrm_static_torque_10/` and
-  `motor/emdlab_synrm_fraction_static_torque_10/`: 20 EMDLAB-style SynRM
+- `application/motor/emdlab_synrm_static_torque_10/` and
+  `application/motor/emdlab_synrm_fraction_static_torque_10/`: 20 EMDLAB-style SynRM
   static-torque examples with flux-barrier and fractional-sector proxies
-- `motor/ipm_interior_pm_10/`: 10 Loop13 IPM examples with buried PM pairs,
+- `application/motor/ipm_interior_pm_10/`: 10 Loop13 IPM examples with buried PM pairs,
   rotor/stator iron, phase coils, rotor-angle parameters, and `FLUM`
-- `motor/wound_field_sync_10/`: 10 Loop13 wound-field synchronous motor
+- `application/motor/wound_field_sync_10/`: 10 Loop13 wound-field synchronous motor
   examples with DC rotor field coils, stator phase coils, soft iron, and `FLUM`
-- `motor/axial_flux_pm_10/`: 10 Loop13 axial-flux PM motor examples with dual
+- `application/motor/axial_flux_pm_10/`: 10 Loop13 axial-flux PM motor examples with dual
   axial yokes, face magnets, skew offsets, stator coils, and `FLUM`
-- `motor/linear_pm_motor_10/`: 10 Loop13 linear PM motor examples with
+- `application/motor/linear_pm_motor_10/`: 10 Loop13 linear PM motor examples with
   alternating PM tracks, moving three-coil forcers, translator offsets, and
   `FLUM`
-- `motor/stepper_motor_10/`: 10 Loop13 stepper motor examples with four stator
+- `application/motor/stepper_motor_10/`: 10 Loop13 stepper motor examples with four stator
   phases, PM rotor proxies, detent offsets, and `FLUM`
-- `motor/spm_surface_pm_10/`: 10 surface permanent-magnet motor examples
+- `application/motor/spm_surface_pm_10/`: 10 surface permanent-magnet motor examples
   using `MWL8T` magnets, `MMB8T` iron, three-phase `MCL8T` coils, and `FLUM`
-- `motor/spm_loop_10/`: 10 loop-reviewed surface-PM motor examples using
+- `application/motor/spm_loop_10/`: 10 loop-reviewed surface-PM motor examples using
   `MWL8T` magnets, stator coils, rotor/stator iron, and `FLUM`
-- `motor/induction_cage_10/`: 10 induction motor cage examples using
+- `application/motor/induction_cage_10/`: 10 induction motor cage examples using
   three-phase coils, `MAB8T` conducting bars, `OHM2`, and transient `FLUM`
-- `motor/srm_switched_reluctance_10/`: 10 switched-reluctance motor examples
+- `application/motor/srm_switched_reluctance_10/`: 10 switched-reluctance motor examples
   using salient `MMB8T` stator/rotor iron, phase `MCL8T` coils, and `FLUM`
-- `motor/sr_motor_loop_10/`: 10 loop-reviewed SR-motor examples with salient
+- `application/motor/sr_motor_loop_10/`: 10 loop-reviewed SR-motor examples with salient
   stator/rotor iron, phase coils, rotor-angle sweeps, and `FLUM`
-- `motor/reluctance_motor_10/`: 10 synchronous-reluctance motor examples with
+- `application/motor/reluctance_motor_10/`: 10 synchronous-reluctance motor examples with
   saliency, phase excitation, and passive pickup coils
-- `motor/hysteresis_motor_10/`: 10 high-coercivity hysteresis-motor input-deck
+- `application/motor/hysteresis_motor_10/`: 10 high-coercivity hysteresis-motor input-deck
   proxy examples using origin-starting B-H curves and pickup coils
-- `application/`: 848 application examples covering transformers, MRI,
+- non-motor `application/` families: 948 examples covering transformers, MRI,
   wireless power transfer, induction heating, accelerator electromagnets,
   actuator plungers, maglev bearings, magnetic separators, eddy-current
   brakes, NDT eddy-current probes, magnetic gears, voice-coil actuators,
@@ -123,8 +156,8 @@ Current families:
   numeric-validation anchors, numeric FLUM-law validation decks, numeric
   inductance/co-energy validation decks, and numeric force/torque-gradient
   validation decks, numeric AC-loss validation decks, and numeric
-  magnetic-circuit validation decks, and numeric permanent-magnet validation
-  decks
+  magnetic-circuit validation decks, numeric permanent-magnet validation decks,
+  and numeric transformer-coupling validation decks
 - `application/emdlab_1ph_transformer_static_10/`: 10 EMDLAB-style
   single-phase transformer static examples with core limbs, primary/secondary
   coils, and `FLUM`
@@ -159,6 +192,10 @@ Current families:
   scaling, distance decay, magnet width/depth, magnetization-angle cosine,
   polarity reversal, lateral symmetry, add/cancel, array count, and
   pickup-turn scaling invariants
+- `application/numeric_transformer_coupling_100/`: 100 numeric MMB8T/HBUN/HBCU
+  transformer-coupling examples validating primary/secondary `FLUM`, apparent
+  turns ratio, B-H slope, air-gap leakage, winding span, core area/depth,
+  secondary-offset symmetry, and buck/boost superposition invariants
 - `application/transformer_core_pickup_12/`: 12 transformer core, primary,
   secondary, and passive pickup-coil examples
 - `application/transformer_loop_10/`: 10 loop-reviewed transformer core,

@@ -37,11 +37,20 @@ from .sample_decks import (
     get_sample_deck,
     route_sample_decks,
     build_sample_deck_cards,
+    build_representative_cards,
     build_team28_cards,
+    build_cross_validation_summary,
+    build_quality_summary,
+    build_physical_quantity_summary,
     build_validation_summary,
+    format_public_promotion,
     format_sample_deck_cards,
+    format_cross_validation_summary,
+    format_representative_cards,
     format_sample_deck_routes,
     format_team28_cards,
+    format_quality_summary,
+    format_physical_quantity_summary,
     format_validation_summary,
 )
 from .recipes import (
@@ -77,11 +86,15 @@ _TOOL_CATALOG = [
     ("elf_examples_index / search / get / playbook", "C:/ELF600/examples/ "
                                                        "(332 .mai/.mei/.txt, 533 KB) "
                                                        "plus 100 compact example cards"),
-    ("elf_sample_decks_index / search / route / validation / get / playbook",
+    ("elf_sample_decks_index / search / route / validation / cross_validation / "
+     "quality / physics / "
+     "representatives / get / playbook",
                                               "Lab-authored ELF-runnable "
                                               "public .mai/.meg input decks "
                                               "(input files only; no solver outputs; "
                                               "machine-readable validation levels)"),
+    ("elf_public_promotion", "Public-safe Japanese/English promotion copy "
+                              "for the 1600-case corpus"),
     ("elf_recipe_index / search / get / plan", "Public-safe workflow "
                                                 "recipes for choosing ELF "
                                                 "elements, PRE/SOL blocks, "
@@ -103,16 +116,16 @@ _RELATED_PUBLIC_PACKAGES = [
 
 @mcp.tool()
 def elf_overview() -> dict:
-    """RECOMMENDED FIRST CALL. Catalog of ELF MCP's 26 tools + 1
+    """RECOMMENDED FIRST CALL. Catalog of ELF MCP's 31 tools + 1
     prompt, with public-safe routing hints for MCP clients.
 
     Returns:
-        dict with `tool_families` (curated 26-tool grouping), `n_tools`,
+        dict with `tool_families` (curated 31-tool grouping), `n_tools`,
         public boundary notes, recommended calls, and public companion package
         hints.
     """
     return {
-        "n_tools": 26,
+        "n_tools": 31,
         "n_prompts": 1,
         "tool_families": [
             {"signature": sig, "description": desc}
@@ -132,8 +145,28 @@ def elf_overview() -> dict:
                 "call": "elf_sample_decks_route('IPM hairpin motor flux linkage')",
             },
             {
-                "goal": "Learn from the 1500 public input-deck cases",
+                "goal": "Learn from the 1600 public input-deck cases",
                 "call": "elf_sample_decks_playbook(limit=20, query='permanent magnet HBRM')",
+            },
+            {
+                "goal": "Start from curated representative decks",
+                "call": "elf_sample_decks_representatives(area='motor')",
+            },
+            {
+                "goal": "Inspect quality labels for public sample families",
+                "call": "elf_sample_decks_quality(label='gold')",
+            },
+            {
+                "goal": "Inspect physical quantities covered by public samples",
+                "call": "elf_sample_decks_physics(quantity='force')",
+            },
+            {
+                "goal": "Audit cross-validation coverage and gaps",
+                "call": "elf_sample_decks_cross_validation()",
+            },
+            {
+                "goal": "Draft public-safe promotion copy",
+                "call": "elf_public_promotion(audience='ja')",
             },
             {
                 "goal": "Check validation levels before claiming a deck is validated",
@@ -163,7 +196,12 @@ def elf_overview() -> dict:
             "catalogue, elf_plan_workflow('goal') for a workflow plan, "
             "elf_recipe_search('keyword') for decision cards, or "
             "elf_sample_decks_playbook() for ELF-runnable public .mai/.meg decks, "
+            "elf_sample_decks_representatives() for curated first-stop decks, "
+            "elf_sample_decks_quality() for quality labels, "
+            "elf_sample_decks_physics() for physical-quantity coverage, "
+            "elf_sample_decks_cross_validation() for cross-validation gaps, "
             "elf_sample_decks_validation() for public validation levels and limits, "
+            "elf_public_promotion() for public-safe promotion copy, "
             "elf_python_team28() for the Python-interface team28 seed manifest, "
             "elf_help_search('keyword') / "
             "elf_examples_search('keyword') for raw access, or "
@@ -518,7 +556,7 @@ def elf_sample_decks_get(path: str, max_chars: int = 60000) -> str:
 
     Args:
         path: Relative sample path, e.g.
-              "motor/pm_cosine_pickup_72/pm001/pm001.mai".
+              "application/motor/pm_cosine_pickup_72/pm001/pm001.mai".
               Filename-only works if unambiguous.
         max_chars: Truncate output if longer. Default 60000, enough for
                    the bundled public `.meg` decks.
@@ -539,7 +577,7 @@ def elf_sample_decks_get(path: str, max_chars: int = 60000) -> str:
 @mcp.tool()
 def elf_sample_decks_playbook(limit: int = 100, family: str = "", query: str = "") -> str:
     """
-    Build compact cards from the 1500 public ELF-runnable `.mai`/`.meg` cases.
+    Build compact cards from the 1600 public ELF-runnable `.mai`/`.meg` cases.
 
     Each card links the `.mai` and `.meg` pair and summarizes detected SOL
     blocks, PRE keywords, element types, feature tags, and a reuse hint. This
@@ -547,7 +585,7 @@ def elf_sample_decks_playbook(limit: int = 100, family: str = "", query: str = "
     every raw file.
 
     Args:
-        limit: Number of cards to return. Default 100. Max 1500.
+        limit: Number of cards to return. Default 100. Max 1600.
         family: Optional family substring, e.g. "pm_square", "cosine",
             "spm", "srm", "sr_motor", "induction", "ipm",
             "emdlab", "afpm", "linear_pm", "stepper", "wound_field",
@@ -559,7 +597,7 @@ def elf_sample_decks_playbook(limit: int = 100, family: str = "", query: str = "
             "numeric_validation", "numeric_flum_law",
             "numeric_inductance_energy", "numeric_force_torque",
             "numeric_ac_loss", "numeric_magnetic_circuit", or
-            "numeric_permanent_magnet".
+            "numeric_permanent_magnet", or "numeric_transformer_coupling".
         query: Optional keyword filter across paths, tags, and deck text.
 
     Returns:
@@ -568,6 +606,25 @@ def elf_sample_decks_playbook(limit: int = 100, family: str = "", query: str = "
     """
     cards = build_sample_deck_cards(limit=limit, family=family or None, query=query or None)
     return format_sample_deck_cards(cards)
+
+
+@mcp.tool()
+def elf_sample_decks_representatives(area: str = "", limit: int = 36) -> str:
+    """
+    Return curated first-stop representative decks from the 1600-case corpus.
+
+    Args:
+        area: Optional area filter, e.g. "motor", "application",
+              "numeric", "numeric-gold", "pm", or "wpt".
+        limit: Number of representative cards to return. Default 36.
+
+    Returns:
+        Markdown cards with representative `.mai`/`.meg` paths, why each deck
+        is representative, quality label, validation level, SOL blocks, PRE
+        keywords, and element families.
+    """
+    cards = build_representative_cards(area=area or None, limit=limit)
+    return format_representative_cards(cards)
 
 
 @mcp.tool()
@@ -584,7 +641,7 @@ def elf_sample_decks_validation(family: str = "", level: str = "") -> str:
             "numeric_flum_law", "numeric_inductance_energy",
             "numeric_force_torque", "numeric_ac_loss",
             "numeric_magnetic_circuit", "numeric_permanent_magnet",
-            "emdlab_ipm", "wpt", or "motor".
+            "numeric_transformer_coupling", "emdlab_ipm", "wpt", or "motor".
         level: Optional exact validation level, e.g.
             "ngsolve_proxy_energy" or "ngsolve_numeric_invariant".
 
@@ -594,6 +651,98 @@ def elf_sample_decks_validation(family: str = "", level: str = "") -> str:
     """
     summary = build_validation_summary(family=family or None, level=level or None)
     return format_validation_summary(summary)
+
+
+@mcp.tool()
+def elf_sample_decks_quality(family: str = "", label: str = "") -> str:
+    """
+    Summarize quality labels for public sample-deck families.
+
+    Quality labels are public-safe wrappers around validation levels:
+    `gold_numeric_invariant` for numeric invariant families and
+    `silver_proxy_energy` for broader proxy-energy-gated runnable examples.
+
+    Args:
+        family: Optional family substring, e.g. "motor", "numeric",
+            "transformer", "wpt", or "permanent_magnet".
+        label: Optional quality-label substring, e.g. "gold" or "silver".
+
+    Returns:
+        Markdown quality-label summary with counts, meaning, recommended use,
+        and matching families.
+    """
+    summary = build_quality_summary(family=family or None, label=label or None)
+    return format_quality_summary(summary)
+
+
+@mcp.tool()
+def elf_sample_decks_physics(quantity: str = "", family: str = "") -> str:
+    """
+    Summarize physical quantities covered by the public sample-deck corpus.
+
+    Use this when an agent needs to decide what physical quantity a prompt is
+    asking for before choosing examples or making validation claims. The map is
+    derived from public input decks and validation metadata only.
+
+    Args:
+        quantity: Optional physical-quantity substring, e.g. "flux",
+            "inductance", "force", "torque", "loss", "permanent",
+            "transformer", "wpt", or "mri".
+        family: Optional family substring, e.g. "motor", "numeric",
+            "transformer", "wpt", or "permanent_magnet".
+
+    Returns:
+        Markdown physical-quantity coverage with gold/silver counts,
+        representative decks, gates, and public-use limitations.
+    """
+    summary = build_physical_quantity_summary(
+        quantity=quantity or None,
+        family=family or None,
+    )
+    return format_physical_quantity_summary(summary)
+
+
+@mcp.tool()
+def elf_sample_decks_cross_validation(family: str = "", level: str = "") -> str:
+    """
+    Audit cross-validation coverage and gaps for the 1600 public sample decks.
+
+    Use this before publishing or before claiming that a sample family is
+    cross-validated. The audit reports independent NGSolve cross-check coverage,
+    gold dual-invariant coverage, silver proxy-energy coverage, gap status, and
+    silver-to-gold upgrade candidates.
+
+    Args:
+        family: Optional family substring such as "motor", "numeric",
+            "transformer", "wpt", or "permanent_magnet".
+        level: Optional exact validation level, e.g.
+            "ngsolve_proxy_energy" or "ngsolve_numeric_invariant".
+
+    Returns:
+        Markdown cross-validation audit with gates, method counts, gaps,
+        selected families, upgrade candidates, and public-use limitations.
+    """
+    summary = build_cross_validation_summary(
+        family=family or None,
+        level=level or None,
+    )
+    return format_cross_validation_summary(summary)
+
+
+@mcp.tool()
+def elf_public_promotion(audience: str = "ja") -> str:
+    """
+    Return public-safe promotion copy for ELF-mcp-server.
+
+    Args:
+        audience: "ja" / "yano" for Japanese collaborator-facing copy, or
+            "en" for English copy.
+
+    Returns:
+        Markdown promotion draft that mentions the 1600-case public corpus,
+        representative routing, quality labels, and public boundary.
+    """
+    return format_public_promotion(audience)
 
 
 @mcp.tool()
@@ -1027,32 +1176,32 @@ def main():
         # 9. Public sample decks
         print("[9/16] elf_sample_decks tools:")
         sd = elf_sample_decks_index()
-        assert "motor/pm_cosine_pickup_72/pm001/pm001.mai" in sd
-        assert "motor/pm_cosine_pickup_72/pm001/pm001.meg" in sd
-        assert "motor/spm_surface_pm_10/spm001/spm001.mai" in sd
-        assert "motor/srm_switched_reluctance_10/srm001/srm001.mai" in sd
-        assert "motor/induction_cage_10/im001/im001.mai" in sd
-        assert "motor/emdlab_bldc_spm_10/ebl001/ebl001.mai" in sd
-        assert "motor/emdlab_ipm_hairpin_10/eip001/eip001.mai" in sd
-        assert "motor/emdlab_induction_bar_10/eim001/eim001.mai" in sd
-        assert "motor/emdlab_synrm_flux_barrier_10/esr001/esr001.mai" in sd
-        assert "motor/emdlab_srm_pole_variants_10/esm001/esm001.mai" in sd
-        assert "motor/emdlab_afpm_linearized_10/eaf001/eaf001.mai" in sd
-        assert "motor/ipm_interior_pm_10/ipm001/ipm001.mai" in sd
-        assert "motor/wound_field_sync_10/wfs001/wfs001.mai" in sd
-        assert "motor/axial_flux_pm_10/afm001/afm001.mai" in sd
-        assert "motor/linear_pm_motor_10/lpm001/lpm001.mai" in sd
-        assert "motor/stepper_motor_10/stm001/stm001.mai" in sd
+        assert "application/motor/pm_cosine_pickup_72/pm001/pm001.mai" in sd
+        assert "application/motor/pm_cosine_pickup_72/pm001/pm001.meg" in sd
+        assert "application/motor/spm_surface_pm_10/spm001/spm001.mai" in sd
+        assert "application/motor/srm_switched_reluctance_10/srm001/srm001.mai" in sd
+        assert "application/motor/induction_cage_10/im001/im001.mai" in sd
+        assert "application/motor/emdlab_bldc_spm_10/ebl001/ebl001.mai" in sd
+        assert "application/motor/emdlab_ipm_hairpin_10/eip001/eip001.mai" in sd
+        assert "application/motor/emdlab_induction_bar_10/eim001/eim001.mai" in sd
+        assert "application/motor/emdlab_synrm_flux_barrier_10/esr001/esr001.mai" in sd
+        assert "application/motor/emdlab_srm_pole_variants_10/esm001/esm001.mai" in sd
+        assert "application/motor/emdlab_afpm_linearized_10/eaf001/eaf001.mai" in sd
+        assert "application/motor/ipm_interior_pm_10/ipm001/ipm001.mai" in sd
+        assert "application/motor/wound_field_sync_10/wfs001/wfs001.mai" in sd
+        assert "application/motor/axial_flux_pm_10/afm001/afm001.mai" in sd
+        assert "application/motor/linear_pm_motor_10/lpm001/lpm001.mai" in sd
+        assert "application/motor/stepper_motor_10/stm001/stm001.mai" in sd
         assert "application/transformer_core_pickup_12/tf001/tf001.mai" in sd
         assert "application/mri_gradient_shield_12/mri001/mri001.mai" in sd
         assert "application/wpt_coupled_coils_10/wpt001/wpt001.mai" in sd
         assert "application/wpt_loop_10/wpl001/wpl001.mai" in sd
         assert "application/mri_loop_10/mrl001/mrl001.mai" in sd
-        assert "motor/sr_motor_loop_10/srl001/srl001.mai" in sd
-        assert "motor/spm_loop_10/spl001/spl001.mai" in sd
+        assert "application/motor/sr_motor_loop_10/srl001/srl001.mai" in sd
+        assert "application/motor/spm_loop_10/spl001/spl001.mai" in sd
         assert "application/ih_induction_heating_10/ihl001/ihl001.mai" in sd
-        assert "motor/reluctance_motor_10/ryl001/ryl001.mai" in sd
-        assert "motor/hysteresis_motor_10/hyl001/hyl001.mai" in sd
+        assert "application/motor/reluctance_motor_10/ryl001/ryl001.mai" in sd
+        assert "application/motor/hysteresis_motor_10/hyl001/hyl001.mai" in sd
         assert "application/transformer_loop_10/tfl001/tfl001.mai" in sd
         assert "application/accelerator_magnet_10/acl001/acl001.mai" in sd
         assert "application/actuator_plunger_10/atl001/atl001.mai" in sd
@@ -1070,9 +1219,9 @@ def main():
         assert "application/transformer_leakage_10/tlg001/tlg001.mai" in sd
         assert "application/ih_susceptor_ring_10/ihr001/ihr001.mai" in sd
         assert "application/accelerator_corrector_10/acm001/acm001.mai" in sd
-        assert "motor/emdlab_bldc_outer_rotor_10/ebo001/ebo001.mai" in sd
-        assert "motor/emdlab_spmsm_static_torque_10/eptq001/eptq001.mai" in sd
-        assert "motor/emdlab_srm1216_outer_rotor_10/ero001/ero001.mai" in sd
+        assert "application/motor/emdlab_bldc_outer_rotor_10/ebo001/ebo001.mai" in sd
+        assert "application/motor/emdlab_spmsm_static_torque_10/eptq001/eptq001.mai" in sd
+        assert "application/motor/emdlab_srm1216_outer_rotor_10/ero001/ero001.mai" in sd
         assert "application/emdlab_1ph_transformer_static_10/ept001/ept001.mai" in sd
         assert "application/emdlab_benchmark_ccore_10/ecc001/ecc001.mai" in sd
         assert "application/numeric_validation_anchors_10/nva001/nva001.mai" in sd
@@ -1082,41 +1231,42 @@ def main():
         assert "application/numeric_ac_loss_100/nal001/nal001.mai" in sd
         assert "application/numeric_magnetic_circuit_100/nmc001/nmc001.mai" in sd
         assert "application/numeric_permanent_magnet_100/npm001/npm001.mai" in sd
+        assert "application/numeric_transformer_coupling_100/ntc001/ntc001.mai" in sd
         sd_mai = elf_sample_decks_index(ext="mai")
-        assert sd_mai.count(".mai") == 1500, "Expected 1500 public .mai decks"
+        assert sd_mai.count(".mai") == 1600, "Expected 1600 public .mai decks"
         sd_search = elf_sample_decks_search("HBCN FLUM", top_k=5, ext="mai")
         assert "pm001.mai" in sd_search and "No sample deck matches" not in sd_search
         sd_spm_search = elf_sample_decks_search("SPM HBRM FLUM", top_k=5, ext="mai")
-        assert "motor/spm_surface_pm_10" in sd_spm_search
+        assert "application/motor/spm_surface_pm_10" in sd_spm_search
         sd_srm_search = elf_sample_decks_search("SRM reluctance FLUM", top_k=5, ext="mai")
-        assert "motor/srm_switched_reluctance_10" in sd_srm_search
+        assert "application/motor/srm_switched_reluctance_10" in sd_srm_search
         sd_im_search = elf_sample_decks_search("induction motor cage OHM2 FLUM", top_k=5, ext="mai")
-        assert "motor/induction_cage_10" in sd_im_search
+        assert "application/motor/induction_cage_10" in sd_im_search
         sd_emdlab_ipm_search = elf_sample_decks_search("EMDLAB-style IPM hairpin FLUM", top_k=5, ext="mai")
-        assert "motor/emdlab_ipm_hairpin_10" in sd_emdlab_ipm_search
+        assert "application/motor/emdlab_ipm_hairpin_10" in sd_emdlab_ipm_search
         sd_emdlab_im_search = elf_sample_decks_search("induction-machine bar OHM2 FLUM", top_k=5, ext="mai")
-        assert "motor/emdlab_induction_bar_10" in sd_emdlab_im_search
+        assert "application/motor/emdlab_induction_bar_10" in sd_emdlab_im_search
         sd_emdlab_synrm_search = elf_sample_decks_search("EMDLAB-style SynRM flux-barrier FLUM", top_k=5, ext="mai")
-        assert "motor/emdlab_synrm_flux_barrier_10" in sd_emdlab_synrm_search
+        assert "application/motor/emdlab_synrm_flux_barrier_10" in sd_emdlab_synrm_search
         sd_emdlab_srm_search = elf_sample_decks_search("EMDLAB-style SRM pole-variant FLUM", top_k=5, ext="mai")
-        assert "motor/emdlab_srm_pole_variants_10" in sd_emdlab_srm_search
+        assert "application/motor/emdlab_srm_pole_variants_10" in sd_emdlab_srm_search
         sd_emdlab_afpm_search = elf_sample_decks_search("EMDLAB-style AFPM linearized-airgap FLUM", top_k=5, ext="mai")
-        assert "motor/emdlab_afpm_linearized_10" in sd_emdlab_afpm_search
+        assert "application/motor/emdlab_afpm_linearized_10" in sd_emdlab_afpm_search
         sd_loop13_wound_search = elf_sample_decks_search("Loop13 wound-field synchronous FLUM", top_k=5, ext="mai")
-        assert "motor/wound_field_sync_10" in sd_loop13_wound_search
+        assert "application/motor/wound_field_sync_10" in sd_loop13_wound_search
         sd_loop13_stepper_search = elf_sample_decks_search("Loop13 stepper motor detent FLUM", top_k=5, ext="mai")
-        assert "motor/stepper_motor_10" in sd_loop13_stepper_search
+        assert "application/motor/stepper_motor_10" in sd_loop13_stepper_search
         sd_loop13_wpt_search = elf_sample_decks_search("Loop13 WPT misalignment OHM2", top_k=5, ext="mai")
         assert "application/wpt_misalignment_10" in sd_loop13_wpt_search
         sd_loop13_mri_search = elf_sample_decks_search("Loop13 MRI gradient sequence OHM2", top_k=5, ext="mai")
         assert "application/mri_gradient_sequence_10" in sd_loop13_mri_search
         sd_route = elf_sample_decks_route("IPM hairpin motor flux linkage", limit=3)
-        assert "motor/emdlab_ipm_hairpin_10" in sd_route
+        assert "application/motor/emdlab_ipm_hairpin_10" in sd_route
         assert "elf_sample_decks_playbook" in sd_route
         sd_wpt_route = elf_sample_decks_route("WPT misalignment with conducting shield", limit=2)
         assert "application/wpt_misalignment_10" in sd_wpt_route
         sd_outer_route = elf_sample_decks_route("BLDC outer rotor motor", limit=2)
-        assert "motor/emdlab_bldc_outer_rotor_10" in sd_outer_route
+        assert "application/motor/emdlab_bldc_outer_rotor_10" in sd_outer_route
         sd_transformer_static_route = elf_sample_decks_route("single phase transformer static", limit=2)
         assert "application/emdlab_1ph_transformer_static_10" in sd_transformer_static_route
         sd_ccore_route = elf_sample_decks_route("benchmark C-core magnet", limit=2)
@@ -1141,6 +1291,10 @@ def main():
         assert "application/numeric_permanent_magnet_100" in sd_permanent_magnet_search
         sd_permanent_magnet_route = elf_sample_decks_route("permanent magnet HBRM polarity FLUM", limit=2)
         assert "application/numeric_permanent_magnet_100" in sd_permanent_magnet_route
+        sd_transformer_coupling_search = elf_sample_decks_search("transformer coupling turns ratio HBCU FLUM", top_k=5, ext="mai")
+        assert "application/numeric_transformer_coupling_100" in sd_transformer_coupling_search
+        sd_transformer_coupling_route = elf_sample_decks_route("transformer coupling turns ratio HBCU FLUM", limit=2)
+        assert "application/numeric_transformer_coupling_100" in sd_transformer_coupling_route
         sd_app_search = elf_sample_decks_search("MRI OHM2 FREQ", top_k=5, ext="mai")
         assert "application/mri" in sd_app_search
         sd_wpt_search = elf_sample_decks_search("WPT MOMC FLUM", top_k=5, ext="mai")
@@ -1150,15 +1304,15 @@ def main():
         sd_mri_loop_search = elf_sample_decks_search("Loop10 MRI OHM2 FREQ", top_k=5, ext="mai")
         assert "application/mri_loop_10" in sd_mri_loop_search
         sd_sr_loop_search = elf_sample_decks_search("SR-motor reluctance FLUM", top_k=5, ext="mai")
-        assert "motor/sr_motor_loop_10" in sd_sr_loop_search
+        assert "application/motor/sr_motor_loop_10" in sd_sr_loop_search
         sd_spm_loop_search = elf_sample_decks_search("Loop10 SPM HBRM FLUM", top_k=5, ext="mai")
-        assert "motor/spm_loop_10" in sd_spm_loop_search
+        assert "application/motor/spm_loop_10" in sd_spm_loop_search
         sd_ih_search = elf_sample_decks_search("IH induction-heating MOMC", top_k=5, ext="mai")
         assert "application/ih_induction_heating_10" in sd_ih_search
         sd_reluctance_search = elf_sample_decks_search("reluctance motor synchronous saliency", top_k=5, ext="mai")
-        assert "motor/reluctance_motor_10" in sd_reluctance_search
+        assert "application/motor/reluctance_motor_10" in sd_reluctance_search
         sd_hysteresis_search = elf_sample_decks_search("hysteresis motor high-coercivity", top_k=5, ext="mai")
-        assert "motor/hysteresis_motor_10" in sd_hysteresis_search
+        assert "application/motor/hysteresis_motor_10" in sd_hysteresis_search
         sd_transformer_loop_search = elf_sample_decks_search("Loop10 transformer FLUM", top_k=5, ext="mai")
         assert "application/transformer_loop_10" in sd_transformer_loop_search
         sd_accelerator_search = elf_sample_decks_search("accelerator electromagnet FLUM", top_k=5, ext="mai")
@@ -1183,8 +1337,10 @@ def main():
         assert "application/hall_sensor_fixture_10" in sd_hall_search
         sd_clutch_search = elf_sample_decks_search("Loop12 electromagnetic clutch OHM2", top_k=5, ext="mai")
         assert "application/electromagnetic_clutch_10" in sd_clutch_search
-        sd_get = elf_sample_decks_get("motor/pm_cosine_pickup_72/pm001/pm001.mai")
+        sd_get = elf_sample_decks_get("application/motor/pm_cosine_pickup_72/pm001/pm001.mai")
         assert "HBCN 1 0 1" in sd_get and "HBCN 2 0 2" in sd_get
+        sd_get_legacy = elf_sample_decks_get("motor/pm_cosine_pickup_72/pm001/pm001.mai")
+        assert "application/motor/pm_cosine_pickup_72/pm001/pm001.mai" in sd_get_legacy
         sd_pb = elf_sample_decks_playbook(limit=28, family="pm_square")
         assert sd_pb.count("\n## ") == 28, "Expected 28 sample deck playbook cards"
         sd_app_pb = elf_sample_decks_playbook(limit=20, family="transformer_core_pickup_12")
@@ -1212,13 +1368,15 @@ def main():
         assert sd_magnetic_circuit_pb.count("\n## ") == 100, "Expected numeric magnetic circuit cards"
         sd_permanent_magnet_pb = elf_sample_decks_playbook(limit=110, family="numeric_permanent_magnet")
         assert sd_permanent_magnet_pb.count("\n## ") == 100, "Expected numeric permanent magnet cards"
+        sd_transformer_coupling_pb = elf_sample_decks_playbook(limit=110, family="numeric_transformer_coupling")
+        assert sd_transformer_coupling_pb.count("\n## ") == 100, "Expected numeric transformer coupling cards"
         sd_validation = elf_sample_decks_validation()
-        assert "1500 cases" in sd_validation
+        assert "1600 cases" in sd_validation
         assert "ngsolve_proxy_energy" in sd_validation
         assert "ngsolve_numeric_invariant" in sd_validation
         assert "not a full absolute field/force/torque/loss agreement suite" in sd_validation
         assert "100-case publication checkpoints" in sd_validation
-        assert "100 additional validated cases needed" in sd_validation
+        assert "100 additional validated cases would make the next optional increment" in sd_validation
         sd_numeric_validation = elf_sample_decks_validation(family="numeric_validation")
         assert "application/numeric_validation_anchors_10" in sd_numeric_validation
         assert "elf_flux_invariants_passed" in sd_numeric_validation
@@ -1240,8 +1398,41 @@ def main():
         sd_permanent_magnet_validation = elf_sample_decks_validation(family="numeric_permanent_magnet")
         assert "application/numeric_permanent_magnet_100" in sd_permanent_magnet_validation
         assert "100 cases" in sd_permanent_magnet_validation
+        sd_transformer_coupling_validation = elf_sample_decks_validation(family="numeric_transformer_coupling")
+        assert "application/numeric_transformer_coupling_100" in sd_transformer_coupling_validation
+        assert "100 cases" in sd_transformer_coupling_validation
+        sd_quality = elf_sample_decks_quality()
+        assert "Publication Quality Gates (PASS)" in sd_quality
+        assert "paired_mai_meg" in sd_quality
+        assert "manifest_matches_files" in sd_quality
+        assert "gold_numeric_invariant" in sd_quality
+        assert "silver_proxy_energy" in sd_quality
+        sd_gold_quality = elf_sample_decks_quality(label="gold")
+        assert "application/numeric_transformer_coupling_100" in sd_gold_quality
+        sd_physics = elf_sample_decks_physics()
+        assert "Physical Quantity Gates (PASS)" in sd_physics
+        assert "flux_linkage" in sd_physics
+        assert "gold_physics_anchor_coverage" in sd_physics
+        sd_force_physics = elf_sample_decks_physics(quantity="force")
+        assert "force_torque_gradient" in sd_force_physics
+        assert "application/numeric_force_torque_100" in sd_force_physics
+        sd_cross_validation = elf_sample_decks_cross_validation()
+        assert "Cross-Validation Gates (PASS)" in sd_cross_validation
+        assert "No family is missing independent NGSolve cross-validation" in sd_cross_validation
+        assert "ngsolve_proxy_energy_positive" in sd_cross_validation
+        assert "ngsolve_numeric_invariants_passed" in sd_cross_validation
+        sd_gold_cross_validation = elf_sample_decks_cross_validation(level="ngsolve_numeric_invariant")
+        assert "674 cases" in sd_gold_cross_validation
+        assert "application/numeric_transformer_coupling_100" in sd_gold_cross_validation
+        sd_representatives = elf_sample_decks_representatives()
+        assert "why representative" in sd_representatives
+        assert "application/motor/emdlab_ipm_hairpin_10/eip001/eip001.mai" in sd_representatives
+        sd_motor_representatives = elf_sample_decks_representatives(area="motor")
+        assert "application/motor/emdlab_ipm_hairpin_10" in sd_motor_representatives
+        sd_promotion = elf_public_promotion(audience="ja")
+        assert "1600" in sd_promotion and "品質ラベル" in sd_promotion
         sd_invariant_validation = elf_sample_decks_validation(level="ngsolve_numeric_invariant")
-        assert "574 cases" in sd_invariant_validation
+        assert "674 cases" in sd_invariant_validation
         assert "application/numeric_validation_anchors_10" in sd_invariant_validation
         assert "application/numeric_flum_law_64" in sd_invariant_validation
         assert "application/numeric_inductance_energy_100" in sd_invariant_validation
@@ -1249,10 +1440,11 @@ def main():
         assert "application/numeric_ac_loss_100" in sd_invariant_validation
         assert "application/numeric_magnetic_circuit_100" in sd_invariant_validation
         assert "application/numeric_permanent_magnet_100" in sd_invariant_validation
+        assert "application/numeric_transformer_coupling_100" in sd_invariant_validation
         sd_loop13_motor_pb = elf_sample_decks_playbook(limit=50, query="Loop13 motor")
         assert sd_loop13_motor_pb.count("\n## ") == 50, "Expected Loop13 motor sample cards"
         assert "wound_field_sync_10" in sd_loop13_motor_pb
-        sd_loop13_app_pb = elf_sample_decks_playbook(limit=50, query="Loop13")
+        sd_loop13_app_pb = elf_sample_decks_playbook(limit=20, query="Loop13 WPT misalignment")
         assert "wpt_misalignment_10" in sd_loop13_app_pb
         assert "Python-interface seed manifest" not in sd_pb, "Normal sample playbook must not claim team28"
         sample_text = (
@@ -1270,11 +1462,18 @@ def main():
             + sd_magnetic_circuit_pb
             + sd_permanent_magnet_search + sd_permanent_magnet_route
             + sd_permanent_magnet_pb
+            + sd_transformer_coupling_search + sd_transformer_coupling_route
+            + sd_transformer_coupling_pb
             + sd_validation + sd_numeric_validation + sd_flum_law_validation
             + sd_inductance_validation + sd_force_validation
             + sd_ac_loss_validation
             + sd_magnetic_circuit_validation
             + sd_permanent_magnet_validation
+            + sd_transformer_coupling_validation
+            + sd_quality + sd_gold_quality + sd_physics + sd_force_physics
+            + sd_cross_validation + sd_gold_cross_validation
+            + sd_representatives
+            + sd_motor_representatives + sd_promotion
             + sd_invariant_validation
             + sd_loop13_motor_pb + sd_loop13_app_pb
             + sd_wpt_loop_search + sd_mri_loop_search + sd_sr_loop_search
@@ -1289,7 +1488,7 @@ def main():
         )
         forbidden_sample_markers = ("C:" + "\\temp", "S:" + "\\", "_cross" + "val", ".mag", ".mao")
         assert not any(marker in sample_text for marker in forbidden_sample_markers)
-        print("  1500-case .mai/.meg sample deck corpus OK")
+        print("  1600-case .mai/.meg sample deck corpus OK")
 
         # 10. Recipe tools
         print("[10/16] elf_recipe tools:")

@@ -12,17 +12,18 @@ This server does **not** execute ELF600 simulations — it provides curated docu
 
 ## Features
 
-**26 tools + 1 prompt** providing curated docs, workflow recipes, ELF-runnable public sample decks, prompt-to-sample routing, validation summaries, and raw access to ELF600 help HTM, example inputs, vendor wiki, and Python ctypes API:
+**31 tools + 1 prompt** providing curated docs, workflow recipes, ELF-runnable public sample decks, representative sample tours, quality labels, physical-quantity coverage, cross-validation audits, prompt-to-sample routing, validation summaries, promotion copy, and raw access to ELF600 help HTM, example inputs, vendor wiki, and Python ctypes API:
 
 | Tool family | Purpose | Files |
 |---|---|---|
 | `elf_usage(topic)` | 31 curated topics — high-level recipes | (knowledge.py) |
 | `elf_help_*(...)` | Help HTM files from `C:/ELF600/help/` | 1141 files, 1.18M chars |
 | `elf_examples_*(...)` | Example .mai/.mei/.txt plus 100-card playbook from `C:/ELF600/examples/` | 332 files, 533k chars |
-| `elf_sample_decks_*(...)` | Lab-authored ELF-runnable public `.mai`/`.meg` sample decks | 1500 cases, 3000 input files |
+| `elf_sample_decks_*(...)` | Lab-authored ELF-runnable public `.mai`/`.meg` sample decks | 1600 cases, 3200 input files |
 | `elf_recipe_*(...)` | Workflow decision cards for elements, PRE/SOL blocks, outputs, checks, and pitfalls | public-safe recipes |
 | `elf_wiki_*(...)` | Vendor wiki pages from elf.co.jp PukiWiki | 146 pages, 211k chars |
 | `elf_python_*(...)` | Python ctypes API + configs from `C:/ELF600/bin/` | 15 files, 246k chars |
+| `elf_public_promotion(...)` | Public-safe promotion copy for the 1600-case corpus | Japanese/English drafts |
 
 Each `_*` family has 3 tools: `_index`, `_search(query)`, `_get(path)`.
 The examples family also has `elf_examples_playbook(limit=100)`, which
@@ -30,13 +31,26 @@ summarizes 100 `.mai` examples as compact cards with detected SOL blocks,
 element families, feature tags, companion `.mei/.model` files, and reuse hints.
 The recipe family also has `elf_plan_workflow(goal)`, which chooses a short
 public-safe recipe sequence from a natural-language analysis goal.
-The sample deck family has `elf_sample_decks_index/search/route/validation/get/playbook`
+The sample deck family has `elf_sample_decks_index/search/route/validation/cross_validation/quality/physics/representatives/get/playbook`
 for ELF-runnable public `.mai`/`.meg` decks. `elf_sample_decks_route(goal)`
 maps a user prompt such as "IPM hairpin motor flux linkage" or
 "WPT misalignment" to the most relevant public deck families, follow-up MCP
 calls, validation levels, and representative `.mai` files.
 `elf_sample_decks_validation()` summarizes the validation level and public
 limitations for the corpus before an agent claims a deck is validated.
+`elf_sample_decks_representatives()` gives a curated first-stop tour through
+the 1600-case corpus. `elf_sample_decks_quality()` summarizes the public
+quality labels: 674 `gold_numeric_invariant` cases and 926
+`silver_proxy_energy` cases, and reports publication quality gates for pairing,
+manifest coverage, public-boundary hygiene, solver-output exclusion, and the
+`application/motor` hierarchy. `elf_sample_decks_physics()` maps the corpus to
+physical quantities such as flux linkage, inductance/co-energy, force/torque,
+AC loss, permanent-magnet flux, transformer coupling, WPT coupling, and MRI
+shield response. `elf_sample_decks_cross_validation()` audits whether every
+family has an independent NGSolve cross-check, separates gold dual-invariant
+families from silver proxy-energy families, and lists silver-to-gold upgrade
+candidates. `elf_public_promotion()` returns public-safe Japanese/English
+promotion copy for the corpus.
 The Python family also has
 `elf_python_team28()`: a compact 28-case seed manifest from the public motor
 cases for ELF Python-interface orchestration. `team28` is not a normal
@@ -54,6 +68,16 @@ public boundary. The most useful calls while authoring ELF/MAGIC inputs are:
   `.mai` decks
 - `elf_sample_decks_validation()` to check the public validation levels,
   counts, and limitations before claiming a deck is validated
+- `elf_sample_decks_representatives()` to start from curated first-stop decks
+  across motors, non-motor applications, and numeric validation anchors
+- `elf_sample_decks_quality(label="gold")` to prioritize the strongest public
+  numeric-invariant families
+- `elf_sample_decks_physics(quantity="force")` to inspect physical-quantity
+  coverage before choosing sample decks or making validation claims
+- `elf_sample_decks_cross_validation()` to audit independent cross-validation
+  coverage and find any remaining validation gaps
+- `elf_public_promotion(audience="ja")` to draft a public-safe Japanese
+  introduction of the 1600-case corpus
 - `elf_plan_workflow("WPT misalignment with conducting shield")` to get both
   a recipe-level plan and related public sample-deck routes
 - `elf_sample_decks_playbook(limit=20, family="pm_square")` for compact cards
@@ -150,7 +174,7 @@ public boundary. The most useful calls while authoring ELF/MAGIC inputs are:
   find AC clutch and conducting-plate setup patterns
 - `elf_sample_decks_search("Loop13 WPT misalignment OHM2", ext="mai")` to find
   wireless-power-transfer misalignment setup patterns
-- `elf_sample_decks_get("motor/pm_cosine_pickup_72/pm001/pm001.mai")` to open a
+- `elf_sample_decks_get("application/motor/pm_cosine_pickup_72/pm001/pm001.mai")` to open a
   concrete public deck
 - `elf_python_team28()` to inspect the Python-interface seed manifest
 
@@ -163,7 +187,8 @@ ELF/MAGIC is useful for magnetostatic and AC magnetic input authoring when the
 model is expressed as `.mai` analysis control plus `.meg` mesh data. This server
 turns that knowledge into MCP tools:
 
-- 652 public motor input-deck pairs covering 2-pole, 4-pole, 6-pole, 8-pole,
+- 652 public motor input-deck pairs under `application/motor/`, covering
+  2-pole, 4-pole, 6-pole, 8-pole,
   cosine-remanence PM pickup families, 10 explicit SPM motor examples, and
   10 SRM switched-reluctance examples, 10 induction cage examples, plus
   loop-reviewed SPM, SR motor, synchronous-reluctance motor, hysteresis motor,
@@ -171,7 +196,7 @@ turns that knowledge into MCP tools:
   induction, IPM hairpin, SPMSM static torque, SynRM, SRM 6/4 through 12/16,
   and AFPM variants, plus Loop13 IPM, wound-field synchronous, axial-flux PM,
   linear PM, and stepper families
-- 848 public application input-deck pairs covering transformer core/pickup
+- 948 public non-motor application input-deck pairs covering transformer core/pickup
   coupling, MRI gradient-coil/eddy-current shield patterns, WPT coupled coils,
   IH induction-heating workpieces, accelerator electromagnets, actuator
   plungers, maglev bearings, magnetic separators, eddy-current brakes,
@@ -184,9 +209,20 @@ turns that knowledge into MCP tools:
   validation decks, 100 numeric force/torque-gradient validation decks, and
   100 numeric AC-loss validation decks, plus 100 numeric magnetic-circuit
   validation decks and 100 numeric permanent-magnet/magnetization validation
-  decks
+  decks, plus 100 numeric transformer-coupling validation decks
 - playbook cards that expose each deck's SOL blocks, PRE keywords, element
   families, feature tags, and reuse hints
+- representative cards that identify first-stop examples and why each is a
+  good seed for agent-assisted authoring
+- quality labels that distinguish `gold_numeric_invariant` families from
+  broader `silver_proxy_energy` families
+- physical-quantity coverage that links examples to FLUM-based flux linkage,
+  inductance/co-energy, force/torque-gradient, AC-loss, magnetic-circuit,
+  permanent-magnet, transformer-coupling, WPT, MRI, actuator, and accelerator
+  quantities without bundling solver outputs
+- cross-validation audits that require every public family to have an
+  independent NGSolve check and distinguish `gold_numeric_invariant` from
+  `silver_proxy_energy` coverage
 - curated motor topics for air-gap field, flux linkage/back-EMF pickup,
   polarity/angle conventions, force outputs, and eddy-current setup
 - Python-interface `team28` seed manifest for higher-level orchestration,
@@ -259,7 +295,7 @@ inside the public sample decks, and exact agreement with
 `public_samples/PUBLICATION_BATCHES.json`. Only sample families marked
 `validation: passed` in that manifest are intended for publication.
 The manifest records the validation level for each family:
-`ngsolve_proxy_energy` or `ngsolve_numeric_invariant`. All 1500 public sample
+`ngsolve_proxy_energy` or `ngsolve_numeric_invariant`. All 1600 public sample
 decks are cross-checked with an independent NGSolve proxy-field energy gate
 before they are listed. The numeric-validation anchor decks and numeric
 FLUM-law decks go one level further; the numeric inductance/co-energy decks
@@ -275,14 +311,18 @@ The numeric permanent-magnet decks add MWL8T/HBRM/HBCN/VEC3 decks with
 `FLUM` sanity checks and NGSolve proxy invariants for remanence, PM volume,
 magnetization angle, polarity reversal, add/cancel, array count, and pickup
 turn scaling trends.
+The numeric transformer-coupling decks add MMB8T/HBUN/HBCU transformer-core
+decks with primary/secondary `FLUM` sanity checks and NGSolve proxy invariants
+for current/turn scaling, turns ratio, B-H slope, air-gap leakage, winding
+span, core area/depth, secondary offset, and buck/boost superposition trends.
 ELF `FLUM` invariants and independent NGSolve proxy invariants must both pass.
 MCP clients can inspect this contract with `elf_sample_decks_validation()`;
 the broad proxy gate is intentionally not claimed as a full absolute field,
 force, torque, or loss agreement suite.
 The publication batch manifest groups the validated baseline into deterministic
-100-case checkpoints: 15 full checkpoints, 1500 cases total.
-The next 100-case checkpoint is 1600 cases, so 100 additional validated cases
-are needed before the next clean 100-case publication increment.
+100-case checkpoints: 16 full checkpoints, 1600 cases total.
+No additional cases are required for this baseline. A future optional
+100-case checkpoint would be 1700 cases.
 
 Bundled data (all generated from fresh ELF600 install via `scripts/crawl_*.py`):
 - `help_dump.json` — Shift_JIS HTM decoded + HTML-stripped

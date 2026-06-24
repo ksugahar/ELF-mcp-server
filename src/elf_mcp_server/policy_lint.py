@@ -95,11 +95,14 @@ def _sample_families(samples: Path) -> dict[str, list[Path]]:
     families: dict[str, list[Path]] = {}
     if not samples.exists():
         return families
-    for domain in sorted(p for p in samples.iterdir() if p.is_dir()):
-        for family_dir in sorted(p for p in domain.iterdir() if p.is_dir()):
-            cases = sorted(p for p in family_dir.iterdir() if p.is_dir())
-            if cases:
-                families[f"{domain.name}/{family_dir.name}"] = cases
+    for family_dir in sorted(p for p in samples.rglob("*") if p.is_dir()):
+        cases = []
+        for candidate in sorted(p for p in family_dir.iterdir() if p.is_dir()):
+            case = candidate.name
+            if (candidate / f"{case}.mai").exists() and (candidate / f"{case}.meg").exists():
+                cases.append(candidate)
+        if cases:
+            families[family_dir.relative_to(samples).as_posix()] = cases
     return families
 
 
@@ -370,6 +373,31 @@ def _validate_publication_batches(
     return issues
 
 
+def _validate_mcp_quality_gates() -> list[str]:
+    """Mirror the MCP-visible publication gates in policy lint."""
+    issues: list[str] = []
+    try:
+        from .sample_decks import build_public_quality_gates
+    except ImportError:
+        src_root = Path(__file__).resolve().parents[1]
+        if str(src_root) not in sys.path:
+            sys.path.insert(0, str(src_root))
+        try:
+            from elf_mcp_server.sample_decks import build_public_quality_gates
+        except Exception as exc:  # pragma: no cover - defensive CLI import guard.
+            return [f"public quality gates could not be loaded: {exc}"]
+    except Exception as exc:  # pragma: no cover - defensive CLI import guard.
+        return [f"public quality gates could not be loaded: {exc}"]
+
+    for gate in build_public_quality_gates():
+        if gate.get("status") != "PASS":
+            issues.append(
+                f"public quality gate {gate.get('gate', '<unknown>')!r} failed: "
+                f"{gate.get('detail', '')}"
+            )
+    return issues
+
+
 def run_policy_lint(root: Path | str | None = None) -> list[str]:
     """Return policy-lint issue strings for a repository root."""
     repo = Path(root) if root is not None else Path.cwd()
@@ -386,6 +414,7 @@ def run_policy_lint(root: Path | str | None = None) -> list[str]:
     samples = repo / "src" / "elf_mcp_server" / "public_samples"
     if samples.exists():
         issues.extend(_validate_public_sample_manifest(repo, samples))
+        issues.extend(_validate_mcp_quality_gates())
         for path in sorted(p for p in samples.rglob("*") if p.is_file()):
             rel = path.relative_to(repo).as_posix()
             suffix = path.suffix.lower()

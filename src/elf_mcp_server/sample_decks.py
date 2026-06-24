@@ -46,6 +46,161 @@ VALIDATION_LIMITATIONS = (
     "invariants are both checked.",
 )
 
+QUALITY_LABELS = {
+    "ngsolve_numeric_invariant": {
+        "label": "gold_numeric_invariant",
+        "display": "Gold numeric invariant",
+        "meaning": (
+            "ELF FLUM-derived numeric laws and independent NGSolve proxy "
+            "invariants both passed for this family."
+        ),
+        "recommended_use": (
+            "Use as the strongest public anchor when the prompt asks what "
+            "physical quantity should be evaluated or how a law should scale."
+        ),
+    },
+    "ngsolve_proxy_energy": {
+        "label": "silver_proxy_energy",
+        "display": "Silver proxy energy",
+        "meaning": (
+            "ELF/MAGIC run checks passed and an independent NGSolve "
+            "proxy-field energy sanity gate was positive."
+        ),
+        "recommended_use": (
+            "Use as a validated runnable authoring pattern. Do not claim "
+            "absolute field, force, torque, or loss agreement from this label."
+        ),
+    },
+    "solver_smoke": {
+        "label": "bronze_solver_smoke",
+        "display": "Bronze solver smoke",
+        "meaning": "Input-pair presence and local solver-run smoke checks passed.",
+        "recommended_use": "Use only as a syntax and workflow smoke-check pattern.",
+    },
+}
+
+PUBLIC_FORBIDDEN_TEXT_MARKERS = (
+    "C:" + "\\temp",
+    "C:" + "\\tmp",
+    "S:" + "\\",
+    "W:" + "\\",
+    "_cross" + "val",
+)
+
+PUBLIC_FORBIDDEN_OUTPUT_SUFFIXES = (
+    ".mag",
+    ".mao",
+    ".mat",
+    ".mac",
+)
+
+PHYSICAL_QUANTITY_DEFINITIONS: dict[str, dict[str, str]] = {
+    "flux_linkage": {
+        "display": "Flux linkage / pickup flux",
+        "observable": "FLUM requests in .mai decks",
+        "validation_focus": "current, turns, sign, distance, symmetry, and superposition trends",
+    },
+    "inductance_coenergy": {
+        "display": "Inductance and magnetic co-energy",
+        "observable": "FLUM-derived L = Phi/I and W = 1/2 sum(I Phi)",
+        "validation_focus": "current-square, turn-square, mutual, and add/cancel energy trends",
+    },
+    "force_torque_gradient": {
+        "display": "Force / torque from co-energy gradient",
+        "observable": "finite-difference dW/dx and dW/dtheta trends",
+        "validation_focus": "distance force and angular torque trend checks",
+    },
+    "ac_loss": {
+        "display": "AC eddy-current loss trend",
+        "observable": "MOMC/FREQ/OHM2 conductive decks plus FLUM series",
+        "validation_focus": "P proportional to I^2 f^2 / rho proxy trends",
+    },
+    "eddy_current_response": {
+        "display": "Eddy-current / conducting-region response",
+        "observable": "OHM2 and MAB8T conductive-region decks",
+        "validation_focus": "conductive-region setup and positive proxy-energy gates",
+    },
+    "magnetic_circuit_flux": {
+        "display": "Magnetic-circuit flux / reluctance trend",
+        "observable": "MMB8T/HBCU iron-core and air-gap decks",
+        "validation_focus": "B-H slope, air-gap, area, length, and current scaling trends",
+    },
+    "permanent_magnet_flux": {
+        "display": "Permanent-magnet flux / magnetization polarity",
+        "observable": "MWL8T/HBRM/HBCN permanent-magnet decks",
+        "validation_focus": "remanence, polarity reversal, magnetization angle, and add/cancel trends",
+    },
+    "transformer_coupling": {
+        "display": "Transformer coupling / turns ratio",
+        "observable": "primary/secondary FLUM pickup in transformer decks",
+        "validation_focus": "turns ratio, buck/boost, leakage, core area, and secondary-offset trends",
+    },
+    "motor_flux_linkage": {
+        "display": "Motor phase flux-linkage pattern",
+        "observable": "motor families with phase/pickup FLUM requests",
+        "validation_focus": "topology-specific flux-linkage authoring and proxy-energy gates",
+    },
+    "wpt_mutual_coupling": {
+        "display": "Wireless-power mutual coupling",
+        "observable": "WPT coil decks with FLUM coupling probes",
+        "validation_focus": "coil spacing, misalignment, and conductive-shield setup trends",
+    },
+    "mri_gradient_shielding": {
+        "display": "MRI gradient and shield response",
+        "observable": "MRI gradient-coil decks with FLUM/OHM2/FREQ probes",
+        "validation_focus": "gradient-coil, shield, and eddy-current setup trends",
+    },
+    "actuator_force_proxy": {
+        "display": "Actuator / solenoid force proxy",
+        "observable": "plunger, relay, voice-coil, and clutch FLUM decks",
+        "validation_focus": "gap, coil-current, and magnetic-circuit force-proxy trends",
+    },
+    "accelerator_field_quality": {
+        "display": "Accelerator magnet field-quality proxy",
+        "observable": "accelerator dipole/quadrupole/corrector FLUM decks",
+        "validation_focus": "coil-current and pole/yoke setup trends",
+    },
+}
+
+PHYSICAL_QUANTITY_ORDER = tuple(PHYSICAL_QUANTITY_DEFINITIONS)
+
+GOLD_PHYSICS_ANCHORS = (
+    "flux_linkage",
+    "inductance_coenergy",
+    "force_torque_gradient",
+    "ac_loss",
+    "magnetic_circuit_flux",
+    "permanent_magnet_flux",
+    "transformer_coupling",
+)
+
+CROSS_VALIDATION_METHODS: dict[str, dict[str, str]] = {
+    "ngsolve_proxy_energy_positive": {
+        "display": "NGSolve proxy-field energy",
+        "strength": "silver_proxy_cross_check",
+        "meaning": (
+            "Independent NGSolve proxy-field energy sanity check passed for "
+            "the public authoring pattern."
+        ),
+    },
+    "ngsolve_numeric_invariants_passed": {
+        "display": "NGSolve numeric invariant",
+        "strength": "gold_independent_invariant",
+        "meaning": (
+            "Independent NGSolve proxy invariants passed for the public "
+            "numeric validation law."
+        ),
+    },
+    "elf_flux_invariants_passed": {
+        "display": "ELF FLUM-derived invariant",
+        "strength": "gold_observable_invariant",
+        "meaning": (
+            "Public FLUM-derived scaling, sign, energy, loss, force, or "
+            "coupling invariants passed for the numeric family."
+        ),
+    },
+}
+
 FAMILY_META = {
     "application/mri_gradient_shield_12": {
         "title": "MRI gradient coil with eddy-current shield",
@@ -357,7 +512,7 @@ FAMILY_META = {
         ),
         "hint": "Use for transformer-style core/coil coupling, passive pickup FLUM, and nonlinear B-H setup.",
     },
-    "motor/emdlab_afpm_linearized_10": {
+    "application/motor/emdlab_afpm_linearized_10": {
         "title": "EMDLAB-style AFPM linearized-airgap campaign",
         "tags": (
             "motor",
@@ -377,7 +532,7 @@ FAMILY_META = {
         ),
         "hint": "Use for axial-flux PM motor authoring patterns represented as unfolded line-airgap decks with face magnets, stator coils, and FLUM pickup.",
     },
-    "motor/emdlab_bldc_spm_10": {
+    "application/motor/emdlab_bldc_spm_10": {
         "title": "EMDLAB-style BLDC/SPM slotted-stator campaign",
         "tags": (
             "motor",
@@ -398,7 +553,7 @@ FAMILY_META = {
         ),
         "hint": "Use for BLDC/SPM motor input patterns with surface PM rotor proxies, slotted stator iron, phase coils, and passive FLUM pickup.",
     },
-    "motor/emdlab_induction_bar_10": {
+    "application/motor/emdlab_induction_bar_10": {
         "title": "EMDLAB-style induction-machine rotor-bar campaign",
         "tags": (
             "motor",
@@ -416,7 +571,7 @@ FAMILY_META = {
         ),
         "hint": "Use for induction-machine rotor-bar decks with stator phase coils, conductive bar proxies, OHM2 material data, and FLUM pickup.",
     },
-    "motor/emdlab_ipm_hairpin_10": {
+    "application/motor/emdlab_ipm_hairpin_10": {
         "title": "EMDLAB-style IPM hairpin campaign",
         "tags": (
             "motor",
@@ -437,7 +592,7 @@ FAMILY_META = {
         ),
         "hint": "Use for IPM hairpin-style authoring with buried PM rotor proxies, stator phase coils, rotor-angle sweeps, and FLUM pickup.",
     },
-    "motor/emdlab_srm_pole_variants_10": {
+    "application/motor/emdlab_srm_pole_variants_10": {
         "title": "EMDLAB-style SRM pole-variant campaign",
         "tags": (
             "motor",
@@ -460,7 +615,7 @@ FAMILY_META = {
         ),
         "hint": "Use for SRM 6/4, 8/6, 12/8, and 12/16 pole-variant decks with salient iron, phase-pair excitation, and FLUM pickup.",
     },
-    "motor/emdlab_synrm_flux_barrier_10": {
+    "application/motor/emdlab_synrm_flux_barrier_10": {
         "title": "EMDLAB-style SynRM flux-barrier campaign",
         "tags": (
             "motor",
@@ -577,7 +732,7 @@ FAMILY_META = {
         ),
         "hint": "Use for WPT decks with primary/secondary pad offset, conducting shield plates, AC MOMC/FREQ setup, and FLUM pickup.",
     },
-    "motor/axial_flux_pm_10": {
+    "application/motor/axial_flux_pm_10": {
         "title": "Loop13 axial-flux PM motor campaign",
         "tags": (
             "motor",
@@ -597,7 +752,7 @@ FAMILY_META = {
         ),
         "hint": "Use for axial-flux PM motor decks with dual axial yokes, face magnets, central stator coils, skew offsets, and FLUM.",
     },
-    "motor/ipm_interior_pm_10": {
+    "application/motor/ipm_interior_pm_10": {
         "title": "Loop13 IPM interior permanent-magnet campaign",
         "tags": (
             "motor",
@@ -617,7 +772,7 @@ FAMILY_META = {
         ),
         "hint": "Use for interior permanent-magnet motor decks with buried PM pairs, rotor/stator iron, phase coils, rotor-angle parameters, and FLUM.",
     },
-    "motor/linear_pm_motor_10": {
+    "application/motor/linear_pm_motor_10": {
         "title": "Loop13 linear PM motor campaign",
         "tags": (
             "motor",
@@ -638,7 +793,7 @@ FAMILY_META = {
         ),
         "hint": "Use for linear PM motor decks with alternating PM tracks, moving three-coil forcers, translator offsets, and FLUM pickup.",
     },
-    "motor/stepper_motor_10": {
+    "application/motor/stepper_motor_10": {
         "title": "Loop13 stepper motor campaign",
         "tags": (
             "motor",
@@ -658,7 +813,7 @@ FAMILY_META = {
         ),
         "hint": "Use for stepper motor decks with four stator phases, PM rotor proxies, detent offsets, and FLUM pickup.",
     },
-    "motor/wound_field_sync_10": {
+    "application/motor/wound_field_sync_10": {
         "title": "Loop13 wound-field synchronous motor campaign",
         "tags": (
             "motor",
@@ -677,7 +832,7 @@ FAMILY_META = {
         ),
         "hint": "Use for wound-field synchronous motor decks with DC rotor field coils, stator phase coils, soft iron, and FLUM pickup.",
     },
-    "motor/induction_cage_10": {
+    "application/motor/induction_cage_10": {
         "title": "Induction motor cage and transient pickup",
         "tags": (
             "motor",
@@ -695,7 +850,7 @@ FAMILY_META = {
         ),
         "hint": "Use for induction-motor cage bars, three-phase stator COI1/AMP1 patterns, OHM2 conductors, and transient FLUM pickup.",
     },
-    "motor/srm_switched_reluctance_10": {
+    "application/motor/srm_switched_reluctance_10": {
         "title": "Switched-reluctance motor phase excitation",
         "tags": (
             "motor",
@@ -714,7 +869,7 @@ FAMILY_META = {
         ),
         "hint": "Use for SRM-style salient stator/rotor iron, phase-pair excitation, rotor-angle sweeps, and passive FLUM pickup.",
     },
-    "motor/hysteresis_motor_10": {
+    "application/motor/hysteresis_motor_10": {
         "title": "Loop10 hysteresis motor input-deck proxy",
         "tags": (
             "motor",
@@ -730,12 +885,12 @@ FAMILY_META = {
         ),
         "hint": "Use as an input-deck proxy and authoring pattern for high-coercivity rotor rings; ELF B-H curves start at the origin.",
     },
-    "motor/pm_cosine_pickup_72": {
+    "application/motor/pm_cosine_pickup_72": {
         "title": "2-pole cosine-amplitude PM pickup",
         "tags": ("motor", "pm", "cosine-remanence", "hbrm", "hbcn", "flum", "pickup"),
         "hint": "Use when spatially varying PM remanence or per-segment HBCN curve assignment matters.",
     },
-    "motor/spm_surface_pm_10": {
+    "application/motor/spm_surface_pm_10": {
         "title": "Surface PM motor with stator coils",
         "tags": (
             "motor",
@@ -755,7 +910,7 @@ FAMILY_META = {
         ),
         "hint": "Use for compact SPM motor authoring with surface MWL8T magnets, stator coils, rotor/stator iron, and passive FLUM pickup.",
     },
-    "motor/reluctance_motor_10": {
+    "application/motor/reluctance_motor_10": {
         "title": "Loop10 synchronous reluctance motor campaign",
         "tags": (
             "motor",
@@ -772,7 +927,7 @@ FAMILY_META = {
         ),
         "hint": "Use for synchronous-reluctance saliency patterns, stator phase excitation, rotor-angle sweeps, and passive FLUM pickup.",
     },
-    "motor/spm_loop_10": {
+    "application/motor/spm_loop_10": {
         "title": "Loop10 surface PM motor campaign",
         "tags": (
             "motor",
@@ -789,7 +944,7 @@ FAMILY_META = {
         ),
         "hint": "Use for loop-reviewed SPM motor decks with surface MWL8T magnets, stator coils, rotor/stator iron, and FLUM pickup.",
     },
-    "motor/sr_motor_loop_10": {
+    "application/motor/sr_motor_loop_10": {
         "title": "Loop10 SR-motor reluctance campaign",
         "tags": (
             "motor",
@@ -807,22 +962,22 @@ FAMILY_META = {
         ),
         "hint": "Use for loop-reviewed SR-motor salient stator/rotor iron, phase excitation, rotor-angle sweeps, and passive FLUM pickup.",
     },
-    "motor/pm_square_2pole_pickup_100": {
+    "application/motor/pm_square_2pole_pickup_100": {
         "title": "2-pole square-wave PM pickup",
         "tags": ("motor", "pm", "2-pole", "square-wave", "mwl8t", "flum", "pickup"),
         "hint": "Use as the broadest PM-only passive pickup baseline.",
     },
-    "motor/pm_square_4pole_pickup_60": {
+    "application/motor/pm_square_4pole_pickup_60": {
         "title": "4-pole square-wave PM pickup",
         "tags": ("motor", "pm", "4-pole", "square-wave", "mwl8t", "flum", "pickup"),
         "hint": "Use for multipole polarity, rotor-angle sign, and passive FLUM checks.",
     },
-    "motor/pm_square_6pole_pickup_72": {
+    "application/motor/pm_square_6pole_pickup_72": {
         "title": "6-pole square-wave PM pickup",
         "tags": ("motor", "pm", "6-pole", "square-wave", "mwl8t", "flum", "pickup"),
         "hint": "Use for shorter mechanical period PM pickup examples.",
     },
-    "motor/pm_square_8pole_pickup_28": {
+    "application/motor/pm_square_8pole_pickup_28": {
         "title": "8-pole square-wave PM pickup subset",
         "tags": ("motor", "pm", "8-pole", "square-wave", "mwl8t", "flum", "pickup"),
         "hint": "Use for compact high-pole-count PM pickup examples.",
@@ -1009,6 +1164,38 @@ FAMILY_META.update(
             ),
             "hint": "Use for MWL8T/HBRM/HBCN/VEC3 permanent-magnet decks with pickup FLUM and NGSolve proxy checks covering remanence, distance, magnet volume/depth, magnetization angle, polarity reversal, symmetry, add/cancel, array count, and pickup-turn scaling.",
         },
+        "application/numeric_transformer_coupling_100": {
+            "title": "Numeric transformer-coupling and turns-ratio validation campaign",
+            "tags": (
+                "application",
+                "numeric-validation",
+                "transformer",
+                "transformer-coupling",
+                "coupling",
+                "mutual-inductance",
+                "turns-ratio",
+                "primary-secondary",
+                "primary",
+                "secondary",
+                "leakage",
+                "air-gap",
+                "b-h",
+                "hbcu",
+                "hbun",
+                "mmb8t",
+                "core-area",
+                "core-depth",
+                "winding-span",
+                "buck-boost",
+                "flum",
+                "co-energy",
+                "ngsolve-crossval",
+                "ngsolve-numeric-invariant",
+                "validation-level:numeric-invariant",
+                "mcl8t",
+            ),
+            "hint": "Use for MMB8T/HBUN/HBCU transformer-coupling decks with primary/secondary FLUM and NGSolve proxy checks covering current/turn scaling, turns ratio, B-H slope, air-gap leakage, span, core area/depth, secondary offset, and buck/boost superposition.",
+        },
         "application/numeric_force_torque_100": {
             "title": "Numeric force and torque-gradient validation campaign",
             "tags": (
@@ -1037,72 +1224,72 @@ FAMILY_META.update(
             ),
             "hint": "Use for FLUM-derived co-energy force/torque-gradient checks: distance-force sign, current-square scaling, mirror/lateral symmetry, angular dW/dtheta trends, and balanced-torque invariants.",
         },
-        "motor/emdlab_bldc_outer_rotor_10": {
+        "application/motor/emdlab_bldc_outer_rotor_10": {
             "title": "EMDLAB-style BLDC outer-rotor campaign",
             "tags": ("motor", "emdlab-style", "bldc", "outer-rotor", "spm", "surface-pm", "pm", "mwl8t", "mmb8t", "mcl8t", "hbrm", "hbcn", "flum", "ngsolve-crossval"),
             "hint": "Use for BLDC outer-rotor decks with surface PM proxies outside the stator and FLUM pickup.",
         },
-        "motor/emdlab_induction_fraction_10": {
+        "application/motor/emdlab_induction_fraction_10": {
             "title": "EMDLAB-style induction-machine fractional-sector campaign",
             "tags": ("motor", "emdlab-style", "induction", "im", "fractional-sector", "rotor-bar", "mab8t", "ohm2", "mcl8t", "flum", "ngsolve-crossval"),
             "hint": "Use for induction-machine fractional-sector decks with rotor-bar conductors, OHM2, phase coils, and FLUM.",
         },
-        "motor/emdlab_ipm_hairpin_fraction_10": {
+        "application/motor/emdlab_ipm_hairpin_fraction_10": {
             "title": "EMDLAB-style IPM hairpin fractional-sector campaign",
             "tags": ("motor", "emdlab-style", "ipm", "hairpin", "fractional-sector", "interior-pm", "buried-pm", "mwl8t", "mmb8t", "mcl8t", "flum", "ngsolve-crossval"),
             "hint": "Use for fractional-sector IPM hairpin decks with buried PMs, phase coils, rotor-angle proxies, and FLUM.",
         },
-        "motor/emdlab_spmsm_10": {
+        "application/motor/emdlab_spmsm_10": {
             "title": "EMDLAB-style SPMSM campaign",
             "tags": ("motor", "emdlab-style", "spmsm", "spm", "surface-pm", "pm", "mwl8t", "mmb8t", "mcl8t", "hbrm", "hbcn", "flum", "ngsolve-crossval"),
             "hint": "Use for SPMSM decks with surface PM rotor proxies, stator coils, and FLUM pickup.",
         },
-        "motor/emdlab_spmsm_fraction_10": {
+        "application/motor/emdlab_spmsm_fraction_10": {
             "title": "EMDLAB-style SPMSM fractional-sector campaign",
             "tags": ("motor", "emdlab-style", "spmsm", "spm", "fractional-sector", "surface-pm", "mwl8t", "mmb8t", "mcl8t", "flum", "ngsolve-crossval"),
             "hint": "Use for fractional-sector SPMSM decks with surface PM proxies and stator phase coils.",
         },
-        "motor/emdlab_spmsm_static_torque_10": {
+        "application/motor/emdlab_spmsm_static_torque_10": {
             "title": "EMDLAB-style SPMSM static-torque campaign",
             "tags": ("motor", "emdlab-style", "spmsm", "spm", "static-torque", "surface-pm", "rotor-angle", "mwl8t", "mmb8t", "mcl8t", "flum", "ngsolve-crossval"),
             "hint": "Use for SPMSM static-torque proxy decks with rotor-angle sweeps and FLUM pickup.",
         },
-        "motor/emdlab_srm64_10": {
+        "application/motor/emdlab_srm64_10": {
             "title": "EMDLAB-style SRM 6/4 campaign",
             "tags": ("motor", "emdlab-style", "srm", "6-4", "switched-reluctance", "salient", "mmb8t", "mcl8t", "coi1", "amp1", "flum", "ngsolve-crossval"),
             "hint": "Use for SRM 6/4 pole-pattern decks with salient iron, phase-pair excitation, and FLUM.",
         },
-        "motor/emdlab_srm86_10": {
+        "application/motor/emdlab_srm86_10": {
             "title": "EMDLAB-style SRM 8/6 campaign",
             "tags": ("motor", "emdlab-style", "srm", "8-6", "switched-reluctance", "salient", "mmb8t", "mcl8t", "coi1", "amp1", "flum", "ngsolve-crossval"),
             "hint": "Use for SRM 8/6 pole-pattern decks with salient iron, phase-pair excitation, and FLUM.",
         },
-        "motor/emdlab_srm86_fraction_10": {
+        "application/motor/emdlab_srm86_fraction_10": {
             "title": "EMDLAB-style SRM 8/6 fractional-sector campaign",
             "tags": ("motor", "emdlab-style", "srm", "8-6", "fractional-sector", "switched-reluctance", "mmb8t", "mcl8t", "flum", "ngsolve-crossval"),
             "hint": "Use for fractional-sector SRM 8/6 decks with salient iron and phase excitation.",
         },
-        "motor/emdlab_srm86_static_torque_10": {
+        "application/motor/emdlab_srm86_static_torque_10": {
             "title": "EMDLAB-style SRM 8/6 static-torque campaign",
             "tags": ("motor", "emdlab-style", "srm", "8-6", "static-torque", "switched-reluctance", "rotor-angle", "mmb8t", "mcl8t", "flum", "ngsolve-crossval"),
             "hint": "Use for SRM 8/6 static-torque proxy decks with rotor-position sweeps and FLUM.",
         },
-        "motor/emdlab_srm128_10": {
+        "application/motor/emdlab_srm128_10": {
             "title": "EMDLAB-style SRM 12/8 campaign",
             "tags": ("motor", "emdlab-style", "srm", "12-8", "switched-reluctance", "salient", "mmb8t", "mcl8t", "flum", "ngsolve-crossval"),
             "hint": "Use for SRM 12/8 pole-pattern decks with salient iron and phase excitation.",
         },
-        "motor/emdlab_srm1216_outer_rotor_10": {
+        "application/motor/emdlab_srm1216_outer_rotor_10": {
             "title": "EMDLAB-style SRM 12/16 outer-rotor campaign",
             "tags": ("motor", "emdlab-style", "srm", "12-16", "outer-rotor", "switched-reluctance", "salient", "mmb8t", "mcl8t", "flum", "ngsolve-crossval"),
             "hint": "Use for SRM 12/16 outer-rotor pole-pattern decks with salient iron and FLUM.",
         },
-        "motor/emdlab_synrm_static_torque_10": {
+        "application/motor/emdlab_synrm_static_torque_10": {
             "title": "EMDLAB-style SynRM static-torque campaign",
             "tags": ("motor", "emdlab-style", "synrm", "synchronous-reluctance", "static-torque", "flux-barrier", "saliency", "mmb8t", "mcl8t", "flum", "ngsolve-crossval"),
             "hint": "Use for SynRM static-torque proxy decks with flux-barrier rotor proxies and FLUM.",
         },
-        "motor/emdlab_synrm_fraction_static_torque_10": {
+        "application/motor/emdlab_synrm_fraction_static_torque_10": {
             "title": "EMDLAB-style SynRM fractional static-torque campaign",
             "tags": ("motor", "emdlab-style", "synrm", "synchronous-reluctance", "fractional-sector", "static-torque", "flux-barrier", "mmb8t", "mcl8t", "flum", "ngsolve-crossval"),
             "hint": "Use for fractional-sector SynRM static-torque proxy decks with saliency and FLUM.",
@@ -1111,40 +1298,241 @@ FAMILY_META.update(
 )
 
 TEAM28_CASES: tuple[tuple[str, str], ...] = (
-    ("motor/pm_square_2pole_pickup_100", "pm001"),
-    ("motor/pm_square_2pole_pickup_100", "pm006"),
-    ("motor/pm_square_2pole_pickup_100", "pm019"),
-    ("motor/pm_square_2pole_pickup_100", "pm024"),
-    ("motor/pm_square_2pole_pickup_100", "pm049"),
-    ("motor/pm_square_2pole_pickup_100", "pm072"),
-    ("motor/pm_square_2pole_pickup_100", "pm097"),
-    ("motor/pm_square_2pole_pickup_100", "pm100"),
-    ("motor/pm_square_4pole_pickup_60", "pm001"),
-    ("motor/pm_square_4pole_pickup_60", "pm012"),
-    ("motor/pm_square_4pole_pickup_60", "pm025"),
-    ("motor/pm_square_4pole_pickup_60", "pm036"),
-    ("motor/pm_square_4pole_pickup_60", "pm060"),
-    ("motor/pm_square_6pole_pickup_72", "pm001"),
-    ("motor/pm_square_6pole_pickup_72", "pm018"),
-    ("motor/pm_square_6pole_pickup_72", "pm025"),
-    ("motor/pm_square_6pole_pickup_72", "pm042"),
-    ("motor/pm_square_6pole_pickup_72", "pm061"),
-    ("motor/pm_square_6pole_pickup_72", "pm072"),
-    ("motor/pm_square_8pole_pickup_28", "pm001"),
-    ("motor/pm_square_8pole_pickup_28", "pm013"),
-    ("motor/pm_square_8pole_pickup_28", "pm028"),
-    ("motor/pm_cosine_pickup_72", "pm001"),
-    ("motor/pm_cosine_pickup_72", "pm004"),
-    ("motor/pm_cosine_pickup_72", "pm025"),
-    ("motor/pm_cosine_pickup_72", "pm049"),
-    ("motor/pm_cosine_pickup_72", "pm071"),
-    ("motor/pm_cosine_pickup_72", "pm072"),
+    ("application/motor/pm_square_2pole_pickup_100", "pm001"),
+    ("application/motor/pm_square_2pole_pickup_100", "pm006"),
+    ("application/motor/pm_square_2pole_pickup_100", "pm019"),
+    ("application/motor/pm_square_2pole_pickup_100", "pm024"),
+    ("application/motor/pm_square_2pole_pickup_100", "pm049"),
+    ("application/motor/pm_square_2pole_pickup_100", "pm072"),
+    ("application/motor/pm_square_2pole_pickup_100", "pm097"),
+    ("application/motor/pm_square_2pole_pickup_100", "pm100"),
+    ("application/motor/pm_square_4pole_pickup_60", "pm001"),
+    ("application/motor/pm_square_4pole_pickup_60", "pm012"),
+    ("application/motor/pm_square_4pole_pickup_60", "pm025"),
+    ("application/motor/pm_square_4pole_pickup_60", "pm036"),
+    ("application/motor/pm_square_4pole_pickup_60", "pm060"),
+    ("application/motor/pm_square_6pole_pickup_72", "pm001"),
+    ("application/motor/pm_square_6pole_pickup_72", "pm018"),
+    ("application/motor/pm_square_6pole_pickup_72", "pm025"),
+    ("application/motor/pm_square_6pole_pickup_72", "pm042"),
+    ("application/motor/pm_square_6pole_pickup_72", "pm061"),
+    ("application/motor/pm_square_6pole_pickup_72", "pm072"),
+    ("application/motor/pm_square_8pole_pickup_28", "pm001"),
+    ("application/motor/pm_square_8pole_pickup_28", "pm013"),
+    ("application/motor/pm_square_8pole_pickup_28", "pm028"),
+    ("application/motor/pm_cosine_pickup_72", "pm001"),
+    ("application/motor/pm_cosine_pickup_72", "pm004"),
+    ("application/motor/pm_cosine_pickup_72", "pm025"),
+    ("application/motor/pm_cosine_pickup_72", "pm049"),
+    ("application/motor/pm_cosine_pickup_72", "pm071"),
+    ("application/motor/pm_cosine_pickup_72", "pm072"),
+)
+
+REPRESENTATIVE_CASES: tuple[dict[str, str], ...] = (
+    {
+        "area": "pm-foundation",
+        "family": "application/motor/pm_square_2pole_pickup_100",
+        "case": "pm001",
+        "reason": "Small PM pickup seed for HBCN/HBRM polarity and FLUM inspection.",
+    },
+    {
+        "area": "pm-foundation",
+        "family": "application/motor/pm_cosine_pickup_72",
+        "case": "pm001",
+        "reason": "Cosine-remanence PM pickup pattern for smoother air-gap-field prompts.",
+    },
+    {
+        "area": "motor",
+        "family": "application/motor/emdlab_bldc_spm_10",
+        "case": "ebl001",
+        "reason": "First slotted-stator BLDC/SPM deck with phase coils and passive FLUM.",
+    },
+    {
+        "area": "motor",
+        "family": "application/motor/emdlab_ipm_hairpin_10",
+        "case": "eip001",
+        "reason": "Default IPM hairpin seed for buried PM and dq-flux authoring.",
+    },
+    {
+        "area": "motor",
+        "family": "application/motor/emdlab_induction_bar_10",
+        "case": "eim001",
+        "reason": "Induction-machine rotor-bar proxy with OHM2 and FLUM.",
+    },
+    {
+        "area": "motor",
+        "family": "application/motor/emdlab_synrm_flux_barrier_10",
+        "case": "esr001",
+        "reason": "SynRM flux-barrier seed for saliency and reluctance prompts.",
+    },
+    {
+        "area": "motor",
+        "family": "application/motor/emdlab_srm_pole_variants_10",
+        "case": "esm001",
+        "reason": "SRM pole-variant seed covering salient iron and phase-pair excitation.",
+    },
+    {
+        "area": "motor",
+        "family": "application/motor/axial_flux_pm_10",
+        "case": "afm001",
+        "reason": "Axial-flux PM authoring pattern with face magnets and axial yokes.",
+    },
+    {
+        "area": "motor",
+        "family": "application/motor/wound_field_sync_10",
+        "case": "wfs001",
+        "reason": "Wound-field synchronous motor seed with rotor field and stator coils.",
+    },
+    {
+        "area": "motor",
+        "family": "application/motor/stepper_motor_10",
+        "case": "stm001",
+        "reason": "Stepper motor seed for four-phase stator and detent-offset prompts.",
+    },
+    {
+        "area": "motor",
+        "family": "application/motor/reluctance_motor_10",
+        "case": "ryl001",
+        "reason": "Compact synchronous-reluctance seed with saliency and pickup coils.",
+    },
+    {
+        "area": "motor",
+        "family": "application/motor/hysteresis_motor_10",
+        "case": "hyl001",
+        "reason": "Hysteresis-motor proxy seed with high-coercivity material behavior.",
+    },
+    {
+        "area": "application",
+        "family": "application/transformer_core_pickup_12",
+        "case": "tf001",
+        "reason": "Transformer core/pickup deck for primary-secondary FLUM examples.",
+    },
+    {
+        "area": "application",
+        "family": "application/transformer_leakage_10",
+        "case": "tlg001",
+        "reason": "Gapped transformer leakage seed for coupling and stray-pickup prompts.",
+    },
+    {
+        "area": "application",
+        "family": "application/wpt_coupled_coils_10",
+        "case": "wpt001",
+        "reason": "Wireless-power coupled-coil AC seed with MOMC/FREQ and FLUM.",
+    },
+    {
+        "area": "application",
+        "family": "application/wpt_misalignment_10",
+        "case": "wpm001",
+        "reason": "WPT misalignment seed with conducting shield and lateral offset.",
+    },
+    {
+        "area": "application",
+        "family": "application/mri_gradient_shield_12",
+        "case": "mri001",
+        "reason": "MRI gradient-coil/shield seed with eddy-current AC setup.",
+    },
+    {
+        "area": "application",
+        "family": "application/ih_induction_heating_10",
+        "case": "ihl001",
+        "reason": "Induction-heating seed with conducting workpiece and MOMC setup.",
+    },
+    {
+        "area": "application",
+        "family": "application/accelerator_magnet_10",
+        "case": "acl001",
+        "reason": "Accelerator electromagnet seed with yoke, aperture pickup, and coils.",
+    },
+    {
+        "area": "application",
+        "family": "application/actuator_plunger_10",
+        "case": "atl001",
+        "reason": "Plunger actuator seed for solenoid/yoke force-oriented prompts.",
+    },
+    {
+        "area": "application",
+        "family": "application/eddy_current_brake_10",
+        "case": "ebl001",
+        "reason": "Eddy-current brake seed with conducting plate and AC excitation.",
+    },
+    {
+        "area": "application",
+        "family": "application/ndt_eddy_probe_10",
+        "case": "ndl001",
+        "reason": "NDT eddy-current probe seed with lift-off and conductive target patterns.",
+    },
+    {
+        "area": "application",
+        "family": "application/magnetic_gear_10",
+        "case": "mgl001",
+        "reason": "Magnetic gear seed with PM pole modulation and FLUM pickup.",
+    },
+    {
+        "area": "application",
+        "family": "application/voice_coil_10",
+        "case": "vcl001",
+        "reason": "Voice-coil actuator seed with compact moving-coil authoring pattern.",
+    },
+    {
+        "area": "application",
+        "family": "application/hall_sensor_fixture_10",
+        "case": "hsl001",
+        "reason": "Hall-sensor fixture seed with PMs, concentrators, and pickup coils.",
+    },
+    {
+        "area": "numeric-gold",
+        "family": "application/numeric_validation_anchors_10",
+        "case": "nva001",
+        "reason": "Small numeric invariant anchor for current scaling and sign sanity.",
+    },
+    {
+        "area": "numeric-gold",
+        "family": "application/numeric_flum_law_64",
+        "case": "nfl001",
+        "reason": "FLUM-law seed for current, turns, symmetry, and superposition checks.",
+    },
+    {
+        "area": "numeric-gold",
+        "family": "application/numeric_inductance_energy_100",
+        "case": "nie001",
+        "reason": "Inductance/co-energy seed for L = Phi/I and W = 1/2 sum(I Phi).",
+    },
+    {
+        "area": "numeric-gold",
+        "family": "application/numeric_force_torque_100",
+        "case": "nft001",
+        "reason": "Co-energy force/torque-gradient seed for dW/dx and dW/dtheta trends.",
+    },
+    {
+        "area": "numeric-gold",
+        "family": "application/numeric_ac_loss_100",
+        "case": "nal001",
+        "reason": "AC-loss invariant seed for I^2 f^2 / rho scaling prompts.",
+    },
+    {
+        "area": "numeric-gold",
+        "family": "application/numeric_magnetic_circuit_100",
+        "case": "nmc001",
+        "reason": "Magnetic-circuit invariant seed for B-H slope and air-gap reluctance.",
+    },
+    {
+        "area": "numeric-gold",
+        "family": "application/numeric_permanent_magnet_100",
+        "case": "npm001",
+        "reason": "Permanent-magnet invariant seed for HBRM/HBCN/VEC3 polarity work.",
+    },
+    {
+        "area": "numeric-gold",
+        "family": "application/numeric_transformer_coupling_100",
+        "case": "ntc001",
+        "reason": "Transformer-coupling invariant seed for turns ratio and leakage trends.",
+    },
 )
 
 SAMPLE_ROUTE_RULES: tuple[dict[str, Any], ...] = (
     {
         "intent": "BLDC or surface-PM motor",
-        "family": "motor/emdlab_bldc_spm_10",
+        "family": "application/motor/emdlab_bldc_spm_10",
         "query": "EMDLAB-style BLDC SPM surface-pm FLUM",
         "recipe": "pm_airgap_field",
         "terms": ("bldc", "brushless", "spm", "surface pm", "surface-pm", "slotted", "stator"),
@@ -1152,7 +1540,7 @@ SAMPLE_ROUTE_RULES: tuple[dict[str, Any], ...] = (
     },
     {
         "intent": "IPM hairpin motor",
-        "family": "motor/emdlab_ipm_hairpin_10",
+        "family": "application/motor/emdlab_ipm_hairpin_10",
         "query": "EMDLAB-style IPM hairpin buried-pm FLUM",
         "recipe": "ipm_ldlq_flux",
         "terms": ("ipm", "interior pm", "interior-pm", "hairpin", "buried pm", "buried-pm", "54-slot"),
@@ -1160,7 +1548,7 @@ SAMPLE_ROUTE_RULES: tuple[dict[str, Any], ...] = (
     },
     {
         "intent": "Interior-PM angle sweep",
-        "family": "motor/ipm_interior_pm_10",
+        "family": "application/motor/ipm_interior_pm_10",
         "query": "Loop13 IPM interior permanent-magnet rotor angle FLUM",
         "recipe": "ipm_ldlq_flux",
         "terms": ("interior", "rotor angle", "angle sweep", "dq", "ld", "lq"),
@@ -1168,7 +1556,7 @@ SAMPLE_ROUTE_RULES: tuple[dict[str, Any], ...] = (
     },
     {
         "intent": "Induction machine rotor bars",
-        "family": "motor/emdlab_induction_bar_10",
+        "family": "application/motor/emdlab_induction_bar_10",
         "query": "induction-machine bar OHM2 FLUM",
         "recipe": "eddy_current_time_domain",
         "terms": ("induction", "im", "rotor bar", "rotor-bar", "squirrel cage", "squirrel-cage", "ohm2"),
@@ -1176,7 +1564,7 @@ SAMPLE_ROUTE_RULES: tuple[dict[str, Any], ...] = (
     },
     {
         "intent": "Synchronous reluctance or flux-barrier motor",
-        "family": "motor/emdlab_synrm_flux_barrier_10",
+        "family": "application/motor/emdlab_synrm_flux_barrier_10",
         "query": "EMDLAB-style SynRM flux-barrier saliency FLUM",
         "recipe": "maxwell_torque_surface",
         "terms": ("synrm", "synchronous reluctance", "flux barrier", "flux-barrier", "saliency"),
@@ -1184,7 +1572,7 @@ SAMPLE_ROUTE_RULES: tuple[dict[str, Any], ...] = (
     },
     {
         "intent": "Switched-reluctance motor pole variant",
-        "family": "motor/emdlab_srm_pole_variants_10",
+        "family": "application/motor/emdlab_srm_pole_variants_10",
         "query": "EMDLAB-style SRM pole-variant switched-reluctance FLUM",
         "recipe": "maxwell_torque_surface",
         "terms": ("srm", "switched reluctance", "switched-reluctance", "pole variant", "6/4", "8/6", "12/8", "12/16"),
@@ -1192,7 +1580,7 @@ SAMPLE_ROUTE_RULES: tuple[dict[str, Any], ...] = (
     },
     {
         "intent": "Axial-flux PM motor",
-        "family": "motor/axial_flux_pm_10",
+        "family": "application/motor/axial_flux_pm_10",
         "query": "Loop13 axial-flux PM face magnet FLUM",
         "recipe": "pm_airgap_field",
         "terms": ("afpm", "axial flux", "axial-flux", "face magnet", "face-magnet", "skew"),
@@ -1200,7 +1588,7 @@ SAMPLE_ROUTE_RULES: tuple[dict[str, Any], ...] = (
     },
     {
         "intent": "Linear PM motor",
-        "family": "motor/linear_pm_motor_10",
+        "family": "application/motor/linear_pm_motor_10",
         "query": "Loop13 linear PM motor translator offset FLUM",
         "recipe": "pm_airgap_field",
         "terms": ("linear pm", "linear-pm", "linear motor", "translator", "forcer"),
@@ -1208,7 +1596,7 @@ SAMPLE_ROUTE_RULES: tuple[dict[str, Any], ...] = (
     },
     {
         "intent": "Stepper motor",
-        "family": "motor/stepper_motor_10",
+        "family": "application/motor/stepper_motor_10",
         "query": "Loop13 stepper motor detent FLUM",
         "recipe": "pm_airgap_field",
         "terms": ("stepper", "stepper motor", "detent", "four phase", "four-phase"),
@@ -1216,7 +1604,7 @@ SAMPLE_ROUTE_RULES: tuple[dict[str, Any], ...] = (
     },
     {
         "intent": "Wound-field synchronous motor",
-        "family": "motor/wound_field_sync_10",
+        "family": "application/motor/wound_field_sync_10",
         "query": "Loop13 wound-field synchronous rotor field FLUM",
         "recipe": "mutual_flux_current_pickup",
         "terms": ("wound field", "wound-field", "field coil", "field-coil", "synchronous motor", "rotor field"),
@@ -1224,7 +1612,7 @@ SAMPLE_ROUTE_RULES: tuple[dict[str, Any], ...] = (
     },
     {
         "intent": "PM pickup or back-EMF seed",
-        "family": "motor/pm_cosine_pickup_72",
+        "family": "application/motor/pm_cosine_pickup_72",
         "query": "HBCN FLUM cosine-remanence PM pickup",
         "recipe": "passive_flum_pickup",
         "terms": ("back emf", "back-emf", "flux linkage", "flux-linkage", "pickup", "flum", "pm pickup"),
@@ -1272,7 +1660,7 @@ SAMPLE_ROUTE_RULES: tuple[dict[str, Any], ...] = (
     },
     {
         "intent": "General motor authoring starter",
-        "family": "motor/emdlab_bldc_spm_10",
+        "family": "application/motor/emdlab_bldc_spm_10",
         "query": "EMDLAB-style motor FLUM",
         "recipe": "pm_airgap_field",
         "terms": ("motor", "machine", "rotor", "stator"),
@@ -1281,6 +1669,28 @@ SAMPLE_ROUTE_RULES: tuple[dict[str, Any], ...] = (
 )
 
 SAMPLE_ROUTE_RULES = (
+    {
+        "intent": "Numeric transformer-coupling and turns-ratio validation",
+        "family": "application/numeric_transformer_coupling_100",
+        "query": "numeric transformer coupling primary secondary turns ratio FLUM HBCU MMB8T",
+        "recipe": "mutual_flux_current_pickup",
+        "terms": (
+            "transformer coupling",
+            "coupling coefficient",
+            "turns ratio",
+            "turn ratio",
+            "primary secondary",
+            "primary/secondary",
+            "secondary turn",
+            "primary turn",
+            "transformer flum law",
+            "buck boost",
+            "buck/boost",
+            "air-gap leakage",
+            "core coupling",
+        ),
+        "why": "Use these decks when the prompt asks how to validate transformer primary/secondary FLUM, turns ratio, leakage coupling, core B-H/area/depth effects, or buck/boost superposition before detailed transformer studies.",
+    },
     {
         "intent": "Numeric permanent-magnet and magnetization validation",
         "family": "application/numeric_permanent_magnet_100",
@@ -1453,7 +1863,7 @@ SAMPLE_ROUTE_RULES = (
     },
     {
         "intent": "BLDC outer-rotor motor",
-        "family": "motor/emdlab_bldc_outer_rotor_10",
+        "family": "application/motor/emdlab_bldc_outer_rotor_10",
         "query": "EMDLAB-style BLDC outer-rotor surface-pm FLUM",
         "recipe": "pm_airgap_field",
         "terms": ("outer rotor", "outer-rotor", "bldc outer", "outside rotor"),
@@ -1461,7 +1871,7 @@ SAMPLE_ROUTE_RULES = (
     },
     {
         "intent": "Fractional-sector induction machine",
-        "family": "motor/emdlab_induction_fraction_10",
+        "family": "application/motor/emdlab_induction_fraction_10",
         "query": "EMDLAB-style induction fractional-sector OHM2 FLUM",
         "recipe": "eddy_current_time_domain",
         "terms": ("induction fraction", "fractional induction", "fractional-sector induction", "im fraction"),
@@ -1469,7 +1879,7 @@ SAMPLE_ROUTE_RULES = (
     },
     {
         "intent": "Fractional-sector IPM hairpin motor",
-        "family": "motor/emdlab_ipm_hairpin_fraction_10",
+        "family": "application/motor/emdlab_ipm_hairpin_fraction_10",
         "query": "EMDLAB-style IPM hairpin fractional-sector FLUM",
         "recipe": "ipm_ldlq_flux",
         "terms": ("ipm fraction", "hairpin fraction", "fractional-sector ipm", "fractional ipm"),
@@ -1477,7 +1887,7 @@ SAMPLE_ROUTE_RULES = (
     },
     {
         "intent": "SPMSM motor",
-        "family": "motor/emdlab_spmsm_10",
+        "family": "application/motor/emdlab_spmsm_10",
         "query": "EMDLAB-style SPMSM surface-pm FLUM",
         "recipe": "pm_airgap_field",
         "terms": ("spmsm", "surface pm synchronous", "surface-pm synchronous"),
@@ -1485,7 +1895,7 @@ SAMPLE_ROUTE_RULES = (
     },
     {
         "intent": "SPMSM static torque",
-        "family": "motor/emdlab_spmsm_static_torque_10",
+        "family": "application/motor/emdlab_spmsm_static_torque_10",
         "query": "EMDLAB-style SPMSM static-torque rotor-angle FLUM",
         "recipe": "maxwell_torque_surface",
         "terms": ("spmsm torque", "spmsm static torque", "surface pm torque", "static torque spm"),
@@ -1493,7 +1903,7 @@ SAMPLE_ROUTE_RULES = (
     },
     {
         "intent": "SPMSM fractional-sector",
-        "family": "motor/emdlab_spmsm_fraction_10",
+        "family": "application/motor/emdlab_spmsm_fraction_10",
         "query": "EMDLAB-style SPMSM fractional-sector FLUM",
         "recipe": "pm_airgap_field",
         "terms": ("spmsm fraction", "fractional spmsm", "fractional-sector spmsm"),
@@ -1501,7 +1911,7 @@ SAMPLE_ROUTE_RULES = (
     },
     {
         "intent": "Specific SRM pole count",
-        "family": "motor/emdlab_srm86_10",
+        "family": "application/motor/emdlab_srm86_10",
         "query": "EMDLAB-style SRM 8-6 switched-reluctance FLUM",
         "recipe": "maxwell_torque_surface",
         "terms": ("srm 8/6", "srm86", "8/6 srm", "8-6 srm"),
@@ -1509,7 +1919,7 @@ SAMPLE_ROUTE_RULES = (
     },
     {
         "intent": "SRM 6/4 pole count",
-        "family": "motor/emdlab_srm64_10",
+        "family": "application/motor/emdlab_srm64_10",
         "query": "EMDLAB-style SRM 6-4 switched-reluctance FLUM",
         "recipe": "maxwell_torque_surface",
         "terms": ("srm 6/4", "srm64", "6/4 srm", "6-4 srm"),
@@ -1517,7 +1927,7 @@ SAMPLE_ROUTE_RULES = (
     },
     {
         "intent": "SRM 12/8 pole count",
-        "family": "motor/emdlab_srm128_10",
+        "family": "application/motor/emdlab_srm128_10",
         "query": "EMDLAB-style SRM 12-8 switched-reluctance FLUM",
         "recipe": "maxwell_torque_surface",
         "terms": ("srm 12/8", "srm128", "12/8 srm", "12-8 srm"),
@@ -1525,7 +1935,7 @@ SAMPLE_ROUTE_RULES = (
     },
     {
         "intent": "SRM 12/16 outer-rotor",
-        "family": "motor/emdlab_srm1216_outer_rotor_10",
+        "family": "application/motor/emdlab_srm1216_outer_rotor_10",
         "query": "EMDLAB-style SRM 12-16 outer-rotor FLUM",
         "recipe": "maxwell_torque_surface",
         "terms": ("srm 12/16", "srm1216", "12/16 srm", "12-16 srm", "srm outer rotor"),
@@ -1533,7 +1943,7 @@ SAMPLE_ROUTE_RULES = (
     },
     {
         "intent": "SynRM static torque",
-        "family": "motor/emdlab_synrm_static_torque_10",
+        "family": "application/motor/emdlab_synrm_static_torque_10",
         "query": "EMDLAB-style SynRM static-torque flux-barrier FLUM",
         "recipe": "maxwell_torque_surface",
         "terms": ("synrm torque", "synrm static torque", "reluctance torque"),
@@ -1681,6 +2091,194 @@ def build_publication_batch_summary() -> dict[str, Any]:
     }
 
 
+def _public_gate(name: str, passed: bool, detail: str) -> dict[str, str]:
+    return {
+        "gate": name,
+        "status": "PASS" if passed else "FAIL",
+        "detail": detail,
+    }
+
+
+def build_public_quality_gates() -> list[dict[str, str]]:
+    """Return publication-readiness gates for the bundled public sample corpus."""
+    manifest = load_validated_manifest()
+    batches = load_publication_batches()
+    decks = load_sample_decks()
+    mai_paths = {path for path, deck in decks.items() if deck.ext == "mai"}
+    meg_paths = {path for path, deck in decks.items() if deck.ext == "meg"}
+    mai_stems = {path.rsplit(".", 1)[0] for path in mai_paths}
+    meg_stems = {path.rsplit(".", 1)[0] for path in meg_paths}
+    paired_stems = mai_stems & meg_stems
+    missing_meg = sorted(mai_stems - meg_stems)
+    missing_mai = sorted(meg_stems - mai_stems)
+
+    gates = [
+        _public_gate(
+            "paired_mai_meg",
+            not missing_meg and not missing_mai and len(mai_paths) == len(meg_paths),
+            (
+                f"{len(paired_stems)} paired cases, {len(mai_paths)} .mai files, "
+                f"{len(meg_paths)} .meg files"
+            ),
+        )
+    ]
+
+    manifest_families = manifest.get("families", {})
+    deck_case_counts: dict[str, int] = {}
+    deck_input_counts: dict[str, int] = {}
+    for deck in decks.values():
+        deck_input_counts[deck.family] = deck_input_counts.get(deck.family, 0) + 1
+        if deck.ext == "mai":
+            deck_case_counts[deck.family] = deck_case_counts.get(deck.family, 0) + 1
+
+    manifest_family_names = set(manifest_families)
+    deck_family_names = set(deck_case_counts)
+    family_count_mismatches = []
+    for family, entry in manifest_families.items():
+        if deck_case_counts.get(family, 0) != int(entry.get("cases", 0)):
+            family_count_mismatches.append(family)
+        if deck_input_counts.get(family, 0) != int(entry.get("input_files", 0)):
+            family_count_mismatches.append(family)
+    family_ok = (
+        manifest_family_names == deck_family_names
+        and not family_count_mismatches
+        and int(manifest.get("total_cases", 0)) == len(mai_paths)
+        and int(manifest.get("total_input_files", 0)) == len(decks)
+    )
+    gates.append(
+        _public_gate(
+            "manifest_matches_files",
+            family_ok,
+            (
+                f"{len(manifest_family_names)} manifest families, "
+                f"{len(deck_family_names)} deck families, {len(decks)} input files"
+            ),
+        )
+    )
+
+    batched_case_paths: list[str] = []
+    for batch in batches.get("batches", []):
+        batched_case_paths.extend(str(path) for path in batch.get("case_paths", []))
+    batched_case_set = set(batched_case_paths)
+    publication_ok = (
+        int(batches.get("total_cases", 0)) == len(mai_paths)
+        and int(batches.get("full_100_case_batches", 0)) * int(batches.get("checkpoint_size", 0))
+        == len(mai_paths)
+        and int(batches.get("remainder_cases", 0)) == 0
+        and len(batched_case_paths) == len(mai_paths)
+        and batched_case_set == mai_paths
+    )
+    gates.append(
+        _public_gate(
+            "publication_batches_cover_cases",
+            publication_ok,
+            (
+                f"{int(batches.get('total_batches', 0))} batches, "
+                f"{len(batched_case_set)} unique case paths"
+            ),
+        )
+    )
+
+    forbidden_text_hits = []
+    for deck in decks.values():
+        haystack = f"{deck.path}\n{deck.text}"
+        if any(marker in haystack for marker in PUBLIC_FORBIDDEN_TEXT_MARKERS):
+            forbidden_text_hits.append(deck.path)
+    gates.append(
+        _public_gate(
+            "public_boundary_text",
+            not forbidden_text_hits,
+            f"{len(forbidden_text_hits)} decks contain private-path or private-log markers",
+        )
+    )
+
+    all_public_files = _walk_public_files(_sample_root())
+    solver_output_files = [
+        path
+        for path, _node in all_public_files
+        if path.lower().endswith(PUBLIC_FORBIDDEN_OUTPUT_SUFFIXES)
+    ]
+    gates.append(
+        _public_gate(
+            "no_solver_output_files",
+            not solver_output_files,
+            f"{len(solver_output_files)} bundled solver-output files",
+        )
+    )
+
+    old_motor_files = [path for path, _node in all_public_files if path.startswith("motor/")]
+    application_hierarchy_ok = all(deck.path.startswith("application/") for deck in decks.values())
+    gates.append(
+        _public_gate(
+            "application_hierarchy",
+            application_hierarchy_ok and not old_motor_files,
+            (
+                f"{len(old_motor_files)} top-level motor files, "
+                f"{sum(1 for deck in decks.values() if deck.path.startswith('application/motor/'))} "
+                "motor input files under application/motor"
+            ),
+        )
+    )
+
+    known_levels = set(QUALITY_LABELS)
+    unknown_level_families = [
+        family
+        for family, entry in manifest_families.items()
+        if entry.get("validation_level") not in known_levels
+    ]
+    gates.append(
+        _public_gate(
+            "quality_labels_cover_manifest",
+            not unknown_level_families,
+            (
+                f"{len(manifest_family_names) - len(unknown_level_families)} "
+                f"of {len(manifest_family_names)} families have public quality labels"
+            ),
+        )
+    )
+
+    flum_case_count = sum(
+        1
+        for deck in decks.values()
+        if deck.ext == "mai" and "FLUM" in deck.text.upper()
+    )
+    gates.append(
+        _public_gate(
+            "observable_flum_coverage",
+            flum_case_count > 0,
+            f"{flum_case_count} .mai decks include FLUM-observable requests",
+        )
+    )
+
+    representative_missing = [
+        f"{entry['family']}/{entry['case']}/{entry['case']}.mai"
+        for entry in REPRESENTATIVE_CASES
+        if f"{entry['family']}/{entry['case']}/{entry['case']}.mai" not in decks
+    ]
+    gates.append(
+        _public_gate(
+            "representatives_resolve",
+            not representative_missing,
+            (
+                f"{len(REPRESENTATIVE_CASES) - len(representative_missing)} "
+                f"of {len(REPRESENTATIVE_CASES)} representative paths resolve"
+            ),
+        )
+    )
+    gates.extend(
+        _build_physical_quantity_gates(
+            build_physical_quantity_summary(include_gates=False)
+        )
+    )
+    gates.extend(
+        _build_cross_validation_gates(
+            build_cross_validation_summary(include_gates=False)
+        )
+    )
+
+    return gates
+
+
 def get_family_validation(family: str) -> dict[str, Any]:
     """Return public validation metadata for one sample family."""
     entry = load_validated_manifest().get("families", {}).get(family)
@@ -1703,6 +2301,652 @@ def get_family_validation(family: str) -> dict[str, Any]:
         "cases": int(entry.get("cases", 0)),
         "input_files": int(entry.get("input_files", 0)),
         "validated_on": entry.get("validated_on", ""),
+    }
+
+
+def quality_label_for_level(level: str) -> dict[str, str]:
+    """Return public quality label metadata for a validation level."""
+    return QUALITY_LABELS.get(
+        level,
+        {
+            "label": "unlabeled",
+            "display": "Unlabeled",
+            "meaning": "No public quality label is defined for this validation level.",
+            "recommended_use": "Inspect validation metadata before reuse.",
+        },
+    )
+
+
+def quality_label_for_family(family: str) -> dict[str, str]:
+    """Return public quality label metadata for one sample family."""
+    validation = get_family_validation(family)
+    return quality_label_for_level(validation["validation_level"])
+
+
+def _sample_cases() -> list[dict[str, Any]]:
+    decks = load_sample_decks()
+    cases = []
+    for mai in sorted((deck for deck in decks.values() if deck.ext == "mai"), key=lambda d: d.path):
+        meg_path = f"{mai.path.rsplit('.', 1)[0]}.meg"
+        meg = decks.get(meg_path)
+        cases.append(
+            {
+                "family": mai.family,
+                "case": mai.case,
+                "mai_path": mai.path,
+                "meg_path": meg_path,
+                "mai_text": mai.text,
+                "meg_text": meg.text if meg else "",
+            }
+        )
+    return cases
+
+
+def _physical_quantity_keys_for_case(case: dict[str, Any]) -> tuple[str, ...]:
+    family = str(case["family"])
+    meta = _family_meta(family)
+    context = " ".join(
+        [
+            family,
+            meta["title"],
+            " ".join(meta["tags"]),
+            meta["hint"],
+            str(case["mai_text"]),
+            str(case["meg_text"]),
+        ]
+    )
+    lower = context.lower()
+    upper = context.upper()
+    keys: set[str] = set()
+
+    if "FLUM" in upper:
+        keys.add("flux_linkage")
+    if family.startswith("application/motor/"):
+        keys.add("motor_flux_linkage")
+    if "OHM2" in upper or "MAB8T" in upper:
+        keys.add("eddy_current_response")
+    if (
+        "numeric_ac_loss" in family
+        or "ac-loss" in lower
+        or "eddy-current" in lower
+        or ("OHM2" in upper and ("FREQ" in upper or "MOMC" in upper))
+    ):
+        keys.add("ac_loss")
+    if (
+        "numeric_inductance_energy" in family
+        or "inductance" in lower
+        or "co-energy" in lower
+        or "coenergy" in lower
+    ):
+        keys.add("inductance_coenergy")
+    if (
+        "numeric_force_torque" in family
+        or "force" in lower
+        or "torque" in lower
+        or "static_torque" in family
+    ):
+        keys.add("force_torque_gradient")
+    if (
+        "numeric_magnetic_circuit" in family
+        or "magnetic-circuit" in lower
+        or "reluctance" in lower
+        or ("MMB8T" in upper and "HBCU" in upper)
+    ):
+        keys.add("magnetic_circuit_flux")
+    if (
+        "numeric_permanent_magnet" in family
+        or "permanent-magnet" in lower
+        or "surface-pm" in lower
+        or "HBRM" in upper
+        or "MWL8T" in upper
+    ):
+        keys.add("permanent_magnet_flux")
+    if "transformer" in lower:
+        keys.add("transformer_coupling")
+    if "wpt" in lower or "wireless-power" in lower:
+        keys.add("wpt_mutual_coupling")
+    if "mri" in lower or "gradient-coil" in lower:
+        keys.add("mri_gradient_shielding")
+    if any(
+        term in lower
+        for term in (
+            "actuator",
+            "plunger",
+            "solenoid",
+            "relay",
+            "voice-coil",
+            "clutch",
+        )
+    ):
+        keys.add("actuator_force_proxy")
+    if "accelerator" in lower or "corrector" in lower or "quadrupole" in lower:
+        keys.add("accelerator_field_quality")
+
+    return tuple(key for key in PHYSICAL_QUANTITY_ORDER if key in keys)
+
+
+def _matches_physical_quantity_filter(key: str, query: str) -> bool:
+    if not query:
+        return True
+    definition = PHYSICAL_QUANTITY_DEFINITIONS[key]
+    haystack = " ".join(
+        [
+            key,
+            definition["display"],
+            definition["observable"],
+            definition["validation_focus"],
+        ]
+    ).lower()
+    return query.lower() in haystack
+
+
+def _build_physical_quantity_gates(summary: dict[str, Any]) -> list[dict[str, str]]:
+    counts = summary["quantity_counts"]
+    no_quantity_families = [
+        row["family"] for row in summary["families"] if not row["quantity_keys"]
+    ]
+    missing_gold = [
+        key
+        for key in GOLD_PHYSICS_ANCHORS
+        if counts.get(key, {}).get("gold_cases", 0) <= 0
+    ]
+    gates = [
+        _public_gate(
+            "physical_quantity_case_coverage",
+            summary["cases_with_quantities"] == summary["total_cases"],
+            (
+                f"{summary['cases_with_quantities']} of {summary['total_cases']} "
+                "cases map to at least one physical quantity"
+            ),
+        ),
+        _public_gate(
+            "physical_quantity_family_coverage",
+            not no_quantity_families,
+            (
+                f"{summary['total_families'] - len(no_quantity_families)} "
+                f"of {summary['total_families']} families map to physical quantities"
+            ),
+        ),
+        _public_gate(
+            "gold_physics_anchor_coverage",
+            not missing_gold,
+            (
+                "gold invariant anchors cover "
+                + ", ".join(GOLD_PHYSICS_ANCHORS)
+                if not missing_gold
+                else "missing gold anchors for " + ", ".join(missing_gold)
+            ),
+        ),
+        _public_gate(
+            "flux_linkage_observable_all_cases",
+            counts.get("flux_linkage", {}).get("cases", 0) == summary["total_cases"],
+            (
+                f"{counts.get('flux_linkage', {}).get('cases', 0)} "
+                f"of {summary['total_cases']} cases include FLUM observables"
+            ),
+        ),
+        _public_gate(
+            "motor_physical_quantity_coverage",
+            counts.get("motor_flux_linkage", {}).get("cases", 0)
+            == summary["motor_case_count"],
+            (
+                f"{counts.get('motor_flux_linkage', {}).get('cases', 0)} "
+                f"of {summary['motor_case_count']} motor cases map to motor flux linkage"
+            ),
+        ),
+        _public_gate(
+            "conductive_physics_coverage",
+            counts.get("eddy_current_response", {}).get("cases", 0)
+            >= summary["ohm2_case_count"],
+            (
+                f"{counts.get('eddy_current_response', {}).get('cases', 0)} "
+                f"conductive-response cases for {summary['ohm2_case_count']} OHM2 cases"
+            ),
+        ),
+    ]
+    return gates
+
+
+def build_physical_quantity_summary(
+    quantity: str | None = None,
+    family: str | None = None,
+    include_gates: bool = True,
+) -> dict[str, Any]:
+    """Build public physical-quantity coverage for the sample deck corpus."""
+    quantity_filter = (quantity or "").strip().lower()
+    family_filter = (family or "").strip().lower()
+    manifest = load_validated_manifest()
+    active_quantity_keys = [
+        key
+        for key in PHYSICAL_QUANTITY_ORDER
+        if _matches_physical_quantity_filter(key, quantity_filter)
+    ]
+    quantity_counts = {
+        key: {
+            "display": PHYSICAL_QUANTITY_DEFINITIONS[key]["display"],
+            "observable": PHYSICAL_QUANTITY_DEFINITIONS[key]["observable"],
+            "validation_focus": PHYSICAL_QUANTITY_DEFINITIONS[key]["validation_focus"],
+            "families": set(),
+            "cases": 0,
+            "gold_cases": 0,
+            "silver_cases": 0,
+            "representative_paths": [],
+        }
+        for key in active_quantity_keys
+    }
+    family_rows: dict[str, dict[str, Any]] = {}
+    cases_with_quantities = 0
+    selected_case_count = 0
+    total_case_count = 0
+    motor_case_count = 0
+    ohm2_case_count = 0
+
+    for case in _sample_cases():
+        total_case_count += 1
+        if case["family"].startswith("application/motor/"):
+            motor_case_count += 1
+        combined_upper = f"{case['mai_text']}\n{case['meg_text']}".upper()
+        if "OHM2" in combined_upper:
+            ohm2_case_count += 1
+
+        all_keys = _physical_quantity_keys_for_case(case)
+        if all_keys:
+            cases_with_quantities += 1
+        if family_filter and family_filter not in str(case["family"]).lower():
+            continue
+        keys = [key for key in all_keys if key in active_quantity_keys]
+        if quantity_filter and not keys:
+            continue
+        if not quantity_filter:
+            keys = list(all_keys)
+        if not keys:
+            continue
+        selected_case_count += 1
+
+        validation = manifest.get("families", {}).get(case["family"], {})
+        quality = quality_label_for_level(validation.get("validation_level", ""))
+        row = family_rows.setdefault(
+            case["family"],
+            {
+                "family": case["family"],
+                "title": _family_meta(case["family"])["title"],
+                "cases": 0,
+                "quantity_cases": {},
+                "quantity_keys": set(),
+                "validation_level": validation.get("validation_level", ""),
+                "quality_label": quality["label"],
+                "quality_display": quality["display"],
+                "representative_paths": representative_paths_for_family(case["family"], limit=2),
+            },
+        )
+        row["cases"] += 1
+        for key in keys:
+            row["quantity_keys"].add(key)
+            row["quantity_cases"][key] = row["quantity_cases"].get(key, 0) + 1
+            qrow = quantity_counts[key]
+            qrow["families"].add(case["family"])
+            qrow["cases"] += 1
+            if quality["label"] == "gold_numeric_invariant":
+                qrow["gold_cases"] += 1
+            elif quality["label"] == "silver_proxy_energy":
+                qrow["silver_cases"] += 1
+            if len(qrow["representative_paths"]) < 3:
+                reps = representative_paths_for_family(case["family"], limit=1)
+                for path in reps:
+                    if path not in qrow["representative_paths"]:
+                        qrow["representative_paths"].append(path)
+
+    serial_quantity_counts = {}
+    for key, row in quantity_counts.items():
+        serial_quantity_counts[key] = {
+            "display": row["display"],
+            "observable": row["observable"],
+            "validation_focus": row["validation_focus"],
+            "families": len(row["families"]),
+            "cases": row["cases"],
+            "gold_cases": row["gold_cases"],
+            "silver_cases": row["silver_cases"],
+            "representative_paths": list(row["representative_paths"]),
+        }
+    serial_family_rows = []
+    for row in sorted(family_rows.values(), key=lambda item: item["family"]):
+        quantity_keys = [key for key in PHYSICAL_QUANTITY_ORDER if key in row["quantity_keys"]]
+        serial_family_rows.append(
+            {
+                "family": row["family"],
+                "title": row["title"],
+                "cases": row["cases"],
+                "quantity_keys": quantity_keys,
+                "quantity_cases": {
+                    key: row["quantity_cases"].get(key, 0)
+                    for key in quantity_keys
+                },
+                "validation_level": row["validation_level"],
+                "quality_label": row["quality_label"],
+                "quality_display": row["quality_display"],
+                "representative_paths": row["representative_paths"],
+            }
+        )
+
+    summary = {
+        "schema_version": manifest.get("schema_version"),
+        "total_cases": total_case_count,
+        "total_families": len(manifest.get("families", {})),
+        "selected_cases": selected_case_count,
+        "selected_family_count": len(serial_family_rows),
+        "cases_with_quantities": cases_with_quantities,
+        "motor_case_count": motor_case_count,
+        "ohm2_case_count": ohm2_case_count,
+        "quantity_filter": quantity or "",
+        "family_filter": family or "",
+        "quantity_counts": serial_quantity_counts,
+        "families": serial_family_rows,
+        "limitations": [
+            "Physical quantity coverage is inferred from public input decks and validation metadata.",
+            "It does not expose private solver outputs or absolute commercial benchmark numbers.",
+            "Gold labels indicate public numeric-invariant checks; silver labels indicate runnable proxy-energy gates.",
+        ],
+    }
+    if include_gates and not quantity_filter and not family_filter:
+        physical_gates = _build_physical_quantity_gates(summary)
+        summary["physical_gate_status"] = (
+            "PASS" if all(gate["status"] == "PASS" for gate in physical_gates) else "FAIL"
+        )
+        summary["physical_gates"] = physical_gates
+    else:
+        summary["physical_gate_status"] = ""
+        summary["physical_gates"] = []
+    return summary
+
+
+def _cross_validation_methods_for_checks(checks: list[str]) -> list[dict[str, str]]:
+    methods = []
+    for check in checks:
+        method = CROSS_VALIDATION_METHODS.get(check)
+        if method:
+            methods.append({"check": check, **method})
+    return methods
+
+
+def _has_independent_cross_validation(checks: list[str]) -> bool:
+    return any(check.startswith("ngsolve_") for check in checks)
+
+
+def _build_cross_validation_gates(summary: dict[str, Any]) -> list[dict[str, str]]:
+    method_counts = summary["method_counts"]
+    gaps = summary["gaps"]
+    return [
+        _public_gate(
+            "all_families_have_independent_cross_validation",
+            gaps["families_without_independent_cross_validation"] == 0,
+            (
+                f"{summary['families_with_independent_cross_validation']} "
+                f"of {summary['total_families']} families include an independent NGSolve check"
+            ),
+        ),
+        _public_gate(
+            "all_cases_have_independent_cross_validation",
+            gaps["cases_without_independent_cross_validation"] == 0,
+            (
+                f"{summary['cases_with_independent_cross_validation']} "
+                f"of {summary['total_cases']} cases include an independent NGSolve check"
+            ),
+        ),
+        _public_gate(
+            "gold_families_have_dual_invariant_validation",
+            gaps["gold_families_without_dual_invariants"] == 0,
+            (
+                f"{method_counts.get('ngsolve_numeric_invariants_passed', {}).get('cases', 0)} "
+                "gold cases have NGSolve numeric invariants"
+            ),
+        ),
+        _public_gate(
+            "silver_families_have_proxy_energy_cross_validation",
+            gaps["silver_families_without_proxy_energy"] == 0,
+            (
+                f"{method_counts.get('ngsolve_proxy_energy_positive', {}).get('cases', 0)} "
+                "silver cases have NGSolve proxy-energy checks"
+            ),
+        ),
+        _public_gate(
+            "cross_validation_tied_to_physical_quantities",
+            gaps["families_without_physical_quantity"] == 0,
+            (
+                f"{summary['total_families'] - gaps['families_without_physical_quantity']} "
+                f"of {summary['total_families']} cross-validated families map to physical quantities"
+            ),
+        ),
+    ]
+
+
+def build_cross_validation_summary(
+    family: str | None = None,
+    level: str | None = None,
+    include_gates: bool = True,
+) -> dict[str, Any]:
+    """Build public cross-validation coverage and gap metadata."""
+    manifest = load_validated_manifest()
+    family_filter = (family or "").strip().lower()
+    level_filter = (level or "").strip()
+    physical = build_physical_quantity_summary(include_gates=False)
+    family_to_quantities = {
+        row["family"]: row["quantity_keys"]
+        for row in physical["families"]
+    }
+
+    method_counts: dict[str, dict[str, int]] = {
+        check: {"families": 0, "cases": 0}
+        for check in CROSS_VALIDATION_METHODS
+    }
+    rows = []
+    gap_rows = []
+    upgrade_candidates = []
+    cases_with_independent = 0
+    families_with_independent = 0
+    total_cases = int(manifest.get("total_cases", 0))
+
+    for fam, entry in sorted(manifest.get("families", {}).items()):
+        if family_filter and family_filter not in fam.lower():
+            continue
+        if level_filter and entry.get("validation_level") != level_filter:
+            continue
+        checks = list(entry.get("checks", []))
+        methods = _cross_validation_methods_for_checks(checks)
+        independent = _has_independent_cross_validation(checks)
+        cases = int(entry.get("cases", 0))
+        quality = quality_label_for_level(entry.get("validation_level", ""))
+        quantity_keys = list(family_to_quantities.get(fam, []))
+
+        if independent:
+            families_with_independent += 1
+            cases_with_independent += cases
+        for method in methods:
+            bucket = method_counts[method["check"]]
+            bucket["families"] += 1
+            bucket["cases"] += cases
+
+        has_dual_gold = (
+            entry.get("validation_level") == "ngsolve_numeric_invariant"
+            and "elf_flux_invariants_passed" in checks
+            and "ngsolve_numeric_invariants_passed" in checks
+        )
+        has_silver_proxy = (
+            entry.get("validation_level") == "ngsolve_proxy_energy"
+            and "ngsolve_proxy_energy_positive" in checks
+        )
+        if not independent or not quantity_keys:
+            gap_rows.append(
+                {
+                    "family": fam,
+                    "cases": cases,
+                    "validation_level": entry.get("validation_level", ""),
+                    "missing": [
+                        name
+                        for name, condition in (
+                            ("independent_ngsolve_cross_validation", independent),
+                            ("physical_quantity_mapping", bool(quantity_keys)),
+                        )
+                        if not condition
+                    ],
+                }
+            )
+        if quality["label"] == "silver_proxy_energy":
+            upgrade_candidates.append(
+                {
+                    "family": fam,
+                    "cases": cases,
+                    "quantity_keys": quantity_keys,
+                    "current_cross_validation": "ngsolve_proxy_energy_positive",
+                    "possible_upgrade": (
+                        "Add a family-specific public numeric invariant only when "
+                        "the physical law is simple enough to verify without "
+                        "publishing solver outputs."
+                    ),
+                }
+            )
+
+        rows.append(
+            {
+                "family": fam,
+                "title": _family_meta(fam)["title"],
+                "cases": cases,
+                "validation_level": entry.get("validation_level", ""),
+                "quality_label": quality["label"],
+                "checks": checks,
+                "cross_validation_methods": methods,
+                "has_independent_cross_validation": independent,
+                "has_gold_dual_invariants": has_dual_gold,
+                "has_silver_proxy_energy": has_silver_proxy,
+                "quantity_keys": quantity_keys,
+                "validation_scope": entry.get("validation_scope", ""),
+                "representative_paths": representative_paths_for_family(fam, limit=2),
+            }
+        )
+
+    all_manifest_families = manifest.get("families", {})
+    global_missing_independent = [
+        fam
+        for fam, entry in all_manifest_families.items()
+        if not _has_independent_cross_validation(list(entry.get("checks", [])))
+    ]
+    global_missing_physics = [
+        fam
+        for fam in all_manifest_families
+        if not family_to_quantities.get(fam)
+    ]
+    global_gold_without_dual = [
+        fam
+        for fam, entry in all_manifest_families.items()
+        if entry.get("validation_level") == "ngsolve_numeric_invariant"
+        and not (
+            "elf_flux_invariants_passed" in entry.get("checks", [])
+            and "ngsolve_numeric_invariants_passed" in entry.get("checks", [])
+        )
+    ]
+    global_silver_without_proxy = [
+        fam
+        for fam, entry in all_manifest_families.items()
+        if entry.get("validation_level") == "ngsolve_proxy_energy"
+        and "ngsolve_proxy_energy_positive" not in entry.get("checks", [])
+    ]
+    gaps = {
+        "families_without_independent_cross_validation": len(global_missing_independent),
+        "cases_without_independent_cross_validation": sum(
+            int(all_manifest_families[fam].get("cases", 0))
+            for fam in global_missing_independent
+        ),
+        "families_without_physical_quantity": len(global_missing_physics),
+        "gold_families_without_dual_invariants": len(global_gold_without_dual),
+        "silver_families_without_proxy_energy": len(global_silver_without_proxy),
+        "gap_families": sorted(set(global_missing_independent + global_missing_physics)),
+    }
+    summary = {
+        "schema_version": manifest.get("schema_version"),
+        "total_cases": total_cases,
+        "total_families": len(all_manifest_families),
+        "selected_cases": sum(row["cases"] for row in rows),
+        "selected_family_count": len(rows),
+        "cases_with_independent_cross_validation": cases_with_independent,
+        "families_with_independent_cross_validation": families_with_independent,
+        "method_counts": method_counts,
+        "families": rows,
+        "gaps": gaps,
+        "upgrade_candidates": upgrade_candidates,
+        "family_filter": family or "",
+        "level_filter": level or "",
+        "limitations": [
+            "This public audit records validation contracts and categories, not solver outputs.",
+            "No family is treated as publication-ready unless it has an independent NGSolve cross-check.",
+            "Silver proxy-energy families are cross-validated but are not full absolute field, force, torque, or loss agreement claims.",
+            "Gold numeric-invariant families add public FLUM-derived invariants and independent NGSolve proxy invariants.",
+        ],
+    }
+    if include_gates and not family_filter and not level_filter:
+        gates = _build_cross_validation_gates(summary)
+        summary["cross_validation_gate_status"] = (
+            "PASS" if all(gate["status"] == "PASS" for gate in gates) else "FAIL"
+        )
+        summary["cross_validation_gates"] = gates
+    else:
+        summary["cross_validation_gate_status"] = ""
+        summary["cross_validation_gates"] = []
+    return summary
+
+
+def build_quality_summary(family: str | None = None, label: str | None = None) -> dict[str, Any]:
+    """Build quality-label counts and selected family rows for MCP clients."""
+    manifest = load_validated_manifest()
+    quality_gates = build_public_quality_gates()
+    family_filter = family.lower() if family else ""
+    label_filter = label.lower() if label else ""
+    rows = []
+    label_counts: dict[str, dict[str, int]] = {}
+    for fam, entry in sorted(manifest.get("families", {}).items()):
+        q = quality_label_for_level(entry.get("validation_level", ""))
+        if family_filter and family_filter not in fam.lower():
+            continue
+        if (
+            label_filter
+            and label_filter not in q["label"].lower()
+            and label_filter not in q["display"].lower()
+        ):
+            continue
+        label_counts.setdefault(q["label"], {"families": 0, "cases": 0, "input_files": 0})
+        label_counts[q["label"]]["families"] += 1
+        label_counts[q["label"]]["cases"] += int(entry.get("cases", 0))
+        label_counts[q["label"]]["input_files"] += int(entry.get("input_files", 0))
+        meta = _family_meta(fam)
+        rows.append(
+            {
+                "family": fam,
+                "title": meta["title"],
+                "cases": int(entry.get("cases", 0)),
+                "input_files": int(entry.get("input_files", 0)),
+                "validation_level": entry.get("validation_level", ""),
+                "quality_label": q["label"],
+                "quality_display": q["display"],
+                "quality_meaning": q["meaning"],
+                "recommended_use": q["recommended_use"],
+                "checks": list(entry.get("checks", [])),
+                "validation_scope": entry.get("validation_scope", ""),
+            }
+        )
+    return {
+        "schema_version": manifest.get("schema_version"),
+        "total_cases": int(manifest.get("total_cases", 0)),
+        "total_input_files": int(manifest.get("total_input_files", 0)),
+        "selected_family_count": len(rows),
+        "selected_cases": sum(row["cases"] for row in rows),
+        "selected_input_files": sum(row["input_files"] for row in rows),
+        "label_counts": label_counts,
+        "families": rows,
+        "family_filter": family or "",
+        "label_filter": label or "",
+        "label_definitions": QUALITY_LABELS,
+        "quality_gate_status": (
+            "PASS" if all(gate["status"] == "PASS" for gate in quality_gates) else "FAIL"
+        ),
+        "quality_gates": quality_gates,
     }
 
 
@@ -1756,6 +3000,7 @@ def build_validation_summary(
         "limitations": list(VALIDATION_LIMITATIONS),
         "recommended_calls": [
             'elf_sample_decks_validation(level="ngsolve_numeric_invariant")',
+            'elf_sample_decks_validation(family="numeric_transformer_coupling")',
             'elf_sample_decks_validation(family="numeric_permanent_magnet")',
             'elf_sample_decks_validation(family="numeric_magnetic_circuit")',
             'elf_sample_decks_validation(family="numeric_ac_loss")',
@@ -1763,6 +3008,7 @@ def build_validation_summary(
             'elf_sample_decks_validation(family="numeric_inductance_energy")',
             'elf_sample_decks_validation(family="numeric_flum_law")',
             'elf_sample_decks_validation(family="numeric_validation")',
+            'elf_sample_decks_route("transformer coupling turns ratio HBCU FLUM")',
             'elf_sample_decks_route("permanent magnet HBRM polarity FLUM")',
             'elf_sample_decks_route("magnetic circuit air gap HBCU")',
             'elf_sample_decks_route("AC loss frequency square OHM2")',
@@ -1847,7 +3093,7 @@ def format_validation_summary(summary: dict[str, Any], max_families: int = 20) -
         lines.append(
             f"- next checkpoint: {batches['next_checkpoint_cases']} cases; "
             f"{batches['additional_cases_needed_for_next_100_case_checkpoint']} "
-            "additional validated cases needed"
+            "additional validated cases would make the next optional increment"
         )
         for batch in batches["batches"][:5]:
             level_bits = ", ".join(
@@ -1866,6 +3112,216 @@ def format_validation_summary(summary: dict[str, Any], max_families: int = 20) -
     return "\n".join(lines).rstrip()
 
 
+def format_quality_summary(summary: dict[str, Any], max_families: int = 30) -> str:
+    """Format public quality-label metadata as Markdown."""
+    lines = [
+        "# Public sample-deck quality labels",
+        "",
+        (
+            f"- corpus: {summary['total_cases']} cases, "
+            f"{summary['total_input_files']} input files"
+        ),
+        (
+            f"- selected: {summary['selected_family_count']} families, "
+            f"{summary['selected_cases']} cases, "
+            f"{summary['selected_input_files']} input files"
+        ),
+        "",
+        f"## Publication Quality Gates ({summary['quality_gate_status']})",
+    ]
+    for gate in summary["quality_gates"]:
+        lines.append(f"- {gate['status']} `{gate['gate']}`: {gate['detail']}")
+
+    lines.extend(
+        [
+            "",
+            "## Label Definitions",
+        ]
+    )
+    for level in VALIDATION_LEVEL_ORDER:
+        label = QUALITY_LABELS.get(level)
+        if not label:
+            continue
+        counts = summary["label_counts"].get(
+            label["label"], {"families": 0, "cases": 0, "input_files": 0}
+        )
+        lines.append(
+            f"- `{label['label']}` ({label['display']}): "
+            f"{counts['families']} families, {counts['cases']} cases"
+        )
+        lines.append(f"  meaning: {label['meaning']}")
+        lines.append(f"  recommended use: {label['recommended_use']}")
+
+    lines.extend(["", "## Families"])
+    shown = summary["families"][: max(0, max_families)]
+    for row in shown:
+        lines.append(
+            f"- `{row['family']}`: {row['cases']} cases, "
+            f"`{row['quality_label']}`, level `{row['validation_level']}`"
+        )
+        lines.append(f"  title: {row['title']}")
+        lines.append(f"  use: {row['recommended_use']}")
+    hidden = summary["selected_family_count"] - len(shown)
+    if hidden > 0:
+        lines.append(f"- ... {hidden} more families. Narrow with `family=` or `label=`.")
+    return "\n".join(lines).rstrip()
+
+
+def format_physical_quantity_summary(
+    summary: dict[str, Any],
+    max_quantities: int = 16,
+    max_families: int = 30,
+) -> str:
+    """Format public physical-quantity coverage as Markdown."""
+    lines = [
+        "# Public sample-deck physical quantity coverage",
+        "",
+        f"- corpus: {summary['total_cases']} cases, {summary['total_families']} families",
+        (
+            f"- selected: {summary['selected_cases']} cases, "
+            f"{summary['selected_family_count']} families"
+        ),
+    ]
+    if summary.get("quantity_filter"):
+        lines.append(f"- quantity filter: `{summary['quantity_filter']}`")
+    if summary.get("family_filter"):
+        lines.append(f"- family filter: `{summary['family_filter']}`")
+
+    if summary.get("physical_gates"):
+        lines.extend(["", f"## Physical Quantity Gates ({summary['physical_gate_status']})"])
+        for gate in summary["physical_gates"]:
+            lines.append(f"- {gate['status']} `{gate['gate']}`: {gate['detail']}")
+
+    lines.extend(["", "## Quantity Coverage"])
+    shown_quantity_keys = [
+        key
+        for key in PHYSICAL_QUANTITY_ORDER
+        if key in summary["quantity_counts"]
+    ][: max(0, max_quantities)]
+    for key in shown_quantity_keys:
+        row = summary["quantity_counts"][key]
+        lines.append(
+            f"- `{key}` ({row['display']}): {row['cases']} cases, "
+            f"{row['families']} families, {row['gold_cases']} gold, "
+            f"{row['silver_cases']} silver"
+        )
+        lines.append(f"  observable: {row['observable']}")
+        lines.append(f"  validation focus: {row['validation_focus']}")
+        if row["representative_paths"]:
+            lines.append("  representatives: " + ", ".join(f"`{p}`" for p in row["representative_paths"]))
+    hidden_quantities = len(summary["quantity_counts"]) - len(shown_quantity_keys)
+    if hidden_quantities > 0:
+        lines.append(f"- ... {hidden_quantities} more quantities.")
+
+    lines.extend(["", "## Families"])
+    shown_families = summary["families"][: max(0, max_families)]
+    for row in shown_families:
+        quantity_list = ", ".join(f"`{key}`" for key in row["quantity_keys"])
+        lines.append(
+            f"- `{row['family']}`: {row['cases']} selected cases, "
+            f"`{row['quality_label']}`, quantities: {quantity_list}"
+        )
+        lines.append(f"  title: {row['title']}")
+        if row["representative_paths"]:
+            lines.append(
+                "  representative: "
+                + ", ".join(f"`{path}`" for path in row["representative_paths"])
+            )
+    hidden_families = summary["selected_family_count"] - len(shown_families)
+    if hidden_families > 0:
+        lines.append(f"- ... {hidden_families} more families. Narrow with `quantity=` or `family=`.")
+
+    lines.extend(["", "## Use Notes"])
+    lines.extend(f"- {note}" for note in summary["limitations"])
+    return "\n".join(lines).rstrip()
+
+
+def format_cross_validation_summary(
+    summary: dict[str, Any],
+    max_families: int = 30,
+    max_upgrade_candidates: int = 12,
+) -> str:
+    """Format public cross-validation coverage as Markdown."""
+    lines = [
+        "# Public sample-deck cross-validation audit",
+        "",
+        f"- corpus: {summary['total_cases']} cases, {summary['total_families']} families",
+        (
+            f"- selected: {summary['selected_cases']} cases, "
+            f"{summary['selected_family_count']} families"
+        ),
+    ]
+    if summary.get("family_filter"):
+        lines.append(f"- family filter: `{summary['family_filter']}`")
+    if summary.get("level_filter"):
+        lines.append(f"- level filter: `{summary['level_filter']}`")
+
+    if summary.get("cross_validation_gates"):
+        lines.extend(["", f"## Cross-Validation Gates ({summary['cross_validation_gate_status']})"])
+        for gate in summary["cross_validation_gates"]:
+            lines.append(f"- {gate['status']} `{gate['gate']}`: {gate['detail']}")
+
+    lines.extend(["", "## Methods"])
+    for check, method in CROSS_VALIDATION_METHODS.items():
+        counts = summary["method_counts"].get(check, {"families": 0, "cases": 0})
+        lines.append(
+            f"- `{check}` ({method['display']}): "
+            f"{counts['cases']} cases, {counts['families']} families, "
+            f"strength `{method['strength']}`"
+        )
+        lines.append(f"  meaning: {method['meaning']}")
+
+    gaps = summary["gaps"]
+    lines.extend(["", "## Gaps"])
+    if gaps["families_without_independent_cross_validation"] == 0:
+        lines.append("- No family is missing independent NGSolve cross-validation.")
+    else:
+        lines.append(
+            "- Families missing independent NGSolve cross-validation: "
+            + ", ".join(f"`{fam}`" for fam in gaps["gap_families"])
+        )
+    if gaps["families_without_physical_quantity"] == 0:
+        lines.append("- No cross-validated family is missing physical-quantity mapping.")
+    else:
+        lines.append(
+            "- Families missing physical-quantity mapping: "
+            + ", ".join(f"`{fam}`" for fam in gaps["gap_families"])
+        )
+
+    lines.extend(["", "## Families"])
+    shown = summary["families"][: max(0, max_families)]
+    for row in shown:
+        methods = ", ".join(f"`{m['check']}`" for m in row["cross_validation_methods"])
+        quantities = ", ".join(f"`{q}`" for q in row["quantity_keys"])
+        lines.append(
+            f"- `{row['family']}`: {row['cases']} cases, "
+            f"`{row['quality_label']}`, methods: {methods}"
+        )
+        lines.append(f"  quantities: {quantities}")
+        lines.append(f"  scope: {row['validation_scope']}")
+    hidden = summary["selected_family_count"] - len(shown)
+    if hidden > 0:
+        lines.append(f"- ... {hidden} more families. Narrow with `family=` or `level=`.")
+
+    if summary["upgrade_candidates"]:
+        lines.extend(["", "## Silver-To-Gold Upgrade Candidates"])
+        shown_upgrades = summary["upgrade_candidates"][: max(0, max_upgrade_candidates)]
+        for row in shown_upgrades:
+            quantities = ", ".join(f"`{q}`" for q in row["quantity_keys"])
+            lines.append(
+                f"- `{row['family']}`: {row['cases']} cases, "
+                f"current `{row['current_cross_validation']}`, quantities: {quantities}"
+            )
+            lines.append(f"  possible upgrade: {row['possible_upgrade']}")
+        hidden_upgrades = len(summary["upgrade_candidates"]) - len(shown_upgrades)
+        if hidden_upgrades > 0:
+            lines.append(f"- ... {hidden_upgrades} more silver families.")
+
+    lines.extend(["", "## Use Notes"])
+    lines.extend(f"- {note}" for note in summary["limitations"])
+    return "\n".join(lines).rstrip()
+
+
 def _walk_files(node, prefix: str = "") -> list[tuple[str, Any]]:
     files: list[tuple[str, Any]] = []
     for child in sorted(node.iterdir(), key=lambda p: p.name):
@@ -1873,6 +3329,17 @@ def _walk_files(node, prefix: str = "") -> list[tuple[str, Any]]:
         if child.is_dir():
             files.extend(_walk_files(child, rel))
         elif child.is_file() and child.name.lower().endswith((".mai", ".meg")):
+            files.append((rel.replace("\\", "/"), child))
+    return files
+
+
+def _walk_public_files(node, prefix: str = "") -> list[tuple[str, Any]]:
+    files: list[tuple[str, Any]] = []
+    for child in sorted(node.iterdir(), key=lambda p: p.name):
+        rel = f"{prefix}/{child.name}" if prefix else child.name
+        if child.is_dir():
+            files.extend(_walk_public_files(child, rel))
+        elif child.is_file():
             files.append((rel.replace("\\", "/"), child))
     return files
 
@@ -2003,7 +3470,8 @@ def route_sample_decks(goal: str, limit: int = 5) -> list[dict[str, Any]]:
         family = rule["family"]
         meta = _family_meta(family)
         validation = get_family_validation(family)
-        examples = [d["path"] for d in list_sample_decks(family=family, ext="mai")[:3]]
+        quality = quality_label_for_family(family)
+        examples = representative_paths_for_family(family, limit=3)
         routes.append(
             {
                 "score": score,
@@ -2013,6 +3481,8 @@ def route_sample_decks(goal: str, limit: int = 5) -> list[dict[str, Any]]:
                 "tags": list(meta["tags"]),
                 "validation_level": validation["validation_level"],
                 "validation_scope": validation["validation_scope"],
+                "quality_label": quality["label"],
+                "quality_display": quality["display"],
                 "why": rule["why"],
                 "query": rule["query"],
                 "recipe": rule["recipe"],
@@ -2047,6 +3517,10 @@ def format_sample_deck_routes(routes: list[dict[str, Any]], goal: str) -> str:
                 f"- validation: `{route['validation_level']}` - "
                 f"{route.get('validation_scope', '')}"
             )
+        if route.get("quality_label"):
+            lines.append(
+                f"- quality: `{route['quality_label']}` ({route.get('quality_display', '')})"
+            )
         lines.append(f"- why: {route['why']}")
         lines.append(f"- tags: {', '.join(route['tags'][:10])}")
         lines.append("- next calls:")
@@ -2062,6 +3536,8 @@ def get_sample_deck(rel_path: str, max_chars: int = 60000) -> dict[str, Any]:
     """Get full text of a public sample .mai/.meg deck."""
     decks = load_sample_decks()
     deck = decks.get(rel_path)
+    if deck is None and rel_path.startswith("motor/"):
+        deck = decks.get(f"application/{rel_path}")
     if deck is None:
         candidates = [p for p in decks if p.endswith("/" + rel_path) or p == rel_path]
         if len(candidates) == 1:
@@ -2180,6 +3656,137 @@ def build_sample_deck_cards(
 def build_team28_cards() -> list[dict[str, Any]]:
     """Build the curated 28-card Python-interface representative set."""
     return build_sample_deck_cards(limit=28, team28=True)
+
+
+def build_representative_cards(area: str | None = None, limit: int = 36) -> list[dict[str, Any]]:
+    """Build the curated public representative set across the 1600-case corpus."""
+    area_filter = area.lower() if area else ""
+    decks = load_sample_decks()
+    cards = []
+    for entry in REPRESENTATIVE_CASES:
+        if area_filter and area_filter not in entry["area"].lower() and area_filter not in entry["family"].lower():
+            continue
+        family = entry["family"]
+        case = entry["case"]
+        mai_path = f"{family}/{case}/{case}.mai"
+        meg_path = f"{family}/{case}/{case}.meg"
+        mai = decks.get(mai_path)
+        meg = decks.get(meg_path)
+        if not mai or not meg:
+            continue
+        meta = _family_meta(family)
+        validation = get_family_validation(family)
+        quality = quality_label_for_family(family)
+        sol_blocks = _uniq(SOL_RE.findall(mai.text))
+        pre_keywords = [kw for kw in KEYWORDS if re.search(rf"^\s*{kw}\b", mai.text, re.MULTILINE)]
+        elements = _uniq(ELEMENT_RE.findall(meg.text))
+        cards.append(
+            {
+                "area": entry["area"],
+                "family": family,
+                "case": case,
+                "title": meta["title"],
+                "reason": entry["reason"],
+                "tags": list(meta["tags"]),
+                "mai_path": mai_path,
+                "meg_path": meg_path,
+                "sol_blocks": sol_blocks,
+                "pre_keywords": pre_keywords,
+                "elements": elements,
+                "validation_level": validation["validation_level"],
+                "validation_scope": validation["validation_scope"],
+                "quality_label": quality["label"],
+                "quality_display": quality["display"],
+                "quality_meaning": quality["meaning"],
+                "recommended_use": quality["recommended_use"],
+            }
+        )
+    return cards[: max(0, limit)]
+
+
+def representative_paths_for_family(family: str, limit: int = 3) -> list[str]:
+    """Return curated representative .mai paths for a family, with fallback."""
+    paths = [
+        f"{entry['family']}/{entry['case']}/{entry['case']}.mai"
+        for entry in REPRESENTATIVE_CASES
+        if entry["family"] == family
+    ]
+    if not paths:
+        paths = [d["path"] for d in list_sample_decks(family=family, ext="mai")]
+    return paths[: max(0, limit)]
+
+
+def format_representative_cards(cards: list[dict[str, Any]]) -> str:
+    """Format representative sample cards as Markdown."""
+    if not cards:
+        return "# ELF public representative samples\n\nNo representative samples matched."
+    lines = [
+        f"# ELF public representative samples ({len(cards)} cards)",
+        "",
+        "Use these as first-stop examples before browsing the full 1600-case corpus.",
+        "",
+    ]
+    for i, card in enumerate(cards, 1):
+        lines.append(f"## {i}. {card['title']} / {card['case']}")
+        lines.append(f"- area: `{card['area']}`")
+        lines.append(f"- family: `{card['family']}`")
+        lines.append(f"- files: `{card['mai_path']}` + `{card['meg_path']}`")
+        lines.append(f"- why representative: {card['reason']}")
+        lines.append(
+            f"- quality: `{card['quality_label']}` ({card['quality_display']}) - "
+            f"{card['quality_meaning']}"
+        )
+        lines.append(f"- validation: `{card['validation_level']}`")
+        lines.append(f"- SOL: {', '.join(card['sol_blocks']) if card['sol_blocks'] else '(none)'}")
+        lines.append(f"- PRE: {', '.join(card['pre_keywords']) if card['pre_keywords'] else '(none)'}")
+        lines.append(f"- elements: {', '.join(card['elements']) if card['elements'] else '(none)'}")
+        lines.append("")
+    return "\n".join(lines).rstrip()
+
+
+def format_public_promotion(audience: str = "collaborator") -> str:
+    """Return public-safe promotional copy for the 1600-case corpus."""
+    audience_l = audience.lower()
+    if audience_l in {"ja", "jp", "japanese", "yano", "collaborator"}:
+        return (
+            "# ELF-mcp-server public promotion draft\n\n"
+            "ELF-mcp-server は、ELF/MAGIC の入力ファイル作成を支援するための "
+            "公開 MCP サーバです。公開パッケージには、ELF/MAGIC で読みやすい "
+            "`.mai` / `.meg` 入力デッキ 1600 例、合計 3200 入力ファイルを収録し、"
+            "モータ、変圧器、MRI、WPT、誘導加熱、加速器用電磁石、アクチュエータ、"
+            "磁気ギア、NDT、数値検証アンカーなどを横断的に扱えるようにしました。\n\n"
+            "単なる例題集ではなく、MCP クライアントがユーザーのプロンプトから "
+            "適切な入力デッキ family を選び、代表例を開き、検証レベルを確認し、"
+            "次に見るべき recipe へ進めるための知識ベースとして整備しています。"
+            "全 family は公開 manifest で `validation: passed` として管理され、"
+            "674 例は `gold_numeric_invariant`、926 例は `silver_proxy_energy` "
+            "という品質ラベルで区別できます。\n\n"
+            "公開境界も明確にしています。パッケージに含めるのは、入力デッキ、"
+            "公開ドキュメント、recipe、validation metadata だけです。solver 出力、"
+            "比較ログ、機械ローカル path、非公開 provenance は含めません。"
+            "そのため、研究開発で育てた知見を安全に、かつ実用的に MCP から再利用できます。\n\n"
+            "矢野様へ紹介する場合は、"
+            "「ELF/MAGIC の使い方を AI agent が迷わず学べるよう、1600 件の公開入力例と "
+            "品質ラベル、代表例ルーティングを備えた MCP サーバとして整備しました」"
+            "という一文が一番伝わりやすいです。"
+        )
+    return (
+        "# ELF-mcp-server public promotion draft\n\n"
+        "ELF-mcp-server is a public documentation MCP server for authoring "
+        "ELF/MAGIC input files. It bundles 1600 public runnable `.mai`/`.meg` "
+        "input-deck cases, 3200 input files total, spanning motors, transformers, "
+        "MRI, WPT, induction heating, accelerator magnets, actuators, magnetic "
+        "gears, NDT probes, and numeric validation anchors.\n\n"
+        "The corpus is organized as an agent-facing knowledge base rather than "
+        "a raw example dump: MCP clients can route a user prompt to a suitable "
+        "sample family, inspect representative decks, check public validation "
+        "levels, and continue into workflow recipes. Quality labels distinguish "
+        "674 `gold_numeric_invariant` cases from 926 `silver_proxy_energy` cases.\n\n"
+        "The public boundary is explicit. The package contains input decks, "
+        "public documentation, recipes, and validation metadata only; it does "
+        "not bundle solver outputs, comparison logs, machine-local paths, or "
+        "private provenance."
+    )
 
 
 def format_sample_deck_cards(cards: list[dict[str, Any]], title: str = "ELF public sample deck playbook") -> str:
