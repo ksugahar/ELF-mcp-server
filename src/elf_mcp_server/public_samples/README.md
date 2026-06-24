@@ -106,6 +106,10 @@ Representative routing:
 - `elf_motor_hybrid_router(goal)` dispatches motor prompts across public ELF
   deck routes, radia-motor 2D MMM/BEM-like quick checks, NGSolve AGE validation
   targets, and the user-local ELF/MAGIC product-run handoff.
+- `elf_motor_mmm_quick_check()` runs the public-safe 2D magnetic-circuit /
+  MMM-like first-order check directly in the MCP server. It estimates PM flux
+  linkage, back-EMF constant, dq torque proxy, and induction slip-loss proxy
+  without calling ELF/MAGIC or bundling solver outputs.
 
 For these compact public examples, `.meg` files are generated as small ASCII
 ELF/MAGIC mesh decks directly by lab-authored Python generators. They are not

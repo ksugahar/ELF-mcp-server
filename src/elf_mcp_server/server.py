@@ -44,6 +44,7 @@ from .sample_decks import (
     build_local_simulation_handoff,
     build_mcp_readiness,
     build_motor_hybrid_router,
+    build_motor_mmm_quick_check,
     build_motor_readiness,
     build_quality_summary,
     build_observable_contract_summary,
@@ -57,6 +58,7 @@ from .sample_decks import (
     format_local_simulation_handoff,
     format_mcp_readiness,
     format_motor_hybrid_router,
+    format_motor_mmm_quick_check,
     format_motor_readiness,
     format_observable_contract_summary,
     format_validation_matrix,
@@ -130,16 +132,16 @@ _RELATED_PUBLIC_PACKAGES = [
 
 @mcp.tool()
 def elf_overview() -> dict:
-    """RECOMMENDED FIRST CALL. Catalog of ELF MCP's 39 tools + 1
+    """RECOMMENDED FIRST CALL. Catalog of ELF MCP's 40 tools + 1
     prompt, with public-safe routing hints for MCP clients.
 
     Returns:
-        dict with `tool_families` (curated 39-tool grouping), `n_tools`,
+        dict with `tool_families` (curated 40-tool grouping), `n_tools`,
         public boundary notes, recommended calls, and public companion package
         hints.
     """
     return {
-        "n_tools": 39,
+        "n_tools": 40,
         "n_prompts": 1,
         "tool_families": [
             {"signature": sig, "description": desc}
@@ -161,6 +163,10 @@ def elf_overview() -> dict:
             {
                 "goal": "Route motor work across ELF deck, radia AGE validation, and MMM quick check",
                 "call": "elf_motor_hybrid_router('IPM hairpin motor flux linkage and MTPA')",
+            },
+            {
+                "goal": "Run a public-safe 2D MMM/BEM-like motor quick check",
+                "call": "elf_motor_mmm_quick_check(motor_type='SPM')",
             },
             {
                 "goal": "Find the right ELF/MAGIC command pattern",
@@ -239,6 +245,7 @@ def elf_overview() -> dict:
             "elf_mcp_readiness() for release-quality gates, "
             "elf_motor_readiness() for motor-specific coverage and validation gaps, "
             "elf_motor_hybrid_router('goal') for ELF/radia/MMM motor dispatch, "
+            "elf_motor_mmm_quick_check(motor_type='spm') for quick sign/scale checks, "
             "elf_recipe_search('keyword') for decision cards, or "
             "elf_sample_decks_playbook() for ELF-runnable public .mai/.meg decks, "
             "elf_sample_decks_representatives() for curated first-stop decks, "
@@ -382,6 +389,67 @@ def elf_motor_hybrid_router(goal: str) -> str:
         AGE validation targets, and local ELF/MAGIC handoff.
     """
     return format_motor_hybrid_router(build_motor_hybrid_router(goal))
+
+
+@mcp.tool()
+def elf_motor_mmm_quick_check(
+    motor_type: str = "spm",
+    pole_pairs: int = 4,
+    airgap_radius_m: float = 0.05,
+    stack_length_m: float = 0.05,
+    airgap_m: float = 1.0e-3,
+    turns_per_phase: float = 50.0,
+    phase_current_a: float = 10.0,
+    electrical_angle_deg: float = 0.0,
+    magnet_br_t: float = 1.2,
+    magnet_thickness_m: float = 3.0e-3,
+    magnet_arc_fraction: float = 0.75,
+    saliency_ratio_lq_over_ld: float = 1.5,
+    slip_hz: float = 5.0,
+) -> str:
+    """
+    Public-safe 2D MMM/BEM-like motor quick check.
+
+    This is a first-order magnetic-circuit style evaluator for sign/scale
+    sanity checks before local ELF/MAGIC product runs or NGSolve AGE validation.
+    It estimates PM flux linkage, back-EMF constant, dq torque proxy, and an
+    induction slip-loss proxy. It does not execute ELF/MAGIC or NGSolve.
+
+    Args:
+        motor_type: "spm", "ipm", "induction", "srm", "synrm",
+            "hysteresis", etc.
+        pole_pairs: Number of pole pairs.
+        airgap_radius_m: Air-gap radius in meters.
+        stack_length_m: Active stack length in meters.
+        airgap_m: Mechanical air gap in meters.
+        turns_per_phase: Effective series turns per phase.
+        phase_current_a: Peak phase current.
+        electrical_angle_deg: Electrical current angle from q-axis convention.
+        magnet_br_t: PM remanence in tesla.
+        magnet_thickness_m: Magnet thickness in meters.
+        magnet_arc_fraction: Fraction of pole pitch covered by magnet.
+        saliency_ratio_lq_over_ld: Lq/Ld proxy for IPM/SynRM/SRM checks.
+        slip_hz: Slip frequency for induction-machine proxy checks.
+
+    Returns:
+        Markdown quick-check report and AGE validation route.
+    """
+    result = build_motor_mmm_quick_check(
+        motor_type=motor_type,
+        pole_pairs=pole_pairs,
+        airgap_radius_m=airgap_radius_m,
+        stack_length_m=stack_length_m,
+        airgap_m=airgap_m,
+        turns_per_phase=turns_per_phase,
+        phase_current_a=phase_current_a,
+        electrical_angle_deg=electrical_angle_deg,
+        magnet_br_t=magnet_br_t,
+        magnet_thickness_m=magnet_thickness_m,
+        magnet_arc_fraction=magnet_arc_fraction,
+        saliency_ratio_lq_over_ld=saliency_ratio_lq_over_ld,
+        slip_hz=slip_hz,
+    )
+    return format_motor_mmm_quick_check(result)
 
 
 @mcp.tool()
@@ -1341,10 +1409,14 @@ def main():
         hybrid_route = elf_motor_hybrid_router("IPM hairpin motor flux linkage and MTPA")
         assert "ELF/radia motor hybrid router" in hybrid_route
         assert "application/motor/emdlab_ipm_hairpin_10" in hybrid_route
-        assert "motor_mmm_quick_check" in hybrid_route
+        assert "elf_motor_mmm_quick_check" in hybrid_route
         assert "ngsolve_usage(\"mtpa\")" in hybrid_route
         assert "elf_local_simulation_handoff" in hybrid_route
         assert "S:" + "\\" not in hybrid_route
+        mmm_check = elf_motor_mmm_quick_check(motor_type="spm")
+        assert "ELF motor 2D MMM/BEM-like quick check" in mmm_check
+        assert "ngsolve_usage(\"back_emf\")" in mmm_check
+        assert "not a production solver" in mmm_check
         topics = [
             "overview", "mai_format", "mei_format", "meg_format",
             "magic", "elfin", "beam", "element_types", "bh_curves",
@@ -1696,7 +1768,7 @@ def main():
         assert "ld_lq" in sd_motor_readiness
         sd_hybrid_router = elf_motor_hybrid_router("induction motor slip loss and cage screening")
         assert "application/motor/emdlab_induction_bar_10" in sd_hybrid_router
-        assert "motor_mmm_quick_check" in sd_hybrid_router
+        assert "elf_motor_mmm_quick_check" in sd_hybrid_router
         assert "ngsolve_usage(\"induction_machine\")" in sd_hybrid_router
         sd_duplicates = elf_sample_decks_duplicates()
         assert "Duplicate Gates (PASS)" in sd_duplicates

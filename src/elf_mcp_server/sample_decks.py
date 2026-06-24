@@ -10,11 +10,13 @@ from functools import lru_cache
 from importlib import resources
 import hashlib
 import json
+import math
 import re
 from typing import Any
 
 
 ROOT = "public_samples"
+MU0 = 4.0 * math.pi * 1e-7
 
 VALIDATION_LEVEL_DESCRIPTIONS = {
     "solver_smoke": (
@@ -4788,7 +4790,7 @@ def build_mcp_readiness() -> dict[str, Any]:
             "python -m elf_mcp_server.policy_lint <repo>",
             "python -m elf_mcp_server.server --selftest",
             "python -m build --outdir <temp-dist-dir>",
-            "git commit, git tag v1.55.0, git push origin main, git push origin v1.55.0",
+            "git commit, git tag v1.56.0, git push origin main, git push origin v1.56.0",
         ],
         "public_boundary": (
             "Readiness uses public input decks and metadata only. It does not "
@@ -5048,7 +5050,7 @@ def _motor_hybrid_family(goal: str) -> dict[str, Any]:
         return {
             "family": "induction",
             "elf_query": "induction motor cage slip OHM2 FLUM",
-            "mmm_call": "motor_mmm_quick_check(motor_type='induction', slip_hz=...)",
+            "mmm_call": "elf_motor_mmm_quick_check(motor_type='induction', slip_hz=...)",
             "age_targets": ["induction_machine", "airgap_eddy_machine", "deep_bar"],
             "validation_focus": "rotor loss rises with slip, torque-slip peak, cage screening",
         }
@@ -5056,7 +5058,7 @@ def _motor_hybrid_family(goal: str) -> dict[str, Any]:
         return {
             "family": "srm",
             "elf_query": "SRM switched reluctance FLUM HBCU",
-            "mmm_call": "motor_mmm_quick_check(motor_type='srm', electrical_angle_deg=...)",
+            "mmm_call": "elf_motor_mmm_quick_check(motor_type='srm', electrical_angle_deg=...)",
             "age_targets": ["reluctance_torque", "saturating_inductance"],
             "validation_focus": "angle-current torque sign, periodicity, nonlinear inductance",
         }
@@ -5064,7 +5066,7 @@ def _motor_hybrid_family(goal: str) -> dict[str, Any]:
         return {
             "family": "synrm",
             "elf_query": "SynRM reluctance motor flux barrier FLUM",
-            "mmm_call": "motor_mmm_quick_check(motor_type='synrm', saliency_ratio_lq_over_ld=...)",
+            "mmm_call": "elf_motor_mmm_quick_check(motor_type='synrm', saliency_ratio_lq_over_ld=...)",
             "age_targets": ["synchronous_power_angle", "mtpa", "cross_saturation"],
             "validation_focus": "Ld/Lq saliency, reluctance torque, cross-saturation",
         }
@@ -5072,7 +5074,7 @@ def _motor_hybrid_family(goal: str) -> dict[str, Any]:
         return {
             "family": "ipm",
             "elf_query": "IPM hairpin motor flux linkage",
-            "mmm_call": "motor_mmm_quick_check(motor_type='ipm', electrical_angle_deg=...)",
+            "mmm_call": "elf_motor_mmm_quick_check(motor_type='ipm', electrical_angle_deg=...)",
             "age_targets": ["ld_lq", "mtpa", "field_weakening", "demag_margin"],
             "validation_focus": "PM flux, saliency, MTPA current angle, demag margin",
         }
@@ -5080,14 +5082,14 @@ def _motor_hybrid_family(goal: str) -> dict[str, Any]:
         return {
             "family": "hysteresis",
             "elf_query": "hysteresis motor flux linkage",
-            "mmm_call": "motor_mmm_quick_check(motor_type='hysteresis')",
+            "mmm_call": "elf_motor_mmm_quick_check(motor_type='hysteresis')",
             "age_targets": ["hysteresis_motor_loss", "hysteresis_play"],
             "validation_focus": "separate geometry flux from stateful hysteresis loop loss",
         }
     return {
         "family": "spm",
         "elf_query": "SPM motor flux linkage sweep",
-        "mmm_call": "motor_mmm_quick_check(motor_type='spm', electrical_angle_deg=...)",
+        "mmm_call": "elf_motor_mmm_quick_check(motor_type='spm', electrical_angle_deg=...)",
         "age_targets": ["back_emf", "cogging_torque", "ld_lq", "mtpa"],
         "validation_focus": "PM flux linkage, back-EMF constant, cogging order, Ld/Lq",
     }
@@ -5193,6 +5195,167 @@ def format_motor_hybrid_router(route: dict[str, Any]) -> str:
     lines.extend(["", "## Workflow"])
     for i, step in enumerate(route["workflow"], 1):
         lines.append(f"{i}. {step}")
+    return "\n".join(lines).rstrip()
+
+
+def build_motor_mmm_quick_check(
+    motor_type: str = "spm",
+    pole_pairs: int = 4,
+    airgap_radius_m: float = 0.05,
+    stack_length_m: float = 0.05,
+    airgap_m: float = 1.0e-3,
+    turns_per_phase: float = 50.0,
+    phase_current_a: float = 10.0,
+    electrical_angle_deg: float = 0.0,
+    magnet_br_t: float = 1.2,
+    magnet_thickness_m: float = 3.0e-3,
+    magnet_arc_fraction: float = 0.75,
+    winding_factor: float = 0.933,
+    carter_factor: float = 1.1,
+    recoil_mu_r: float = 1.05,
+    saliency_ratio_lq_over_ld: float = 1.5,
+    slip_hz: float = 5.0,
+    rotor_time_constant_s: float = 0.05,
+    rotor_resistance_ohm: float = 0.2,
+) -> dict[str, Any]:
+    """Public-safe first-order 2D MMM/BEM-like motor sanity check."""
+    t = motor_type.strip().lower()
+    if any(term in t for term in ("induction", "cage", "im")):
+        family = "induction"
+        age_targets = ["induction_machine", "airgap_eddy_machine", "deep_bar"]
+        primary = "slip_loss_proxy"
+        applicability = "Slip-frequency trend only; use AGE for field validation."
+    elif any(term in t for term in ("srm", "switched", "sr motor")):
+        family = "srm"
+        age_targets = ["reluctance_torque", "saturating_inductance"]
+        primary = "reluctance_torque_proxy"
+        applicability = "Saliency sign and angle trend only; use AGE for torque maps."
+    elif any(term in t for term in ("synrm", "reluctance")):
+        family = "synrm"
+        age_targets = ["synchronous_power_angle", "mtpa", "cross_saturation"]
+        primary = "reluctance_torque_proxy"
+        applicability = "Ld/Lq saliency trend only; use AGE for saturation maps."
+    elif "ipm" in t or "interior" in t:
+        family = "ipm"
+        age_targets = ["ld_lq", "mtpa", "field_weakening", "demag_margin"]
+        primary = "pm_plus_reluctance_torque_proxy"
+        applicability = "PM flux and saliency sanity only; use AGE for dq maps."
+    elif "hysteresis" in t:
+        family = "hysteresis"
+        age_targets = ["hysteresis_motor_loss", "hysteresis_play"]
+        primary = "pm_flux_proxy"
+        applicability = "Geometry flux sanity only; hysteresis needs a stateful model."
+    else:
+        family = "spm"
+        age_targets = ["back_emf", "cogging_torque", "ld_lq", "mtpa"]
+        primary = "pm_flux_linkage_proxy"
+        applicability = "PM flux-linkage and EMF scale only; use AGE for slotting/cogging."
+
+    p = max(1, int(pole_pairs))
+    radius = max(float(airgap_radius_m), 1e-9)
+    stack = max(float(stack_length_m), 1e-9)
+    gap = max(float(airgap_m), 1e-9)
+    turns = max(float(turns_per_phase), 1e-9)
+    theta = math.radians(float(electrical_angle_deg))
+    carter_gap = max(float(carter_factor), 1e-9) * gap
+    pole_pitch = math.pi * radius / p
+    pole_area = max(float(magnet_arc_fraction), 1e-9) * pole_pitch * stack
+    magnet_thickness = max(float(magnet_thickness_m), 1e-9)
+    bgap = float(magnet_br_t) * magnet_thickness / (
+        magnet_thickness + max(float(recoil_mu_r), 1e-9) * carter_gap
+    )
+    phi_pole = bgap * pole_area
+    lambda_pm_peak = turns * max(float(winding_factor), 1e-9) * phi_pole
+    lambda_phase = lambda_pm_peak * math.cos(theta)
+    emf_constant = p * lambda_pm_peak
+    torque_constant = 1.5 * p * lambda_pm_peak
+    ld = MU0 * turns * turns * pole_area / carter_gap
+    lq = ld * max(float(saliency_ratio_lq_over_ld), 1e-9)
+    current = float(phase_current_a)
+    iq = current * math.cos(theta)
+    id_current = -current * math.sin(theta)
+    pm_torque = 1.5 * p * lambda_pm_peak * iq
+    reluctance_torque = 1.5 * p * (ld - lq) * id_current * iq
+    slip_rad_s = 2.0 * math.pi * abs(float(slip_hz))
+    x = slip_rad_s * max(float(rotor_time_constant_s), 1e-12)
+    rotor_loss = 3.0 * current * current * max(float(rotor_resistance_ohm), 0.0) * (
+        x * x / (1.0 + x * x)
+    )
+    induction_torque = rotor_loss / max(slip_rad_s, 1e-12)
+
+    warnings = [
+        "first-order 2D magnetic-circuit quick check, not a production solver",
+        "no saturation iteration, no motion band, no end effects, no skew",
+    ]
+    if family == "induction":
+        warnings.append("cage/end-ring coupling is represented only by a single-pole proxy")
+    if family == "hysteresis":
+        warnings.append("hysteresis loop area and vector history are not modeled")
+
+    return {
+        "schema_version": "elf-motor-mmm-quick/v1",
+        "family": family,
+        "primary_quantity": primary,
+        "applicability": applicability,
+        "outputs": {
+            "carter_gap_m": carter_gap,
+            "pole_pitch_m": pole_pitch,
+            "pole_area_m2": pole_area,
+            "airgap_flux_density_t": bgap,
+            "flux_per_pole_wb": phi_pole,
+            "lambda_pm_peak_wb": lambda_pm_peak,
+            "lambda_phase_wb": lambda_phase,
+            "back_emf_v_per_rad_s_mech": emf_constant,
+            "torque_constant_nm_per_a_peak": torque_constant,
+            "ld_h": ld,
+            "lq_h": lq,
+            "id_a": id_current,
+            "iq_a": iq,
+            "pm_torque_nm": pm_torque,
+            "reluctance_torque_nm": reluctance_torque,
+            "total_dq_torque_proxy_nm": pm_torque + reluctance_torque,
+            "rotor_loss_proxy_w": rotor_loss,
+            "induction_torque_proxy_nm": induction_torque,
+        },
+        "recommended_age_targets": age_targets,
+        "warnings": warnings,
+        "public_boundary": (
+            "This is an open, approximate quick check. It does not call "
+            "ELF/MAGIC, NGSolve, or any commercial solver, and it does not "
+            "encode private benchmark numbers."
+        ),
+    }
+
+
+def format_motor_mmm_quick_check(result: dict[str, Any]) -> str:
+    """Format the public 2D MMM/BEM-like quick check."""
+    out = result["outputs"]
+    lines = [
+        "# ELF motor 2D MMM/BEM-like quick check",
+        "",
+        f"- schema: `{result['schema_version']}`",
+        f"- inferred family: `{result['family']}`",
+        f"- primary quantity: `{result['primary_quantity']}`",
+        f"- applicability: {result['applicability']}",
+        f"- public boundary: {result['public_boundary']}",
+        "",
+        "## Key Estimates",
+        f"- effective Carter gap: `{out['carter_gap_m']:.6g}` m",
+        f"- air-gap flux density: `{out['airgap_flux_density_t']:.6g}` T",
+        f"- flux per pole: `{out['flux_per_pole_wb']:.6g}` Wb",
+        f"- PM flux-linkage peak: `{out['lambda_pm_peak_wb']:.6g}` Wb-turn",
+        f"- phase flux-linkage at angle: `{out['lambda_phase_wb']:.6g}` Wb-turn",
+        f"- back-EMF constant: `{out['back_emf_v_per_rad_s_mech']:.6g}` V/(rad/s mechanical)",
+        f"- torque constant: `{out['torque_constant_nm_per_a_peak']:.6g}` N.m/A peak",
+        f"- Ld/Lq proxy: `{out['ld_h']:.6g}` H / `{out['lq_h']:.6g}` H",
+        f"- dq torque proxy: `{out['total_dq_torque_proxy_nm']:.6g}` N.m",
+        f"- induction rotor-loss proxy: `{out['rotor_loss_proxy_w']:.6g}` W",
+        "",
+        "## Route To AGE Validation",
+    ]
+    lines.extend(f"- `ngsolve_usage(\"{target}\")`" for target in result["recommended_age_targets"])
+    lines.extend(["", "## Warnings"])
+    lines.extend(f"- {warning}" for warning in result["warnings"])
     return "\n".join(lines).rstrip()
 
 
