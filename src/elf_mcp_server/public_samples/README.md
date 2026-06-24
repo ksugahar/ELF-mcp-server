@@ -51,7 +51,11 @@ Quality labels used by the MCP tools:
 - `gold_numeric_invariant`: 674 numeric-anchor cases where ELF `FLUM`-derived
   scaling/sign/energy/loss/coupling invariants and independent NGSolve proxy
   invariants both passed.
-- `silver_proxy_energy`: 926 broader runnable authoring-pattern cases where
+- `silver_observable_contract`: 500 runnable authoring-pattern cases where
+  ELF/MAGIC run checks and independent NGSolve proxy-field energy checks
+  passed, and the public `.mai` decks expose the expected FLUM/OHM2/FREQ/HBRM/
+  HBCU markers for their mapped physical quantities.
+- `silver_proxy_energy`: 426 broader runnable authoring-pattern cases where
   ELF/MAGIC run checks passed and an independent NGSolve proxy-field energy
   sanity gate was positive. This is useful for authoring patterns, but is not
   a claim of full absolute field/force/torque/loss agreement.
@@ -76,11 +80,14 @@ Representative routing:
   quantity, public observable, quality label, validation methods,
   representative `.mai` decks, and next MCP calls so agents can answer prompts
   without guessing which quantity to evaluate.
+- `elf_sample_decks_observable_contracts()` audits the 500-case public
+  observable-contract upgrade and reports required deck markers for each
+  enhanced family.
 - `elf_sample_decks_cross_validation()` audits the validation contract across
   all 1600 cases. It requires every family to have an independent NGSolve
   cross-check, reports that no family is missing one, and separates stronger
-  `gold_numeric_invariant` families from broader `silver_proxy_energy`
-  proxy-check families.
+  `gold_numeric_invariant` families from enhanced `silver_observable_contract`
+  and broader `silver_proxy_energy` proxy-check families.
 
 For these compact public examples, `.meg` files are generated as small ASCII
 ELF/MAGIC mesh decks directly by lab-authored Python generators. They are not

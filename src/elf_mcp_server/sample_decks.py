@@ -79,6 +79,77 @@ QUALITY_LABELS = {
     },
 }
 
+ENHANCED_OBSERVABLE_CONTRACT_LABEL = {
+    "label": "silver_observable_contract",
+    "display": "Silver observable contract",
+    "meaning": (
+        "ELF/MAGIC run checks and independent NGSolve proxy-energy checks "
+        "passed, and the public decks expose the expected FLUM/OHM2/FREQ/"
+        "HBRM/HBCU observable contract for their physical quantity."
+    ),
+    "recommended_use": (
+        "Use as a stronger public runnable pattern: the physical quantity, "
+        "observable request, and representative deck are explicit, but this "
+        "is still not a full absolute field/force/torque/loss agreement claim."
+    ),
+}
+
+QUALITY_LABEL_DEFINITIONS = {
+    "gold_numeric_invariant": QUALITY_LABELS["ngsolve_numeric_invariant"],
+    ENHANCED_OBSERVABLE_CONTRACT_LABEL["label"]: ENHANCED_OBSERVABLE_CONTRACT_LABEL,
+    "silver_proxy_energy": QUALITY_LABELS["ngsolve_proxy_energy"],
+    "bronze_solver_smoke": QUALITY_LABELS["solver_smoke"],
+}
+
+QUALITY_LABEL_DISPLAY_ORDER = (
+    "gold_numeric_invariant",
+    "silver_observable_contract",
+    "silver_proxy_energy",
+    "bronze_solver_smoke",
+)
+
+ENHANCED_OBSERVABLE_CONTRACT_FAMILIES: dict[str, tuple[str, ...]] = {
+    "application/motor/pm_square_2pole_pickup_100": ("FLUM", "HBRM", "HBCU"),
+    "application/motor/pm_square_4pole_pickup_60": ("FLUM", "HBRM", "HBCU"),
+    "application/motor/pm_square_6pole_pickup_72": ("FLUM", "HBRM", "HBCU"),
+    "application/motor/pm_square_8pole_pickup_28": ("FLUM", "HBRM", "HBCU"),
+    "application/motor/spm_surface_pm_10": ("FLUM", "HBRM", "HBCU"),
+    "application/motor/spm_loop_10": ("FLUM", "HBRM", "HBCU"),
+    "application/motor/srm_switched_reluctance_10": ("FLUM", "HBCU"),
+    "application/motor/sr_motor_loop_10": ("FLUM", "HBCU"),
+    "application/motor/induction_cage_10": ("FLUM", "OHM2", "HBCU"),
+    "application/motor/emdlab_bldc_spm_10": ("FLUM", "HBRM", "HBCU"),
+    "application/motor/emdlab_ipm_hairpin_10": ("FLUM", "HBRM", "HBCU"),
+    "application/motor/emdlab_induction_bar_10": ("FLUM", "OHM2", "HBCU"),
+    "application/motor/emdlab_synrm_flux_barrier_10": ("FLUM", "HBCU"),
+    "application/motor/emdlab_srm_pole_variants_10": ("FLUM", "HBCU"),
+    "application/motor/emdlab_afpm_linearized_10": ("FLUM", "HBRM", "HBCU"),
+    "application/motor/emdlab_spmsm_static_torque_10": ("FLUM", "HBRM", "HBCU"),
+    "application/motor/emdlab_srm1216_outer_rotor_10": ("FLUM", "HBCU"),
+    "application/motor/emdlab_bldc_outer_rotor_10": ("FLUM", "HBRM", "HBCU"),
+    "application/wpt_loop_10": ("FLUM", "MOMC", "FREQ"),
+    "application/wpt_misalignment_10": ("FLUM", "OHM2", "MOMC", "FREQ"),
+    "application/mri_loop_10": ("FLUM", "OHM2", "MOMC", "FREQ"),
+    "application/ih_induction_heating_10": ("FLUM", "OHM2", "MAB8T", "MOMC", "FREQ"),
+    "application/accelerator_magnet_10": ("FLUM", "HBCU"),
+    "application/actuator_plunger_10": ("FLUM", "HBCU"),
+    "application/electromagnetic_clutch_10": ("FLUM", "OHM2", "HBCU", "MOMC", "FREQ"),
+    "application/eddy_current_brake_10": ("FLUM", "OHM2", "HBCU", "MOMC", "FREQ"),
+    "application/ndt_eddy_probe_10": ("FLUM", "OHM2", "MOMC", "FREQ"),
+    "application/transformer_leakage_10": ("FLUM", "HBCU"),
+}
+
+PUBLIC_OBSERVABLE_CONTRACT_CHECK = {
+    "check": "public_observable_contract_passed",
+    "display": "Public observable contract",
+    "strength": "silver_quality_enhancement",
+    "public_observable": "required FLUM/OHM2/FREQ/HBRM/HBCU/MAB8T deck markers",
+    "meaning": (
+        "The public `.mai` decks expose the expected observable requests and "
+        "setup markers for the family-specific physical quantity."
+    ),
+}
+
 PUBLIC_FORBIDDEN_TEXT_MARKERS = (
     "C:" + "\\temp",
     "C:" + "\\tmp",
@@ -2295,6 +2366,11 @@ def build_public_quality_gates() -> list[dict[str, str]]:
             build_validation_matrix(include_gates=False)
         )
     )
+    gates.extend(
+        _build_observable_contract_gates(
+            build_observable_contract_summary(include_gates=False)
+        )
+    )
 
     return gates
 
@@ -2337,9 +2413,19 @@ def quality_label_for_level(level: str) -> dict[str, str]:
     )
 
 
+def family_has_observable_contract(family: str) -> bool:
+    """Return whether a family belongs to the 500-case observable-contract set."""
+    return family in ENHANCED_OBSERVABLE_CONTRACT_FAMILIES
+
+
 def quality_label_for_family(family: str) -> dict[str, str]:
     """Return public quality label metadata for one sample family."""
     validation = get_family_validation(family)
+    if (
+        validation.get("validation_level") == "ngsolve_proxy_energy"
+        and family_has_observable_contract(family)
+    ):
+        return dict(ENHANCED_OBSERVABLE_CONTRACT_LABEL)
     return quality_label_for_level(validation["validation_level"])
 
 
@@ -2584,7 +2670,7 @@ def build_physical_quantity_summary(
         selected_case_count += 1
 
         validation = manifest.get("families", {}).get(case["family"], {})
-        quality = quality_label_for_level(validation.get("validation_level", ""))
+        quality = quality_label_for_family(case["family"])
         row = family_rows.setdefault(
             case["family"],
             {
@@ -2774,7 +2860,7 @@ def build_cross_validation_summary(
         methods = _cross_validation_methods_for_checks(checks)
         independent = _has_independent_cross_validation(checks)
         cases = int(entry.get("cases", 0))
-        quality = quality_label_for_level(entry.get("validation_level", ""))
+        quality = quality_label_for_family(fam)
         quantity_keys = list(family_to_quantities.get(fam, []))
 
         if independent:
@@ -2810,13 +2896,14 @@ def build_cross_validation_summary(
                     ],
                 }
             )
-        if quality["label"] == "silver_proxy_energy":
+        if quality["label"] in {"silver_proxy_energy", "silver_observable_contract"}:
             upgrade_candidates.append(
                 {
                     "family": fam,
                     "cases": cases,
                     "quantity_keys": quantity_keys,
                     "current_cross_validation": "ngsolve_proxy_energy_positive",
+                    "quality_label": quality["label"],
                     "possible_upgrade": (
                         "Add a family-specific public numeric invariant only when "
                         "the physical law is simple enough to verify without "
@@ -3016,6 +3103,7 @@ def build_validation_matrix(
             "gold_cases": 0,
             "silver_cases": 0,
             "validation_methods": set(),
+            "quality_enhancements": set(),
             "representative_paths": [],
         }
         for key, definition in PHYSICAL_QUANTITY_DEFINITIONS.items()
@@ -3027,7 +3115,7 @@ def build_validation_matrix(
         if family_filter and family_filter not in fam.lower():
             continue
         validation = get_family_validation(fam)
-        quality = quality_label_for_level(validation.get("validation_level", ""))
+        quality = quality_label_for_family(fam)
         if (
             label_filter
             and label_filter not in quality["label"].lower()
@@ -3054,6 +3142,9 @@ def build_validation_matrix(
             for method in cross_row.get("cross_validation_methods", [])
         ]
         method_checks = [method["check"] for method in methods]
+        quality_enhancements = []
+        if family_has_observable_contract(fam):
+            quality_enhancements.append(PUBLIC_OBSERVABLE_CONTRACT_CHECK)
         representatives = representative_paths_for_family(fam, limit=3)
         short_family = fam.rsplit("/", 1)[-1]
         recommended_calls = [
@@ -3073,6 +3164,9 @@ def build_validation_matrix(
             elif quality["label"] == "silver_proxy_energy":
                 qrow["silver_cases"] += qcases
             qrow["validation_methods"].update(method_checks)
+            qrow["quality_enhancements"].update(
+                enhancement["check"] for enhancement in quality_enhancements
+            )
             _append_unique_paths(qrow["representative_paths"], representatives, limit=3)
 
         family_rows.append(
@@ -3094,6 +3188,7 @@ def build_validation_matrix(
                     for key in quantity_keys
                 ],
                 "validation_methods": methods,
+                "quality_enhancements": quality_enhancements,
                 "has_independent_cross_validation": bool(
                     cross_row.get("has_independent_cross_validation", False)
                 ),
@@ -3116,6 +3211,7 @@ def build_validation_matrix(
             "gold_cases": row["gold_cases"],
             "silver_cases": row["silver_cases"],
             "validation_methods": sorted(row["validation_methods"]),
+            "quality_enhancements": sorted(row["quality_enhancements"]),
             "representative_paths": list(row["representative_paths"]),
         }
 
@@ -3144,6 +3240,149 @@ def build_validation_matrix(
     return summary
 
 
+def _build_observable_contract_gates(summary: dict[str, Any]) -> list[dict[str, str]]:
+    return [
+        _public_gate(
+            "observable_contract_target_is_500_cases",
+            summary["enhanced_cases"] == 500,
+            f"{summary['enhanced_cases']} cases are covered by observable contracts",
+        ),
+        _public_gate(
+            "observable_contract_families_resolve",
+            summary["missing_family_count"] == 0,
+            f"{summary['missing_family_count']} configured families are absent from the deck corpus",
+        ),
+        _public_gate(
+            "observable_contract_markers_pass",
+            summary["failed_case_count"] == 0,
+            f"{summary['failed_case_count']} enhanced cases are missing required public markers",
+        ),
+        _public_gate(
+            "observable_contract_independent_cross_validation",
+            summary["families_without_independent_cross_validation"] == 0,
+            (
+                f"{summary['enhanced_family_count'] - summary['families_without_independent_cross_validation']} "
+                f"of {summary['enhanced_family_count']} enhanced families retain independent NGSolve checks"
+            ),
+        ),
+    ]
+
+
+def build_observable_contract_summary(
+    family: str | None = None,
+    label: str | None = None,
+    include_gates: bool = True,
+) -> dict[str, Any]:
+    """Build the 500-case public observable-contract quality audit."""
+    family_filter = (family or "").strip().lower()
+    label_filter = (label or "").strip().lower()
+    decks = load_sample_decks()
+    manifest = load_validated_manifest()
+    physical = build_physical_quantity_summary(include_gates=False)
+    quantities_by_family = {
+        row["family"]: row["quantity_keys"]
+        for row in physical["families"]
+    }
+    rows = []
+    missing_families = []
+    failed_cases = []
+    missing_independent = []
+    enhanced_cases = 0
+
+    for fam, required_markers in sorted(ENHANCED_OBSERVABLE_CONTRACT_FAMILIES.items()):
+        if family_filter and family_filter not in fam.lower():
+            continue
+        validation = get_family_validation(fam)
+        quality = quality_label_for_family(fam)
+        if (
+            label_filter
+            and label_filter not in quality["label"].lower()
+            and label_filter not in quality["display"].lower()
+        ):
+            continue
+        fam_decks = sorted(
+            (
+                deck
+                for deck in decks.values()
+                if deck.family == fam and deck.ext == "mai"
+            ),
+            key=lambda deck: deck.path,
+        )
+        if not fam_decks:
+            missing_families.append(fam)
+            continue
+        checks = list(validation.get("checks", []))
+        has_independent = _has_independent_cross_validation(checks)
+        if not has_independent:
+            missing_independent.append(fam)
+
+        case_failures = []
+        for deck in fam_decks:
+            upper = deck.text.upper()
+            missing = [marker for marker in required_markers if marker not in upper]
+            if missing:
+                case_failures.append(
+                    {
+                        "path": deck.path,
+                        "missing_markers": missing,
+                    }
+                )
+        if case_failures:
+            failed_cases.extend(case_failures)
+
+        cases = len(fam_decks)
+        enhanced_cases += cases
+        rows.append(
+            {
+                "family": fam,
+                "title": _family_meta(fam)["title"],
+                "cases": cases,
+                "quality_label": quality["label"],
+                "quality_display": quality["display"],
+                "validation_level": validation.get("validation_level", ""),
+                "checks": checks,
+                "required_markers": list(required_markers),
+                "passed_cases": cases - len(case_failures),
+                "failed_cases": len(case_failures),
+                "has_independent_cross_validation": has_independent,
+                "quantity_keys": quantities_by_family.get(fam, []),
+                "representative_paths": representative_paths_for_family(fam, limit=2),
+                "enhancement_check": PUBLIC_OBSERVABLE_CONTRACT_CHECK,
+            }
+        )
+
+    summary = {
+        "schema_version": manifest.get("schema_version"),
+        "configured_family_count": len(ENHANCED_OBSERVABLE_CONTRACT_FAMILIES),
+        "enhanced_family_count": len(rows),
+        "enhanced_cases": enhanced_cases,
+        "missing_family_count": len(missing_families),
+        "missing_families": missing_families,
+        "failed_case_count": len(failed_cases),
+        "failed_cases": failed_cases[:20],
+        "families_without_independent_cross_validation": len(missing_independent),
+        "families_missing_independent_cross_validation": missing_independent,
+        "family_filter": family or "",
+        "label_filter": label or "",
+        "families": rows,
+        "notes": [
+            "This 500-case upgrade is a public observable-contract gate, not a hidden solver-output disclosure.",
+            "The gate checks that each selected public `.mai` deck exposes the markers needed to evaluate its mapped physical quantity.",
+            "The enhanced label remains below gold numeric-invariant status unless public numeric scaling/sign/law invariants are added.",
+        ],
+    }
+    if include_gates and not family_filter and not label_filter:
+        gates = _build_observable_contract_gates(summary)
+        summary["observable_contract_gate_status"] = (
+            "PASS" if all(gate["status"] == "PASS" for gate in gates) else "FAIL"
+        )
+        summary["observable_contract_gates"] = gates
+    else:
+        summary["observable_contract_gate_status"] = ""
+        summary["observable_contract_gates"] = []
+    return summary
+
+
 def build_quality_summary(family: str | None = None, label: str | None = None) -> dict[str, Any]:
     """Build quality-label counts and selected family rows for MCP clients."""
     manifest = load_validated_manifest()
@@ -3153,7 +3392,7 @@ def build_quality_summary(family: str | None = None, label: str | None = None) -
     rows = []
     label_counts: dict[str, dict[str, int]] = {}
     for fam, entry in sorted(manifest.get("families", {}).items()):
-        q = quality_label_for_level(entry.get("validation_level", ""))
+        q = quality_label_for_family(fam)
         if family_filter and family_filter not in fam.lower():
             continue
         if (
@@ -3193,7 +3432,7 @@ def build_quality_summary(family: str | None = None, label: str | None = None) -
         "families": rows,
         "family_filter": family or "",
         "label_filter": label or "",
-        "label_definitions": QUALITY_LABELS,
+        "label_definitions": QUALITY_LABEL_DEFINITIONS,
         "quality_gate_status": (
             "PASS" if all(gate["status"] == "PASS" for gate in quality_gates) else "FAIL"
         ),
@@ -3396,6 +3635,9 @@ def format_validation_matrix(summary: dict[str, Any], max_families: int = 24) ->
         methods = ", ".join(f"`{method}`" for method in row["validation_methods"])
         if not methods:
             methods = "none"
+        enhancements = ", ".join(
+            f"`{enhancement}`" for enhancement in row["quality_enhancements"]
+        )
         reps = ", ".join(f"`{path}`" for path in row["representative_paths"])
         lines.append(
             f"- `{key}` ({row['display']}): {row['families']} families, "
@@ -3405,6 +3647,8 @@ def format_validation_matrix(summary: dict[str, Any], max_families: int = 24) ->
         lines.append(f"  observable: {row['observable']}")
         lines.append(f"  validation focus: {row['validation_focus']}")
         lines.append(f"  methods: {methods}")
+        if enhancements:
+            lines.append(f"  quality enhancements: {enhancements}")
         if reps:
             lines.append(f"  representatives: {reps}")
 
@@ -3417,11 +3661,16 @@ def format_validation_matrix(summary: dict[str, Any], max_families: int = 24) ->
         )
         if not methods:
             methods = "none"
+        enhancements = ", ".join(
+            f"`{method['check']}`" for method in row.get("quality_enhancements", [])
+        )
         lines.append(
             f"- `{row['family']}`: {row['cases']} cases, "
             f"`{row['quality_label']}`, quantities: {quantities}"
         )
         lines.append(f"  validation: `{row['validation_level']}`, methods: {methods}")
+        if enhancements:
+            lines.append(f"  quality enhancement: {enhancements}")
         if row["representative_paths"]:
             lines.append(
                 "  representative: "
@@ -3432,6 +3681,66 @@ def format_validation_matrix(summary: dict[str, Any], max_families: int = 24) ->
     hidden = summary["selected_family_count"] - len(shown)
     if hidden > 0:
         lines.append(f"- ... {hidden} more families. Narrow with `quantity=`, `family=`, or `label=`.")
+
+    lines.extend(["", "## Public-Safe Notes"])
+    lines.extend(f"- {note}" for note in summary["notes"])
+    return "\n".join(lines).rstrip()
+
+
+def format_observable_contract_summary(
+    summary: dict[str, Any],
+    max_families: int = 32,
+) -> str:
+    """Format the 500-case observable-contract audit as Markdown."""
+    lines = [
+        "# Public observable-contract quality audit",
+        "",
+        (
+            f"- enhanced corpus: {summary['enhanced_cases']} cases, "
+            f"{summary['enhanced_family_count']} families"
+        ),
+        (
+            f"- configured families: {summary['configured_family_count']}; "
+            f"missing families: {summary['missing_family_count']}; "
+            f"failed cases: {summary['failed_case_count']}"
+        ),
+    ]
+    filters = []
+    if summary["family_filter"]:
+        filters.append(f"family contains `{summary['family_filter']}`")
+    if summary["label_filter"]:
+        filters.append(f"label contains `{summary['label_filter']}`")
+    lines.append(f"- filter: {', '.join(filters) if filters else 'none'}")
+
+    if summary.get("observable_contract_gates"):
+        lines.extend(["", f"## Observable Contract Gates ({summary['observable_contract_gate_status']})"])
+        for gate in summary["observable_contract_gates"]:
+            lines.append(f"- {gate['status']} `{gate['gate']}`: {gate['detail']}")
+
+    lines.extend(["", "## Families"])
+    shown = summary["families"][: max(0, max_families)]
+    for row in shown:
+        quantities = ", ".join(f"`{key}`" for key in row["quantity_keys"])
+        markers = ", ".join(f"`{marker}`" for marker in row["required_markers"])
+        reps = ", ".join(f"`{path}`" for path in row["representative_paths"])
+        lines.append(
+            f"- `{row['family']}`: {row['cases']} cases, "
+            f"{row['passed_cases']} passed, `{row['quality_label']}`"
+        )
+        lines.append(f"  quantities: {quantities}")
+        lines.append(f"  required markers: {markers}")
+        lines.append(f"  enhancement: `{row['enhancement_check']['check']}`")
+        if reps:
+            lines.append(f"  representatives: {reps}")
+    hidden = summary["enhanced_family_count"] - len(shown)
+    if hidden > 0:
+        lines.append(f"- ... {hidden} more families. Narrow with `family=`.")
+
+    if summary["failed_cases"]:
+        lines.extend(["", "## Failed Cases"])
+        for failed in summary["failed_cases"]:
+            missing = ", ".join(f"`{marker}`" for marker in failed["missing_markers"])
+            lines.append(f"- `{failed['path']}` missing {missing}")
 
     lines.extend(["", "## Public-Safe Notes"])
     lines.extend(f"- {note}" for note in summary["notes"])
@@ -3464,8 +3773,8 @@ def format_quality_summary(summary: dict[str, Any], max_families: int = 30) -> s
             "## Label Definitions",
         ]
     )
-    for level in VALIDATION_LEVEL_ORDER:
-        label = QUALITY_LABELS.get(level)
+    for label_key in QUALITY_LABEL_DISPLAY_ORDER:
+        label = QUALITY_LABEL_DEFINITIONS.get(label_key)
         if not label:
             continue
         counts = summary["label_counts"].get(
@@ -3636,6 +3945,7 @@ def format_cross_validation_summary(
             quantities = ", ".join(f"`{q}`" for q in row["quantity_keys"])
             lines.append(
                 f"- `{row['family']}`: {row['cases']} cases, "
+                f"`{row.get('quality_label', 'silver_proxy_energy')}`, "
                 f"current `{row['current_cross_validation']}`, quantities: {quantities}"
             )
             lines.append(f"  possible upgrade: {row['possible_upgrade']}")
@@ -4085,15 +4395,17 @@ def format_public_promotion(audience: str = "collaborator") -> str:
             "適切な入力デッキ family を選び、代表例を開き、検証レベルを確認し、"
             "次に見るべき recipe へ進めるための知識ベースとして整備しています。"
             "全 family は公開 manifest で `validation: passed` として管理され、"
-            "674 例は `gold_numeric_invariant`、926 例は `silver_proxy_energy` "
+            "674 例は `gold_numeric_invariant`、500 例は "
+            "`silver_observable_contract`、426 例は `silver_proxy_energy` "
             "という品質ラベルで区別できます。\n\n"
             "公開境界も明確にしています。パッケージに含めるのは、入力デッキ、"
             "公開ドキュメント、recipe、validation metadata だけです。solver 出力、"
             "比較ログ、機械ローカル path、非公開 provenance は含めません。"
             "そのため、研究開発で育てた知見を安全に、かつ実用的に MCP から再利用できます。\n\n"
             "矢野様へ紹介する場合は、"
-            "「ELF/MAGIC の使い方を AI agent が迷わず学べるよう、1600 件の公開入力例と "
-            "品質ラベル、代表例ルーティングを備えた MCP サーバとして整備しました」"
+            "「ELF/MAGIC の使い方を AI agent が迷わず学べるよう、1600 件の公開入力例、"
+            "500 件の observable-contract 品質強化、品質ラベル、代表例ルーティングを"
+            "備えた MCP サーバとして整備しました」"
             "という一文が一番伝わりやすいです。"
         )
     return (
@@ -4107,7 +4419,8 @@ def format_public_promotion(audience: str = "collaborator") -> str:
         "a raw example dump: MCP clients can route a user prompt to a suitable "
         "sample family, inspect representative decks, check public validation "
         "levels, and continue into workflow recipes. Quality labels distinguish "
-        "674 `gold_numeric_invariant` cases from 926 `silver_proxy_energy` cases.\n\n"
+        "674 `gold_numeric_invariant` cases, 500 `silver_observable_contract` "
+        "cases, and 426 `silver_proxy_energy` cases.\n\n"
         "The public boundary is explicit. The package contains input decks, "
         "public documentation, recipes, and validation metadata only; it does "
         "not bundle solver outputs, comparison logs, machine-local paths, or "

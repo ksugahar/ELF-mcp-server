@@ -12,7 +12,7 @@ This server does **not** execute ELF600 simulations — it provides curated docu
 
 ## Features
 
-**32 tools + 1 prompt** providing curated docs, workflow recipes, ELF-runnable public sample decks, representative sample tours, quality labels, physical-quantity coverage, validation matrices, cross-validation audits, prompt-to-sample routing, validation summaries, promotion copy, and raw access to ELF600 help HTM, example inputs, vendor wiki, and Python ctypes API:
+**33 tools + 1 prompt** providing curated docs, workflow recipes, ELF-runnable public sample decks, representative sample tours, quality labels, physical-quantity coverage, validation matrices, observable-contract audits, cross-validation audits, prompt-to-sample routing, validation summaries, promotion copy, and raw access to ELF600 help HTM, example inputs, vendor wiki, and Python ctypes API:
 
 | Tool family | Purpose | Files |
 |---|---|---|
@@ -31,7 +31,7 @@ summarizes 100 `.mai` examples as compact cards with detected SOL blocks,
 element families, feature tags, companion `.mei/.model` files, and reuse hints.
 The recipe family also has `elf_plan_workflow(goal)`, which chooses a short
 public-safe recipe sequence from a natural-language analysis goal.
-The sample deck family has `elf_sample_decks_index/search/route/validation/validation_matrix/cross_validation/quality/physics/representatives/get/playbook`
+The sample deck family has `elf_sample_decks_index/search/route/validation/validation_matrix/observable_contracts/cross_validation/quality/physics/representatives/get/playbook`
 for ELF-runnable public `.mai`/`.meg` decks. `elf_sample_decks_route(goal)`
 maps a user prompt such as "IPM hairpin motor flux linkage" or
 "WPT misalignment" to the most relevant public deck families, follow-up MCP
@@ -40,15 +40,18 @@ calls, validation levels, and representative `.mai` files.
 limitations for the corpus before an agent claims a deck is validated.
 `elf_sample_decks_representatives()` gives a curated first-stop tour through
 the 1600-case corpus. `elf_sample_decks_quality()` summarizes the public
-quality labels: 674 `gold_numeric_invariant` cases and 926
-`silver_proxy_energy` cases, and reports publication quality gates for pairing,
+quality labels: 674 `gold_numeric_invariant` cases, 500
+`silver_observable_contract` cases, and 426 `silver_proxy_energy` cases, and reports publication quality gates for pairing,
 manifest coverage, public-boundary hygiene, solver-output exclusion, and the
 `application/motor` hierarchy. `elf_sample_decks_physics()` maps the corpus to
 physical quantities such as flux linkage, inductance/co-energy, force/torque,
 AC loss, permanent-magnet flux, transformer coupling, WPT coupling, and MRI
 shield response. `elf_sample_decks_validation_matrix()` joins quantities,
 quality labels, validation methods, representative decks, and next MCP calls
-into a prompt-routing audit table. `elf_sample_decks_cross_validation()` audits whether every
+into a prompt-routing audit table. `elf_sample_decks_observable_contracts()`
+audits the 500-case quality upgrade where public `.mai` decks expose the
+expected FLUM/OHM2/FREQ/HBRM/HBCU markers for their mapped physical quantities.
+`elf_sample_decks_cross_validation()` audits whether every
 family has an independent NGSolve cross-check, separates gold dual-invariant
 families from silver proxy-energy families, and lists silver-to-gold upgrade
 candidates. `elf_public_promotion()` returns public-safe Japanese/English
@@ -78,6 +81,8 @@ public boundary. The most useful calls while authoring ELF/MAGIC inputs are:
   coverage before choosing sample decks or making validation claims
 - `elf_sample_decks_validation_matrix(quantity="transformer")` to map prompt
   intent to physical quantity, quality label, validation method, and first deck
+- `elf_sample_decks_observable_contracts()` to inspect the 500-case
+  observable-contract quality upgrade before publication
 - `elf_sample_decks_cross_validation()` to audit independent cross-validation
   coverage and find any remaining validation gaps
 - `elf_public_promotion(audience="ja")` to draft a public-safe Japanese
@@ -218,15 +223,18 @@ turns that knowledge into MCP tools:
   families, feature tags, and reuse hints
 - representative cards that identify first-stop examples and why each is a
   good seed for agent-assisted authoring
-- quality labels that distinguish `gold_numeric_invariant` families from
-  broader `silver_proxy_energy` families
+- quality labels that distinguish `gold_numeric_invariant` families,
+  500-case `silver_observable_contract` families, and broader
+  `silver_proxy_energy` families
 - physical-quantity coverage that links examples to FLUM-based flux linkage,
   inductance/co-energy, force/torque-gradient, AC-loss, magnetic-circuit,
   permanent-magnet, transformer-coupling, WPT, MRI, actuator, and accelerator
   quantities without bundling solver outputs
+- observable-contract audits that require 500 selected public cases to expose
+  the expected FLUM/OHM2/FREQ/HBRM/HBCU markers for their physical quantities
 - cross-validation audits that require every public family to have an
-  independent NGSolve check and distinguish `gold_numeric_invariant` from
-  `silver_proxy_energy` coverage
+  independent NGSolve check and distinguish `gold_numeric_invariant`,
+  `silver_observable_contract`, and `silver_proxy_energy` coverage
 - curated motor topics for air-gap field, flux linkage/back-EMF pickup,
   polarity/angle conventions, force outputs, and eddy-current setup
 - Python-interface `team28` seed manifest for higher-level orchestration,

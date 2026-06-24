@@ -67,12 +67,13 @@ def test_tool_surface_and_no_work_family():
     assert "elf_sample_decks_quality" in names
     assert "elf_sample_decks_physics" in names
     assert "elf_sample_decks_validation_matrix" in names
+    assert "elf_sample_decks_observable_contracts" in names
     assert "elf_sample_decks_cross_validation" in names
     assert "elf_public_promotion" in names
     assert "elf_python_team28" in names
     overview = elf_overview()
     overview_text = str(overview)
-    assert overview["n_tools"] == 32
+    assert overview["n_tools"] == 33
     assert "public_boundary" in overview
     assert "recommended_calls" in overview
     assert "COMSOL" not in overview_text
@@ -91,6 +92,7 @@ def test_public_sample_decks_are_runnable_inputs_only():
         build_publication_batch_summary,
         build_cross_validation_summary,
         build_quality_summary,
+        build_observable_contract_summary,
         build_physical_quantity_summary,
         build_validation_matrix,
         build_representative_cards,
@@ -98,6 +100,7 @@ def test_public_sample_decks_are_runnable_inputs_only():
         build_validation_summary,
         format_public_promotion,
         format_cross_validation_summary,
+        format_observable_contract_summary,
         format_physical_quantity_summary,
         format_quality_summary,
         format_validation_matrix,
@@ -344,7 +347,8 @@ def test_public_sample_decks_are_runnable_inputs_only():
     assert "100 additional validated cases would make the next optional increment" in validation_text
     quality_summary = build_quality_summary()
     assert quality_summary["label_counts"]["gold_numeric_invariant"]["cases"] == 674
-    assert quality_summary["label_counts"]["silver_proxy_energy"]["cases"] == 926
+    assert quality_summary["label_counts"]["silver_observable_contract"]["cases"] == 500
+    assert quality_summary["label_counts"]["silver_proxy_energy"]["cases"] == 426
     assert quality_summary["quality_gate_status"] == "PASS"
     assert all(gate["status"] == "PASS" for gate in quality_summary["quality_gates"])
     assert {gate["gate"] for gate in quality_summary["quality_gates"]} >= {
@@ -354,6 +358,8 @@ def test_public_sample_decks_are_runnable_inputs_only():
         "public_boundary_text",
         "no_solver_output_files",
         "application_hierarchy",
+        "observable_contract_target_is_500_cases",
+        "observable_contract_markers_pass",
     }
     quality_text = format_quality_summary(quality_summary)
     assert "Publication Quality Gates (PASS)" in quality_text
@@ -362,9 +368,22 @@ def test_public_sample_decks_are_runnable_inputs_only():
     assert "physical_quantity_case_coverage" in quality_text
     assert "gold_physics_anchor_coverage" in quality_text
     assert "gold_numeric_invariant" in quality_text
+    assert "silver_observable_contract" in quality_text
     assert "silver_proxy_energy" in quality_text
     gold_quality_text = format_quality_summary(build_quality_summary(label="gold"))
     assert "application/numeric_transformer_coupling_100" in gold_quality_text
+    enhanced_quality_text = format_quality_summary(build_quality_summary(label="observable"))
+    assert "500 cases" in enhanced_quality_text
+    assert "application/motor/pm_square_2pole_pickup_100" in enhanced_quality_text
+    observable_contract_summary = build_observable_contract_summary()
+    assert observable_contract_summary["observable_contract_gate_status"] == "PASS"
+    assert observable_contract_summary["enhanced_cases"] == 500
+    assert observable_contract_summary["enhanced_family_count"] == 28
+    assert observable_contract_summary["failed_case_count"] == 0
+    observable_contract_text = format_observable_contract_summary(observable_contract_summary)
+    assert "Observable Contract Gates (PASS)" in observable_contract_text
+    assert "public_observable_contract_passed" in observable_contract_text
+    assert "application/wpt_misalignment_10" in observable_contract_text
     physics_summary = build_physical_quantity_summary()
     assert physics_summary["physical_gate_status"] == "PASS"
     assert all(gate["status"] == "PASS" for gate in physics_summary["physical_gates"])
@@ -421,7 +440,7 @@ def test_public_sample_decks_are_runnable_inputs_only():
     )
     representatives = build_representative_cards()
     assert len(representatives) >= 32
-    assert representatives[0]["quality_label"] == "silver_proxy_energy"
+    assert representatives[0]["quality_label"] == "silver_observable_contract"
     representative_text = format_representative_cards(representatives)
     assert "why representative" in representative_text
     assert "application/motor/emdlab_ipm_hairpin_10/eip001/eip001.mai" in representative_text

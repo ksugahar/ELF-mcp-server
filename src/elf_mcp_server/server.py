@@ -41,12 +41,14 @@ from .sample_decks import (
     build_team28_cards,
     build_cross_validation_summary,
     build_quality_summary,
+    build_observable_contract_summary,
     build_physical_quantity_summary,
     build_validation_matrix,
     build_validation_summary,
     format_public_promotion,
     format_sample_deck_cards,
     format_cross_validation_summary,
+    format_observable_contract_summary,
     format_validation_matrix,
     format_representative_cards,
     format_sample_deck_routes,
@@ -89,7 +91,7 @@ _TOOL_CATALOG = [
                                                        "(332 .mai/.mei/.txt, 533 KB) "
                                                        "plus 100 compact example cards"),
     ("elf_sample_decks_index / search / route / validation / validation_matrix / "
-     "cross_validation / quality / physics / "
+     "observable_contracts / cross_validation / quality / physics / "
      "representatives / get / playbook",
                                               "Lab-authored ELF-runnable "
                                               "public .mai/.meg input decks "
@@ -118,16 +120,16 @@ _RELATED_PUBLIC_PACKAGES = [
 
 @mcp.tool()
 def elf_overview() -> dict:
-    """RECOMMENDED FIRST CALL. Catalog of ELF MCP's 32 tools + 1
+    """RECOMMENDED FIRST CALL. Catalog of ELF MCP's 33 tools + 1
     prompt, with public-safe routing hints for MCP clients.
 
     Returns:
-        dict with `tool_families` (curated 32-tool grouping), `n_tools`,
+        dict with `tool_families` (curated 33-tool grouping), `n_tools`,
         public boundary notes, recommended calls, and public companion package
         hints.
     """
     return {
-        "n_tools": 32,
+        "n_tools": 33,
         "n_prompts": 1,
         "tool_families": [
             {"signature": sig, "description": desc}
@@ -165,6 +167,10 @@ def elf_overview() -> dict:
             {
                 "goal": "Map prompt intent to quantity, quality label, validation method, and representative decks",
                 "call": "elf_sample_decks_validation_matrix(quantity='transformer')",
+            },
+            {
+                "goal": "Audit the 500-case observable-contract quality upgrade",
+                "call": "elf_sample_decks_observable_contracts()",
             },
             {
                 "goal": "Audit cross-validation coverage and gaps",
@@ -206,6 +212,7 @@ def elf_overview() -> dict:
             "elf_sample_decks_quality() for quality labels, "
             "elf_sample_decks_physics() for physical-quantity coverage, "
             "elf_sample_decks_validation_matrix() for quantity-to-validation routing, "
+            "elf_sample_decks_observable_contracts() for the 500-case observable-contract audit, "
             "elf_sample_decks_cross_validation() for cross-validation gaps, "
             "elf_sample_decks_validation() for public validation levels and limits, "
             "elf_public_promotion() for public-safe promotion copy, "
@@ -667,7 +674,8 @@ def elf_sample_decks_quality(family: str = "", label: str = "") -> str:
 
     Quality labels are public-safe wrappers around validation levels:
     `gold_numeric_invariant` for numeric invariant families and
-    `silver_proxy_energy` for broader proxy-energy-gated runnable examples.
+    `silver_observable_contract` for the 500-case observable-contract upgrade,
+    plus `silver_proxy_energy` for broader proxy-energy-gated runnable examples.
 
     Args:
         family: Optional family substring, e.g. "motor", "numeric",
@@ -741,6 +749,34 @@ def elf_sample_decks_validation_matrix(
         label=label or None,
     )
     return format_validation_matrix(summary)
+
+
+@mcp.tool()
+def elf_sample_decks_observable_contracts(family: str = "", label: str = "") -> str:
+    """
+    Audit the 500-case public observable-contract quality upgrade.
+
+    These cases remain public input decks only, but they have a stronger
+    MCP-visible contract than a generic proxy-energy silver case: each selected
+    family retains independent NGSolve proxy-energy cross-validation and each
+    public `.mai` deck exposes the expected observable markers for the mapped
+    physical quantity.
+
+    Args:
+        family: Optional family substring, e.g. "motor", "wpt", "mri",
+            "transformer", "pm_square", or "emdlab".
+        label: Optional quality-label substring, normally
+            "silver_observable_contract".
+
+    Returns:
+        Markdown audit with gates, family rows, required observable markers,
+        representative decks, and public-safe limitations.
+    """
+    summary = build_observable_contract_summary(
+        family=family or None,
+        label=label or None,
+    )
+    return format_observable_contract_summary(summary)
 
 
 @mcp.tool()
@@ -1447,9 +1483,17 @@ def main():
         assert "paired_mai_meg" in sd_quality
         assert "manifest_matches_files" in sd_quality
         assert "gold_numeric_invariant" in sd_quality
+        assert "silver_observable_contract" in sd_quality
         assert "silver_proxy_energy" in sd_quality
         sd_gold_quality = elf_sample_decks_quality(label="gold")
         assert "application/numeric_transformer_coupling_100" in sd_gold_quality
+        sd_observable_quality = elf_sample_decks_quality(label="observable")
+        assert "500 cases" in sd_observable_quality
+        assert "application/motor/pm_square_2pole_pickup_100" in sd_observable_quality
+        sd_observable_contracts = elf_sample_decks_observable_contracts()
+        assert "Observable Contract Gates (PASS)" in sd_observable_contracts
+        assert "public_observable_contract_passed" in sd_observable_contracts
+        assert "application/wpt_misalignment_10" in sd_observable_contracts
         sd_physics = elf_sample_decks_physics()
         assert "Physical Quantity Gates (PASS)" in sd_physics
         assert "flux_linkage" in sd_physics
@@ -1518,7 +1562,8 @@ def main():
             + sd_magnetic_circuit_validation
             + sd_permanent_magnet_validation
             + sd_transformer_coupling_validation
-            + sd_quality + sd_gold_quality + sd_physics + sd_force_physics
+            + sd_quality + sd_gold_quality + sd_observable_quality
+            + sd_observable_contracts + sd_physics + sd_force_physics
             + sd_validation_matrix + sd_transformer_matrix
             + sd_cross_validation + sd_gold_cross_validation
             + sd_representatives
