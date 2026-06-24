@@ -59,6 +59,8 @@ def test_tool_surface_and_no_work_family():
     assert "elf_recipe_get" in names
     assert "elf_plan_workflow" in names
     assert "elf_mcp_readiness" in names
+    assert "elf_motor_readiness" in names
+    assert "elf_motor_hybrid_router" in names
     assert "elf_sample_decks_index" in names
     assert "elf_sample_decks_get" in names
     assert "elf_sample_decks_route" in names
@@ -76,7 +78,7 @@ def test_tool_surface_and_no_work_family():
     assert "elf_python_team28" in names
     overview = elf_overview()
     overview_text = str(overview)
-    assert overview["n_tools"] == 36
+    assert overview["n_tools"] == 39
     assert "public_boundary" in overview
     assert "recommended_calls" in overview
     assert "COMSOL" not in overview_text
@@ -97,6 +99,8 @@ def test_public_sample_decks_are_runnable_inputs_only():
         build_duplicate_audit,
         build_local_simulation_handoff,
         build_mcp_readiness,
+        build_motor_hybrid_router,
+        build_motor_readiness,
         build_quality_summary,
         build_observable_contract_summary,
         build_physical_quantity_summary,
@@ -109,6 +113,8 @@ def test_public_sample_decks_are_runnable_inputs_only():
         format_duplicate_audit,
         format_local_simulation_handoff,
         format_mcp_readiness,
+        format_motor_hybrid_router,
+        format_motor_readiness,
         format_observable_contract_summary,
         format_physical_quantity_summary,
         format_quality_summary,
@@ -470,6 +476,37 @@ def test_public_sample_decks_are_runnable_inputs_only():
     assert "ready_for_tag_push" in readiness_text
     assert "Release Steps" in readiness_text
     assert "S:" + "\\" not in readiness_text
+    motor_readiness = build_motor_readiness()
+    assert motor_readiness["motor_readiness"] == "motor_coverage_ready_validation_upgrade_recommended"
+    assert motor_readiness["motor_cases"] == 652
+    assert motor_readiness["motor_families"] == 37
+    assert motor_readiness["quality_counts"]["silver_observable_contract"] == 18
+    assert motor_readiness["quality_counts"]["silver_proxy_energy"] == 19
+    assert motor_readiness["validation_counts"]["ngsolve_proxy_energy"] == 37
+    assert motor_readiness["gold_numeric_motor_families"] == 0
+    assert any(
+        gate["gate"] == "motor_gold_numeric_anchors" and gate["status"] == "WARN"
+        for gate in motor_readiness["gates"]
+    )
+    assert any(
+        row["name"] == "IPM" and row["families"]
+        for row in motor_readiness["archetypes"]
+    )
+    motor_readiness_text = format_motor_readiness(motor_readiness)
+    assert "652 cases across 37 families" in motor_readiness_text
+    assert "radia-motor targets" in motor_readiness_text
+    assert "S:" + "\\" not in motor_readiness_text
+    hybrid_route = build_motor_hybrid_router("IPM hairpin motor flux linkage and MTPA")
+    assert hybrid_route["schema_version"] == "elf-motor-hybrid-router/v1"
+    assert hybrid_route["inferred_family"] == "ipm"
+    assert hybrid_route["elf_deck_routes"][0]["family"] == "application/motor/emdlab_ipm_hairpin_10"
+    assert "motor_mmm_quick_check" in hybrid_route["mmm_quick_check"]["call"]
+    assert 'ngsolve_usage("mtpa")' in hybrid_route["age_validation"]["calls"]
+    hybrid_text = format_motor_hybrid_router(hybrid_route)
+    assert "ELF/radia motor hybrid router" in hybrid_text
+    assert "application/motor/emdlab_ipm_hairpin_10" in hybrid_text
+    assert "elf_local_simulation_handoff" in hybrid_text
+    assert "S:" + "\\" not in hybrid_text
     matrix_summary = build_validation_matrix()
     assert matrix_summary["validation_matrix_gate_status"] == "PASS"
     assert all(

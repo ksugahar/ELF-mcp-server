@@ -43,6 +43,8 @@ from .sample_decks import (
     build_duplicate_audit,
     build_local_simulation_handoff,
     build_mcp_readiness,
+    build_motor_hybrid_router,
+    build_motor_readiness,
     build_quality_summary,
     build_observable_contract_summary,
     build_physical_quantity_summary,
@@ -54,6 +56,8 @@ from .sample_decks import (
     format_duplicate_audit,
     format_local_simulation_handoff,
     format_mcp_readiness,
+    format_motor_hybrid_router,
+    format_motor_readiness,
     format_observable_contract_summary,
     format_validation_matrix,
     format_representative_cards,
@@ -126,16 +130,16 @@ _RELATED_PUBLIC_PACKAGES = [
 
 @mcp.tool()
 def elf_overview() -> dict:
-    """RECOMMENDED FIRST CALL. Catalog of ELF MCP's 36 tools + 1
+    """RECOMMENDED FIRST CALL. Catalog of ELF MCP's 39 tools + 1
     prompt, with public-safe routing hints for MCP clients.
 
     Returns:
-        dict with `tool_families` (curated 36-tool grouping), `n_tools`,
+        dict with `tool_families` (curated 39-tool grouping), `n_tools`,
         public boundary notes, recommended calls, and public companion package
         hints.
     """
     return {
-        "n_tools": 36,
+        "n_tools": 39,
         "n_prompts": 1,
         "tool_families": [
             {"signature": sig, "description": desc}
@@ -149,6 +153,14 @@ def elf_overview() -> dict:
             {
                 "goal": "Check whether the public MCP package is ready for tag push",
                 "call": "elf_mcp_readiness()",
+            },
+            {
+                "goal": "Audit motor-specific corpus breadth and validation gaps",
+                "call": "elf_motor_readiness()",
+            },
+            {
+                "goal": "Route motor work across ELF deck, radia AGE validation, and MMM quick check",
+                "call": "elf_motor_hybrid_router('IPM hairpin motor flux linkage and MTPA')",
             },
             {
                 "goal": "Find the right ELF/MAGIC command pattern",
@@ -225,6 +237,8 @@ def elf_overview() -> dict:
             "Call elf_usage(topic='all') for the 31 curated topic "
             "catalogue, elf_plan_workflow('goal') for a workflow plan, "
             "elf_mcp_readiness() for release-quality gates, "
+            "elf_motor_readiness() for motor-specific coverage and validation gaps, "
+            "elf_motor_hybrid_router('goal') for ELF/radia/MMM motor dispatch, "
             "elf_recipe_search('keyword') for decision cards, or "
             "elf_sample_decks_playbook() for ELF-runnable public .mai/.meg decks, "
             "elf_sample_decks_representatives() for curated first-stop decks, "
@@ -325,6 +339,49 @@ def elf_mcp_readiness() -> str:
         quality gates pass locally; GitHub/PyPI still require tag push and CI.
     """
     return format_mcp_readiness(build_mcp_readiness())
+
+
+@mcp.tool()
+def elf_motor_readiness(family: str = "") -> str:
+    """
+    Audit motor-specific public sample coverage and validation gaps.
+
+    This answers whether the public motor corpus is broad enough for MCP
+    routing, where it is still only proxy-validated, and which radia-motor /
+    radia-ngsolve validation targets should be strengthened next.
+
+    Args:
+        family: Optional motor-family substring such as "spm", "ipm",
+            "induction", "srm", "synrm", "reluctance", or "hysteresis".
+
+    Returns:
+        Markdown motor-readiness report with archetype coverage, quality
+        labels, validation-depth gaps, and radia-motor strengthening targets.
+    """
+    return format_motor_readiness(build_motor_readiness(family=family or None))
+
+
+@mcp.tool()
+def elf_motor_hybrid_router(goal: str) -> str:
+    """
+    Route a motor goal across ELF decks, radia AGE validation, and MMM quick checks.
+
+    This is the public MCP dispatch layer for the hybrid workflow:
+    ELF/MAGIC public `.mai/.meg` decks for product-input authoring, radia-motor's
+    2D MMM/BEM-like quick check for first-order sign/scale sanity, NGSolve AGE
+    for independent physics validation, and a user-local ELF/MAGIC runner for
+    product solves. It does not execute any solver.
+
+    Args:
+        goal: Natural-language motor goal such as "SPM back-EMF",
+            "IPM hairpin MTPA", "induction motor slip loss", or
+            "SRM reluctance torque".
+
+    Returns:
+        Markdown dispatch plan with deck routes, radia-motor quick-check calls,
+        AGE validation targets, and local ELF/MAGIC handoff.
+    """
+    return format_motor_hybrid_router(build_motor_hybrid_router(goal))
 
 
 @mcp.tool()
@@ -1274,6 +1331,20 @@ def main():
         readiness = elf_mcp_readiness()
         assert "ready_for_tag_push" in readiness
         assert "S:" + "\\" not in readiness
+        motor_readiness = elf_motor_readiness()
+        assert "motor_coverage_ready_validation_upgrade_recommended" in motor_readiness
+        assert "652 cases across 37 families" in motor_readiness
+        assert "motor_gold_numeric_anchors" in motor_readiness
+        assert "WARN" in motor_readiness
+        assert "radia-motor targets" in motor_readiness
+        assert "S:" + "\\" not in motor_readiness
+        hybrid_route = elf_motor_hybrid_router("IPM hairpin motor flux linkage and MTPA")
+        assert "ELF/radia motor hybrid router" in hybrid_route
+        assert "application/motor/emdlab_ipm_hairpin_10" in hybrid_route
+        assert "motor_mmm_quick_check" in hybrid_route
+        assert "ngsolve_usage(\"mtpa\")" in hybrid_route
+        assert "elf_local_simulation_handoff" in hybrid_route
+        assert "S:" + "\\" not in hybrid_route
         topics = [
             "overview", "mai_format", "mei_format", "meg_format",
             "magic", "elfin", "beam", "element_types", "bh_curves",
@@ -1619,6 +1690,14 @@ def main():
         sd_gold_cross_validation = elf_sample_decks_cross_validation(level="ngsolve_numeric_invariant")
         assert "674 cases" in sd_gold_cross_validation
         assert "application/numeric_transformer_coupling_100" in sd_gold_cross_validation
+        sd_motor_readiness = elf_motor_readiness(family="ipm")
+        assert "ELF/MAGIC motor readiness" in sd_motor_readiness
+        assert "IPM" in sd_motor_readiness
+        assert "ld_lq" in sd_motor_readiness
+        sd_hybrid_router = elf_motor_hybrid_router("induction motor slip loss and cage screening")
+        assert "application/motor/emdlab_induction_bar_10" in sd_hybrid_router
+        assert "motor_mmm_quick_check" in sd_hybrid_router
+        assert "ngsolve_usage(\"induction_machine\")" in sd_hybrid_router
         sd_duplicates = elf_sample_decks_duplicates()
         assert "Duplicate Gates (PASS)" in sd_duplicates
         assert "No exact pair duplicates were found" in sd_duplicates
@@ -1681,6 +1760,7 @@ def main():
             + sd_observable_contracts + sd_physics + sd_force_physics
             + sd_validation_matrix + sd_transformer_matrix
             + sd_cross_validation + sd_gold_cross_validation
+            + sd_motor_readiness + sd_hybrid_router
             + sd_duplicates + sd_handoff
             + sd_representatives
             + sd_motor_representatives + sd_promotion

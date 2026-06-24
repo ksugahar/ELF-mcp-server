@@ -12,7 +12,7 @@ This server does **not** execute ELF600 simulations — it provides curated docu
 
 ## Features
 
-**36 tools + 1 prompt** providing curated docs, workflow recipes, ELF-runnable public sample decks, representative sample tours, quality labels, physical-quantity coverage, validation matrices, observable-contract audits, cross-validation audits, duplicate/reuse audits, local simulation handoff contracts, release-readiness gates, prompt-to-sample routing, validation summaries, promotion copy, and raw access to ELF600 help HTM, example inputs, vendor wiki, and Python ctypes API:
+**39 tools + 1 prompt** providing curated docs, workflow recipes, ELF-runnable public sample decks, representative sample tours, quality labels, physical-quantity coverage, validation matrices, observable-contract audits, cross-validation audits, duplicate/reuse audits, motor-readiness audits, ELF/radia/MMM hybrid motor routing, local simulation handoff contracts, release-readiness gates, prompt-to-sample routing, validation summaries, promotion copy, and raw access to ELF600 help HTM, example inputs, vendor wiki, and Python ctypes API:
 
 | Tool family | Purpose | Files |
 |---|---|---|
@@ -31,7 +31,7 @@ summarizes 100 `.mai` examples as compact cards with detected SOL blocks,
 element families, feature tags, companion `.mei/.model` files, and reuse hints.
 The recipe family also has `elf_plan_workflow(goal)`, which chooses a short
 public-safe recipe sequence from a natural-language analysis goal.
-The sample deck family has `elf_sample_decks_index/search/route/handoff/validation/readiness/validation_matrix/observable_contracts/cross_validation/duplicates/quality/physics/representatives/get/playbook`
+The sample deck family has `elf_sample_decks_index/search/route/handoff/validation/readiness/motor_readiness/motor_hybrid_router/validation_matrix/observable_contracts/cross_validation/duplicates/quality/physics/representatives/get/playbook`
 for ELF-runnable public `.mai`/`.meg` decks. `elf_sample_decks_route(goal)`
 maps a user prompt such as "IPM hairpin motor flux linkage" or
 "WPT misalignment" to the most relevant public deck families, follow-up MCP
@@ -63,7 +63,13 @@ physical quantities, runner input fields, parser output fields, and the motor
 iteration loop. It does not execute ELF/MAGIC or publish solver outputs.
 `elf_mcp_readiness()` aggregates public quality gates, cross-validation gates,
 duplicate checks, local-runner handoff boundary checks, and key route checks
-into a release-readiness report for maintainers.
+into a release-readiness report for maintainers. `elf_motor_readiness()`
+audits the 652-case motor subset across 37 motor families, separates breadth
+from validation-depth gaps, and lists radia-motor / radia-ngsolve targets such
+as back-EMF, cogging torque, Ld/Lq, MTPA, induction slip loss, and reluctance
+torque. `elf_motor_hybrid_router(goal)` dispatches motor prompts across public
+ELF deck routes, radia-motor 2D MMM/BEM-like quick checks, NGSolve AGE
+validation targets, and the user-local ELF/MAGIC runner contract.
 `elf_public_promotion()` returns public-safe Japanese/English
 promotion copy for the corpus.
 The Python family also has
@@ -82,6 +88,11 @@ public boundary. The most useful calls while authoring ELF/MAGIC inputs are:
   prompt to the right sample family, playbook call, recipe, and representative
   `.mai` decks
 - `elf_mcp_readiness()` to check release-quality gates before tag push
+- `elf_motor_readiness()` to inspect motor-specific breadth, validation-depth
+  gaps, and radia-motor strengthening targets
+- `elf_motor_hybrid_router("IPM hairpin motor flux linkage and MTPA")` to
+  route a motor prompt across ELF deck authoring, radia-motor MMM quick checks,
+  NGSolve AGE validation, and a user-local ELF/MAGIC product run
 - `elf_sample_decks_validation()` to check the public validation levels,
   counts, and limitations before claiming a deck is validated
 - `elf_sample_decks_representatives()` to start from curated first-stop decks

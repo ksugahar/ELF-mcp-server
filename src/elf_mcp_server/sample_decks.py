@@ -4788,7 +4788,7 @@ def build_mcp_readiness() -> dict[str, Any]:
             "python -m elf_mcp_server.policy_lint <repo>",
             "python -m elf_mcp_server.server --selftest",
             "python -m build --outdir <temp-dist-dir>",
-            "git commit, git tag v1.54.0, git push origin main, git push origin v1.54.0",
+            "git commit, git tag v1.55.0, git push origin main, git push origin v1.55.0",
         ],
         "public_boundary": (
             "Readiness uses public input decks and metadata only. It does not "
@@ -4827,6 +4827,372 @@ def format_mcp_readiness(summary: dict[str, Any]) -> str:
 
     lines.extend(["", "## Release Steps"])
     lines.extend(f"- `{step}`" for step in summary["recommended_release_steps"])
+    return "\n".join(lines).rstrip()
+
+
+MOTOR_ARCHETYPE_GROUPS: tuple[dict[str, Any], ...] = (
+    {
+        "name": "SPM / BLDC / PM pickup",
+        "terms": ("spm", "bldc", "pm_square", "pm_cosine", "spmsm"),
+        "radia_targets": ("back_emf", "cogging_torque", "ld_lq", "mtpa"),
+        "upgrade_focus": "Add stronger flux-linkage, back-EMF, cogging, and Ld/Lq invariants.",
+    },
+    {
+        "name": "IPM",
+        "terms": ("ipm", "hairpin"),
+        "radia_targets": ("ld_lq", "mtpa", "field_weakening", "demag_margin"),
+        "upgrade_focus": "Prioritize saliency, frozen-permeability dq, MTPA, and demag-margin checks.",
+    },
+    {
+        "name": "Induction machine",
+        "terms": ("induction", "cage"),
+        "radia_targets": ("induction_machine", "deep_bar", "airgap_eddy_machine"),
+        "upgrade_focus": "Promote slip-frequency rotor-loss and torque-slip trends to numeric anchors.",
+    },
+    {
+        "name": "SRM / SR motor",
+        "terms": ("srm", "sr_motor", "switched_reluctance"),
+        "radia_targets": ("reluctance_torque", "power_angle", "saturating_inductance"),
+        "upgrade_focus": "Add angle-current torque maps and nonlinear inductance trend anchors.",
+    },
+    {
+        "name": "SynRM / reluctance motor",
+        "terms": ("synrm", "reluctance_motor"),
+        "radia_targets": ("synchronous_power_angle", "mtpa", "cross_saturation"),
+        "upgrade_focus": "Anchor Ld/Lq saliency, reluctance torque, and saturation/cross-saturation trends.",
+    },
+    {
+        "name": "AFPM / axial flux",
+        "terms": ("afpm", "axial_flux"),
+        "radia_targets": ("build123d_pmsm_field", "airgap_machine_rotation"),
+        "upgrade_focus": "Add axial-flux geometry and air-gap field trend checks.",
+    },
+    {
+        "name": "Wound-field / stepper / linear / hysteresis",
+        "terms": ("wound_field", "stepper", "linear_pm", "hysteresis"),
+        "radia_targets": ("power_angle", "skew_factor", "hysteresis_motor_loss"),
+        "upgrade_focus": "Keep as specialist families; add one strong numeric anchor per subtype.",
+    },
+)
+
+
+def build_motor_readiness(family: str | None = None) -> dict[str, Any]:
+    """Summarize motor-specific corpus coverage and validation gaps."""
+    family_filter = (family or "").lower()
+    physics = build_physical_quantity_summary(quantity="motor_flux_linkage")
+    motor_families = [
+        row for row in physics["families"]
+        if row["family"].startswith("application/motor/")
+        and (not family_filter or family_filter in row["family"].lower())
+    ]
+    quality_counts: dict[str, int] = {}
+    validation_counts: dict[str, int] = {}
+    for row in motor_families:
+        quality_counts[row["quality_label"]] = quality_counts.get(row["quality_label"], 0) + 1
+        validation_counts[row["validation_level"]] = validation_counts.get(row["validation_level"], 0) + 1
+
+    archetypes = []
+    covered_arch = 0
+    for group in MOTOR_ARCHETYPE_GROUPS:
+        terms = tuple(term.lower() for term in group["terms"])
+        matches = [
+            row for row in motor_families
+            if any(term in row["family"].lower() for term in terms)
+        ]
+        if matches:
+            covered_arch += 1
+        archetypes.append(
+            {
+                "name": group["name"],
+                "families": [
+                    {
+                        "family": row["family"],
+                        "cases": row["cases"],
+                        "quality_label": row["quality_label"],
+                        "validation_level": row["validation_level"],
+                        "representative_paths": row["representative_paths"],
+                    }
+                    for row in matches
+                ],
+                "cases": sum(row["cases"] for row in matches),
+                "radia_targets": list(group["radia_targets"]),
+                "upgrade_focus": group["upgrade_focus"],
+            }
+        )
+
+    observable_contract_families = [
+        row for row in motor_families
+        if row["quality_label"] == ENHANCED_OBSERVABLE_CONTRACT_LABEL["label"]
+    ]
+    gold_families = [
+        row for row in motor_families
+        if row["quality_label"] == "gold_numeric_invariant"
+    ]
+    total_cases = sum(row["cases"] for row in motor_families)
+    gates = [
+        _public_gate(
+            "motor_case_volume_strong",
+            total_cases >= 500,
+            f"{total_cases} motor cases across {len(motor_families)} families",
+        ),
+        _public_gate(
+            "motor_architecture_breadth_strong",
+            covered_arch == len(MOTOR_ARCHETYPE_GROUPS),
+            f"{covered_arch}/{len(MOTOR_ARCHETYPE_GROUPS)} archetype groups covered",
+        ),
+        _public_gate(
+            "motor_observable_contracts_present",
+            len(observable_contract_families) >= 12,
+            f"{len(observable_contract_families)} motor families expose explicit observable contracts",
+        ),
+    ]
+    gold_gate = {
+        "gate": "motor_gold_numeric_anchors",
+        "status": "PASS" if gold_families else "WARN",
+        "detail": (
+            f"{len(gold_families)} motor families have gold numeric invariants; "
+            "add torque/back-EMF/Ld-Lq/slip-loss anchors before claiming full "
+            "motor-solver numerical agreement."
+        ),
+    }
+    motor_readiness = (
+        "motor_coverage_ready_validation_upgrade_recommended"
+        if all(gate["status"] == "PASS" for gate in gates)
+        else "motor_coverage_needs_attention"
+    )
+    return {
+        "schema_version": "elf-motor-readiness/v1",
+        "motor_readiness": motor_readiness,
+        "family_filter": family or "",
+        "motor_families": len(motor_families),
+        "motor_cases": total_cases,
+        "quality_counts": quality_counts,
+        "validation_counts": validation_counts,
+        "observable_contract_families": len(observable_contract_families),
+        "gold_numeric_motor_families": len(gold_families),
+        "archetypes": archetypes,
+        "gates": gates + [gold_gate],
+        "recommended_next_work": [
+            {
+                "priority": 1,
+                "task": "Promote selected PM/IPM/SPM families from proxy energy to numeric anchors.",
+                "radia_mcp_targets": ["back_emf", "cogging_torque", "ld_lq", "mtpa"],
+            },
+            {
+                "priority": 2,
+                "task": "Promote induction-machine families with slip-loss and torque-slip trend anchors.",
+                "radia_mcp_targets": ["induction_machine", "deep_bar", "airgap_eddy_machine"],
+            },
+            {
+                "priority": 3,
+                "task": "Promote SRM/SynRM families with angle-current torque and Ld/Lq saliency anchors.",
+                "radia_mcp_targets": ["reluctance_torque", "synchronous_power_angle", "cross_saturation"],
+            },
+        ],
+        "public_boundary": (
+            "This audit uses public input-deck metadata only. It does not run "
+            "ELF/MAGIC, publish solver outputs, or expose private validation provenance."
+        ),
+    }
+
+
+def format_motor_readiness(summary: dict[str, Any], max_families: int = 5) -> str:
+    """Format motor-specific readiness and strengthening gaps."""
+    lines = [
+        "# ELF/MAGIC motor readiness",
+        "",
+        f"- schema: `{summary['schema_version']}`",
+        f"- readiness: `{summary['motor_readiness']}`",
+        f"- family filter: {summary['family_filter'] or 'none'}",
+        (
+            f"- motor corpus: {summary['motor_cases']} cases across "
+            f"{summary['motor_families']} families"
+        ),
+        f"- quality counts: {summary['quality_counts']}",
+        f"- validation counts: {summary['validation_counts']}",
+        f"- public boundary: {summary['public_boundary']}",
+        "",
+        "## Gates",
+    ]
+    for gate in summary["gates"]:
+        lines.append(f"- {gate['status']} `{gate['gate']}`: {gate['detail']}")
+
+    lines.extend(["", "## Archetype Coverage"])
+    for row in summary["archetypes"]:
+        status = "covered" if row["families"] else "gap"
+        targets = ", ".join(f"`{item}`" for item in row["radia_targets"])
+        lines.append(f"### {row['name']} ({status}, {row['cases']} cases)")
+        lines.append(f"- radia-motor targets: {targets}")
+        lines.append(f"- upgrade focus: {row['upgrade_focus']}")
+        for fam in row["families"][:max_families]:
+            reps = ", ".join(f"`{path}`" for path in fam["representative_paths"][:2])
+            lines.append(
+                f"- `{fam['family']}`: {fam['cases']} cases, "
+                f"`{fam['quality_label']}`, `{fam['validation_level']}`"
+            )
+            if reps:
+                lines.append(f"  representative: {reps}")
+        if len(row["families"]) > max_families:
+            lines.append(f"- ... {len(row['families']) - max_families} more families")
+
+    lines.extend(["", "## Recommended Next Work"])
+    for item in summary["recommended_next_work"]:
+        targets = ", ".join(f"`{target}`" for target in item["radia_mcp_targets"])
+        lines.append(f"{item['priority']}. {item['task']} radia targets: {targets}")
+    return "\n".join(lines).rstrip()
+
+
+def _motor_hybrid_family(goal: str) -> dict[str, Any]:
+    g = goal.lower()
+    if any(term in g for term in ("induction", "slip", "cage", "deep bar")):
+        return {
+            "family": "induction",
+            "elf_query": "induction motor cage slip OHM2 FLUM",
+            "mmm_call": "motor_mmm_quick_check(motor_type='induction', slip_hz=...)",
+            "age_targets": ["induction_machine", "airgap_eddy_machine", "deep_bar"],
+            "validation_focus": "rotor loss rises with slip, torque-slip peak, cage screening",
+        }
+    if any(term in g for term in ("srm", "switched reluctance", "sr motor")):
+        return {
+            "family": "srm",
+            "elf_query": "SRM switched reluctance FLUM HBCU",
+            "mmm_call": "motor_mmm_quick_check(motor_type='srm', electrical_angle_deg=...)",
+            "age_targets": ["reluctance_torque", "saturating_inductance"],
+            "validation_focus": "angle-current torque sign, periodicity, nonlinear inductance",
+        }
+    if any(term in g for term in ("synrm", "reluctance motor")):
+        return {
+            "family": "synrm",
+            "elf_query": "SynRM reluctance motor flux barrier FLUM",
+            "mmm_call": "motor_mmm_quick_check(motor_type='synrm', saliency_ratio_lq_over_ld=...)",
+            "age_targets": ["synchronous_power_angle", "mtpa", "cross_saturation"],
+            "validation_focus": "Ld/Lq saliency, reluctance torque, cross-saturation",
+        }
+    if any(term in g for term in ("ipm", "interior", "hairpin")):
+        return {
+            "family": "ipm",
+            "elf_query": "IPM hairpin motor flux linkage",
+            "mmm_call": "motor_mmm_quick_check(motor_type='ipm', electrical_angle_deg=...)",
+            "age_targets": ["ld_lq", "mtpa", "field_weakening", "demag_margin"],
+            "validation_focus": "PM flux, saliency, MTPA current angle, demag margin",
+        }
+    if "hysteresis" in g:
+        return {
+            "family": "hysteresis",
+            "elf_query": "hysteresis motor flux linkage",
+            "mmm_call": "motor_mmm_quick_check(motor_type='hysteresis')",
+            "age_targets": ["hysteresis_motor_loss", "hysteresis_play"],
+            "validation_focus": "separate geometry flux from stateful hysteresis loop loss",
+        }
+    return {
+        "family": "spm",
+        "elf_query": "SPM motor flux linkage sweep",
+        "mmm_call": "motor_mmm_quick_check(motor_type='spm', electrical_angle_deg=...)",
+        "age_targets": ["back_emf", "cogging_torque", "ld_lq", "mtpa"],
+        "validation_focus": "PM flux linkage, back-EMF constant, cogging order, Ld/Lq",
+    }
+
+
+def build_motor_hybrid_router(goal: str) -> dict[str, Any]:
+    """Route a motor prompt across ELF decks, radia AGE, and MMM quick checks."""
+    plan = _motor_hybrid_family(goal)
+    routes = route_sample_decks(plan["elf_query"], limit=3)
+    readiness = build_motor_readiness(family=plan["family"])
+    return {
+        "schema_version": "elf-motor-hybrid-router/v1",
+        "goal": goal,
+        "inferred_family": plan["family"],
+        "public_boundary": (
+            "This router only selects public ELF decks and public radia-motor "
+            "validation calls. It does not execute ELF/MAGIC, run NGSolve, or "
+            "publish solver outputs."
+        ),
+        "elf_deck_routes": [
+            {
+                "family": route["family"],
+                "title": route["title"],
+                "quality_label": route["quality_label"],
+                "validation_level": route["validation_level"],
+                "representative_decks": route["representative_decks"],
+                "next_public_calls": route["next_calls"],
+            }
+            for route in routes
+        ],
+        "mmm_quick_check": {
+            "server": "mcp-server-motor",
+            "call": plan["mmm_call"],
+            "role": "first-order sign/scale sanity check before heavy solves",
+        },
+        "age_validation": {
+            "server": "mcp-server-radia-ngsolve / mcp-server-motor",
+            "calls": [f'ngsolve_usage("{target}")' for target in plan["age_targets"]],
+            "role": "independent 2D AGE / dq / eddy-current validation anchor",
+        },
+        "local_elf_runner": {
+            "call": f'elf_local_simulation_handoff("{goal}")',
+            "role": "prepare a user-local ELF/MAGIC product run without exposing outputs",
+        },
+        "validation_focus": plan["validation_focus"],
+        "motor_readiness": {
+            "readiness": readiness["motor_readiness"],
+            "motor_cases": readiness["motor_cases"],
+            "motor_families": readiness["motor_families"],
+            "gold_numeric_motor_families": readiness["gold_numeric_motor_families"],
+        },
+        "workflow": [
+            "Select an ELF public deck route and inspect the representative .mai/.meg inputs.",
+            "Run the radia-motor MMM quick check for sign and scale before spending solver time.",
+            "Use NGSolve AGE / radia-ngsolve for the independent physics validation target.",
+            "Run ELF/MAGIC locally only after the deck and reduced physics checks are coherent.",
+            "Promote only reduced, public-safe validation labels; keep raw solver outputs private.",
+        ],
+    }
+
+
+def format_motor_hybrid_router(route: dict[str, Any]) -> str:
+    """Format the hybrid ELF/radia/MMM motor routing plan."""
+    lines = [
+        "# ELF/radia motor hybrid router",
+        "",
+        f"- schema: `{route['schema_version']}`",
+        f"- goal: {route['goal']}",
+        f"- inferred family: `{route['inferred_family']}`",
+        f"- validation focus: {route['validation_focus']}",
+        f"- public boundary: {route['public_boundary']}",
+        (
+            f"- motor readiness: `{route['motor_readiness']['readiness']}` "
+            f"({route['motor_readiness']['motor_cases']} cases, "
+            f"{route['motor_readiness']['motor_families']} families, "
+            f"{route['motor_readiness']['gold_numeric_motor_families']} gold motor anchors)"
+        ),
+        "",
+        "## ELF Deck Route",
+    ]
+    for index, deck in enumerate(route["elf_deck_routes"], 1):
+        reps = ", ".join(f"`{path}`" for path in deck["representative_decks"]) or "none"
+        lines.append(f"{index}. `{deck['family']}` -- {deck['title']}")
+        lines.append(f"   quality: `{deck['quality_label']}`, validation: `{deck['validation_level']}`")
+        lines.append(f"   representative decks: {reps}")
+
+    lines.extend(["", "## MMM Quick Check"])
+    mmm = route["mmm_quick_check"]
+    lines.append(f"- server: `{mmm['server']}`")
+    lines.append(f"- call: `{mmm['call']}`")
+    lines.append(f"- role: {mmm['role']}")
+
+    lines.extend(["", "## AGE Validation"])
+    age = route["age_validation"]
+    lines.append(f"- server: `{age['server']}`")
+    lines.append(f"- role: {age['role']}")
+    lines.extend(f"- `{call}`" for call in age["calls"])
+
+    lines.extend(["", "## Local ELF/MAGIC Runner"])
+    lines.append(f"- `{route['local_elf_runner']['call']}`")
+    lines.append(f"- role: {route['local_elf_runner']['role']}")
+
+    lines.extend(["", "## Workflow"])
+    for i, step in enumerate(route["workflow"], 1):
+        lines.append(f"{i}. {step}")
     return "\n".join(lines).rstrip()
 
 

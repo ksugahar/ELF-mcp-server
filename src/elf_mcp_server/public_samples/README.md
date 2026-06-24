@@ -99,6 +99,13 @@ Representative routing:
 - `elf_mcp_readiness()` aggregates the public quality gates, cross-validation
   gates, duplicate audit, local-runner handoff boundary, and high-value route
   checks into a release-readiness report before tag push.
+- `elf_motor_readiness()` audits the motor subset specifically: 652 cases
+  across 37 public motor families, current quality-label coverage, validation
+  depth gaps, and radia-motor/radia-ngsolve strengthening targets such as
+  back-EMF, cogging torque, Ld/Lq, MTPA, slip loss, and reluctance torque.
+- `elf_motor_hybrid_router(goal)` dispatches motor prompts across public ELF
+  deck routes, radia-motor 2D MMM/BEM-like quick checks, NGSolve AGE validation
+  targets, and the user-local ELF/MAGIC product-run handoff.
 
 For these compact public examples, `.meg` files are generated as small ASCII
 ELF/MAGIC mesh decks directly by lab-authored Python generators. They are not
