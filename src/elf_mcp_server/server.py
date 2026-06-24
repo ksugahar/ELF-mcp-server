@@ -42,10 +42,12 @@ from .sample_decks import (
     build_cross_validation_summary,
     build_quality_summary,
     build_physical_quantity_summary,
+    build_validation_matrix,
     build_validation_summary,
     format_public_promotion,
     format_sample_deck_cards,
     format_cross_validation_summary,
+    format_validation_matrix,
     format_representative_cards,
     format_sample_deck_routes,
     format_team28_cards,
@@ -86,8 +88,8 @@ _TOOL_CATALOG = [
     ("elf_examples_index / search / get / playbook", "C:/ELF600/examples/ "
                                                        "(332 .mai/.mei/.txt, 533 KB) "
                                                        "plus 100 compact example cards"),
-    ("elf_sample_decks_index / search / route / validation / cross_validation / "
-     "quality / physics / "
+    ("elf_sample_decks_index / search / route / validation / validation_matrix / "
+     "cross_validation / quality / physics / "
      "representatives / get / playbook",
                                               "Lab-authored ELF-runnable "
                                               "public .mai/.meg input decks "
@@ -116,16 +118,16 @@ _RELATED_PUBLIC_PACKAGES = [
 
 @mcp.tool()
 def elf_overview() -> dict:
-    """RECOMMENDED FIRST CALL. Catalog of ELF MCP's 31 tools + 1
+    """RECOMMENDED FIRST CALL. Catalog of ELF MCP's 32 tools + 1
     prompt, with public-safe routing hints for MCP clients.
 
     Returns:
-        dict with `tool_families` (curated 31-tool grouping), `n_tools`,
+        dict with `tool_families` (curated 32-tool grouping), `n_tools`,
         public boundary notes, recommended calls, and public companion package
         hints.
     """
     return {
-        "n_tools": 31,
+        "n_tools": 32,
         "n_prompts": 1,
         "tool_families": [
             {"signature": sig, "description": desc}
@@ -159,6 +161,10 @@ def elf_overview() -> dict:
             {
                 "goal": "Inspect physical quantities covered by public samples",
                 "call": "elf_sample_decks_physics(quantity='force')",
+            },
+            {
+                "goal": "Map prompt intent to quantity, quality label, validation method, and representative decks",
+                "call": "elf_sample_decks_validation_matrix(quantity='transformer')",
             },
             {
                 "goal": "Audit cross-validation coverage and gaps",
@@ -199,6 +205,7 @@ def elf_overview() -> dict:
             "elf_sample_decks_representatives() for curated first-stop decks, "
             "elf_sample_decks_quality() for quality labels, "
             "elf_sample_decks_physics() for physical-quantity coverage, "
+            "elf_sample_decks_validation_matrix() for quantity-to-validation routing, "
             "elf_sample_decks_cross_validation() for cross-validation gaps, "
             "elf_sample_decks_validation() for public validation levels and limits, "
             "elf_public_promotion() for public-safe promotion copy, "
@@ -700,6 +707,40 @@ def elf_sample_decks_physics(quantity: str = "", family: str = "") -> str:
         family=family or None,
     )
     return format_physical_quantity_summary(summary)
+
+
+@mcp.tool()
+def elf_sample_decks_validation_matrix(
+    quantity: str = "",
+    family: str = "",
+    label: str = "",
+) -> str:
+    """
+    Map prompt intents to quantities, validation methods, and representative decks.
+
+    This is the recommended audit view when an agent must answer "which
+    physical quantity should I evaluate?" or "which validated public deck
+    should seed this prompt?" It joins physical quantity coverage, quality
+    labels, independent cross-validation methods, representative `.mai`
+    decks, and next MCP calls without exposing solver outputs.
+
+    Args:
+        quantity: Optional physical-quantity substring, e.g. "flux",
+            "force", "torque", "loss", "transformer", "motor", or "wpt".
+        family: Optional family substring, e.g. "numeric", "motor",
+            "transformer", "permanent_magnet", or "emdlab".
+        label: Optional quality-label substring, e.g. "gold" or "silver".
+
+    Returns:
+        Markdown validation matrix with quantity rows, family routes,
+        cross-validation methods, representative decks, and public-safe notes.
+    """
+    summary = build_validation_matrix(
+        quantity=quantity or None,
+        family=family or None,
+        label=label or None,
+    )
+    return format_validation_matrix(summary)
 
 
 @mcp.tool()
@@ -1416,6 +1457,13 @@ def main():
         sd_force_physics = elf_sample_decks_physics(quantity="force")
         assert "force_torque_gradient" in sd_force_physics
         assert "application/numeric_force_torque_100" in sd_force_physics
+        sd_validation_matrix = elf_sample_decks_validation_matrix()
+        assert "Validation Matrix Gates (PASS)" in sd_validation_matrix
+        assert "transformer_coupling" in sd_validation_matrix
+        assert "application/numeric_transformer_coupling_100/ntc001/ntc001.mai" in sd_validation_matrix
+        sd_transformer_matrix = elf_sample_decks_validation_matrix(quantity="transformer", label="gold")
+        assert "application/numeric_transformer_coupling_100" in sd_transformer_matrix
+        assert "ngsolve_numeric_invariants_passed" in sd_transformer_matrix
         sd_cross_validation = elf_sample_decks_cross_validation()
         assert "Cross-Validation Gates (PASS)" in sd_cross_validation
         assert "No family is missing independent NGSolve cross-validation" in sd_cross_validation
@@ -1471,6 +1519,7 @@ def main():
             + sd_permanent_magnet_validation
             + sd_transformer_coupling_validation
             + sd_quality + sd_gold_quality + sd_physics + sd_force_physics
+            + sd_validation_matrix + sd_transformer_matrix
             + sd_cross_validation + sd_gold_cross_validation
             + sd_representatives
             + sd_motor_representatives + sd_promotion

@@ -66,12 +66,13 @@ def test_tool_surface_and_no_work_family():
     assert "elf_sample_decks_representatives" in names
     assert "elf_sample_decks_quality" in names
     assert "elf_sample_decks_physics" in names
+    assert "elf_sample_decks_validation_matrix" in names
     assert "elf_sample_decks_cross_validation" in names
     assert "elf_public_promotion" in names
     assert "elf_python_team28" in names
     overview = elf_overview()
     overview_text = str(overview)
-    assert overview["n_tools"] == 31
+    assert overview["n_tools"] == 32
     assert "public_boundary" in overview
     assert "recommended_calls" in overview
     assert "COMSOL" not in overview_text
@@ -91,6 +92,7 @@ def test_public_sample_decks_are_runnable_inputs_only():
         build_cross_validation_summary,
         build_quality_summary,
         build_physical_quantity_summary,
+        build_validation_matrix,
         build_representative_cards,
         build_team28_cards,
         build_validation_summary,
@@ -98,6 +100,7 @@ def test_public_sample_decks_are_runnable_inputs_only():
         format_cross_validation_summary,
         format_physical_quantity_summary,
         format_quality_summary,
+        format_validation_matrix,
         format_representative_cards,
         format_validation_summary,
         format_team28_cards,
@@ -397,6 +400,25 @@ def test_public_sample_decks_are_runnable_inputs_only():
     assert "Cross-Validation Gates (PASS)" in cross_validation_text
     assert "No family is missing independent NGSolve cross-validation" in cross_validation_text
     assert "Silver-To-Gold Upgrade Candidates" in cross_validation_text
+    matrix_summary = build_validation_matrix()
+    assert matrix_summary["validation_matrix_gate_status"] == "PASS"
+    assert all(
+        gate["status"] == "PASS"
+        for gate in matrix_summary["validation_matrix_gates"]
+    )
+    assert matrix_summary["selected_family_count"] == matrix_summary["total_families"]
+    assert matrix_summary["quantities"]["transformer_coupling"]["gold_cases"] == 100
+    assert "ngsolve_numeric_invariants_passed" in matrix_summary["quantities"]["transformer_coupling"]["validation_methods"]
+    matrix_text = format_validation_matrix(matrix_summary)
+    assert "Validation Matrix Gates (PASS)" in matrix_text
+    assert "transformer_coupling" in matrix_text
+    assert "application/numeric_transformer_coupling_100/ntc001/ntc001.mai" in matrix_text
+    transformer_matrix = build_validation_matrix(quantity="transformer", label="gold")
+    assert transformer_matrix["selected_family_count"] >= 1
+    assert any(
+        row["family"] == "application/numeric_transformer_coupling_100"
+        for row in transformer_matrix["families"]
+    )
     representatives = build_representative_cards()
     assert len(representatives) >= 32
     assert representatives[0]["quality_label"] == "silver_proxy_energy"

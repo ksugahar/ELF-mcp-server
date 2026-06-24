@@ -178,6 +178,7 @@ CROSS_VALIDATION_METHODS: dict[str, dict[str, str]] = {
     "ngsolve_proxy_energy_positive": {
         "display": "NGSolve proxy-field energy",
         "strength": "silver_proxy_cross_check",
+        "public_observable": "positive proxy magnetic energy from public deck geometry classes",
         "meaning": (
             "Independent NGSolve proxy-field energy sanity check passed for "
             "the public authoring pattern."
@@ -186,6 +187,7 @@ CROSS_VALIDATION_METHODS: dict[str, dict[str, str]] = {
     "ngsolve_numeric_invariants_passed": {
         "display": "NGSolve numeric invariant",
         "strength": "gold_independent_invariant",
+        "public_observable": "dimensionless trend or sign invariant from an OSS reference model",
         "meaning": (
             "Independent NGSolve proxy invariants passed for the public "
             "numeric validation law."
@@ -194,12 +196,25 @@ CROSS_VALIDATION_METHODS: dict[str, dict[str, str]] = {
     "elf_flux_invariants_passed": {
         "display": "ELF FLUM-derived invariant",
         "strength": "gold_observable_invariant",
+        "public_observable": "FLUM-derived flux, energy, force, loss, or coupling invariant",
         "meaning": (
             "Public FLUM-derived scaling, sign, energy, loss, force, or "
             "coupling invariants passed for the numeric family."
         ),
     },
 }
+
+VALIDATION_MATRIX_NOTES = (
+    "The matrix connects user-visible prompt intents to public observables, "
+    "quality labels, cross-validation methods, representative decks, and next "
+    "MCP calls.",
+    "It is public-safe by design: it exposes validation contracts and "
+    "dimensionless evidence categories, not solver outputs, regression logs, "
+    "private paths, or commercial benchmark numbers.",
+    "Use gold rows when the prompt asks what physical quantity should be "
+    "evaluated; use silver rows as runnable topology templates that still need "
+    "problem-specific numeric acceptance criteria.",
+)
 
 FAMILY_META = {
     "application/mri_gradient_shield_12": {
@@ -2275,6 +2290,11 @@ def build_public_quality_gates() -> list[dict[str, str]]:
             build_cross_validation_summary(include_gates=False)
         )
     )
+    gates.extend(
+        _build_validation_matrix_gates(
+            build_validation_matrix(include_gates=False)
+        )
+    )
 
     return gates
 
@@ -2893,6 +2913,237 @@ def build_cross_validation_summary(
     return summary
 
 
+def _quantity_matches_filter(key: str, needle: str) -> bool:
+    if not needle:
+        return True
+    definition = PHYSICAL_QUANTITY_DEFINITIONS[key]
+    haystack = " ".join(
+        [
+            key,
+            definition["display"],
+            definition["observable"],
+            definition["validation_focus"],
+        ]
+    ).lower()
+    return needle in haystack
+
+
+def _append_unique_paths(target: list[str], paths: list[str], limit: int = 3) -> None:
+    for path in paths:
+        if path not in target:
+            target.append(path)
+        if len(target) >= limit:
+            break
+
+
+def _build_validation_matrix_gates(summary: dict[str, Any]) -> list[dict[str, str]]:
+    family_rows = summary["families"]
+    quantity_rows = summary["quantities"]
+    gold_anchor_gaps = [
+        key
+        for key in GOLD_PHYSICS_ANCHORS
+        if quantity_rows.get(key, {}).get("gold_cases", 0) <= 0
+    ]
+    missing_methods = [
+        row["family"] for row in family_rows if not row["validation_methods"]
+    ]
+    missing_representatives = [
+        row["family"] for row in family_rows if not row["representative_paths"]
+    ]
+    missing_next_calls = [
+        row["family"] for row in family_rows if not row["recommended_calls"]
+    ]
+    return [
+        _public_gate(
+            "validation_matrix_covers_all_families",
+            summary["selected_family_count"] == summary["total_families"],
+            (
+                f"{summary['selected_family_count']} of {summary['total_families']} "
+                "families appear in the unfiltered validation matrix"
+            ),
+        ),
+        _public_gate(
+            "validation_matrix_covers_gold_physics_anchors",
+            not gold_anchor_gaps,
+            (
+                f"{len(GOLD_PHYSICS_ANCHORS) - len(gold_anchor_gaps)} "
+                f"of {len(GOLD_PHYSICS_ANCHORS)} gold physics anchors have gold cases"
+            ),
+        ),
+        _public_gate(
+            "validation_matrix_has_cross_validation_methods",
+            not missing_methods,
+            f"{len(missing_methods)} families lack matrix cross-validation methods",
+        ),
+        _public_gate(
+            "validation_matrix_has_representatives",
+            not missing_representatives,
+            f"{len(missing_representatives)} families lack representative .mai paths",
+        ),
+        _public_gate(
+            "validation_matrix_has_next_calls",
+            not missing_next_calls,
+            f"{len(missing_next_calls)} families lack next MCP calls",
+        ),
+    ]
+
+
+def build_validation_matrix(
+    quantity: str | None = None,
+    family: str | None = None,
+    label: str | None = None,
+    include_gates: bool = True,
+) -> dict[str, Any]:
+    """Build a prompt-routing matrix across quantities, quality, and validation."""
+    manifest = load_validated_manifest()
+    quantity_filter = (quantity or "").strip().lower()
+    family_filter = (family or "").strip().lower()
+    label_filter = (label or "").strip().lower()
+    physical = build_physical_quantity_summary(include_gates=False)
+    cross_validation = build_cross_validation_summary(include_gates=False)
+    cross_by_family = {
+        row["family"]: row
+        for row in cross_validation["families"]
+    }
+
+    quantity_accumulator: dict[str, dict[str, Any]] = {
+        key: {
+            "display": definition["display"],
+            "observable": definition["observable"],
+            "validation_focus": definition["validation_focus"],
+            "families": set(),
+            "cases": 0,
+            "gold_cases": 0,
+            "silver_cases": 0,
+            "validation_methods": set(),
+            "representative_paths": [],
+        }
+        for key, definition in PHYSICAL_QUANTITY_DEFINITIONS.items()
+    }
+    family_rows = []
+
+    for prow in physical["families"]:
+        fam = prow["family"]
+        if family_filter and family_filter not in fam.lower():
+            continue
+        validation = get_family_validation(fam)
+        quality = quality_label_for_level(validation.get("validation_level", ""))
+        if (
+            label_filter
+            and label_filter not in quality["label"].lower()
+            and label_filter not in quality["display"].lower()
+            and label_filter not in validation.get("validation_level", "").lower()
+        ):
+            continue
+        quantity_keys = [
+            key
+            for key in prow["quantity_keys"]
+            if _quantity_matches_filter(key, quantity_filter)
+        ]
+        if not quantity_keys:
+            continue
+
+        cross_row = cross_by_family.get(fam, {})
+        methods = [
+            {
+                "check": method["check"],
+                "display": method["display"],
+                "strength": method["strength"],
+                "public_observable": method.get("public_observable", ""),
+            }
+            for method in cross_row.get("cross_validation_methods", [])
+        ]
+        method_checks = [method["check"] for method in methods]
+        representatives = representative_paths_for_family(fam, limit=3)
+        short_family = fam.rsplit("/", 1)[-1]
+        recommended_calls = [
+            f'elf_sample_decks_route("{prow["title"]}")',
+            f'elf_sample_decks_playbook(limit=10, family="{short_family}")',
+            f'elf_sample_decks_validation(family="{short_family}")',
+            f'elf_sample_decks_cross_validation(family="{short_family}")',
+        ]
+
+        for key in quantity_keys:
+            qrow = quantity_accumulator[key]
+            qcases = int(prow["quantity_cases"].get(key, prow["cases"]))
+            qrow["families"].add(fam)
+            qrow["cases"] += qcases
+            if quality["label"] == "gold_numeric_invariant":
+                qrow["gold_cases"] += qcases
+            elif quality["label"] == "silver_proxy_energy":
+                qrow["silver_cases"] += qcases
+            qrow["validation_methods"].update(method_checks)
+            _append_unique_paths(qrow["representative_paths"], representatives, limit=3)
+
+        family_rows.append(
+            {
+                "family": fam,
+                "title": prow["title"],
+                "cases": int(prow["cases"]),
+                "validation_level": validation.get("validation_level", ""),
+                "quality_label": quality["label"],
+                "quality_display": quality["display"],
+                "recommended_use": quality["recommended_use"],
+                "quantity_keys": quantity_keys,
+                "evidence_contract": [
+                    {
+                        "quantity": key,
+                        "observable": PHYSICAL_QUANTITY_DEFINITIONS[key]["observable"],
+                        "validation_focus": PHYSICAL_QUANTITY_DEFINITIONS[key]["validation_focus"],
+                    }
+                    for key in quantity_keys
+                ],
+                "validation_methods": methods,
+                "has_independent_cross_validation": bool(
+                    cross_row.get("has_independent_cross_validation", False)
+                ),
+                "representative_paths": representatives,
+                "recommended_calls": recommended_calls,
+            }
+        )
+
+    serial_quantities = {}
+    for key in PHYSICAL_QUANTITY_ORDER:
+        row = quantity_accumulator[key]
+        if not row["families"]:
+            continue
+        serial_quantities[key] = {
+            "display": row["display"],
+            "observable": row["observable"],
+            "validation_focus": row["validation_focus"],
+            "families": len(row["families"]),
+            "cases": row["cases"],
+            "gold_cases": row["gold_cases"],
+            "silver_cases": row["silver_cases"],
+            "validation_methods": sorted(row["validation_methods"]),
+            "representative_paths": list(row["representative_paths"]),
+        }
+
+    summary = {
+        "schema_version": manifest.get("schema_version"),
+        "total_cases": int(manifest.get("total_cases", 0)),
+        "total_families": len(manifest.get("families", {})),
+        "selected_cases": sum(row["cases"] for row in family_rows),
+        "selected_family_count": len(family_rows),
+        "quantity_filter": quantity or "",
+        "family_filter": family or "",
+        "label_filter": label or "",
+        "quantities": serial_quantities,
+        "families": family_rows,
+        "notes": list(VALIDATION_MATRIX_NOTES),
+    }
+    if include_gates and not quantity_filter and not family_filter and not label_filter:
+        gates = _build_validation_matrix_gates(summary)
+        summary["validation_matrix_gate_status"] = (
+            "PASS" if all(gate["status"] == "PASS" for gate in gates) else "FAIL"
+        )
+        summary["validation_matrix_gates"] = gates
+    else:
+        summary["validation_matrix_gate_status"] = ""
+        summary["validation_matrix_gates"] = []
+    return summary
+
+
 def build_quality_summary(family: str | None = None, label: str | None = None) -> dict[str, Any]:
     """Build quality-label counts and selected family rows for MCP clients."""
     manifest = load_validated_manifest()
@@ -3109,6 +3360,81 @@ def format_validation_summary(summary: dict[str, Any], max_families: int = 20) -
             lines.append(f"- ... {hidden_batches} more checkpoint batches.")
     lines.extend(["", "## Recommended MCP calls"])
     lines.extend(f"- `{call}`" for call in summary["recommended_calls"])
+    return "\n".join(lines).rstrip()
+
+
+def format_validation_matrix(summary: dict[str, Any], max_families: int = 24) -> str:
+    """Format the prompt-to-validation matrix as Markdown."""
+    lines = [
+        "# Public sample-deck validation matrix",
+        "",
+        (
+            f"- corpus: {summary['total_cases']} cases, "
+            f"{summary['total_families']} families"
+        ),
+        (
+            f"- selected: {summary['selected_cases']} cases, "
+            f"{summary['selected_family_count']} families"
+        ),
+    ]
+    filters = []
+    if summary["quantity_filter"]:
+        filters.append(f"quantity contains `{summary['quantity_filter']}`")
+    if summary["family_filter"]:
+        filters.append(f"family contains `{summary['family_filter']}`")
+    if summary["label_filter"]:
+        filters.append(f"label contains `{summary['label_filter']}`")
+    lines.append(f"- filter: {', '.join(filters) if filters else 'none'}")
+
+    if summary.get("validation_matrix_gates"):
+        lines.extend(["", f"## Validation Matrix Gates ({summary['validation_matrix_gate_status']})"])
+        for gate in summary["validation_matrix_gates"]:
+            lines.append(f"- {gate['status']} `{gate['gate']}`: {gate['detail']}")
+
+    lines.extend(["", "## Quantity Matrix"])
+    for key, row in summary["quantities"].items():
+        methods = ", ".join(f"`{method}`" for method in row["validation_methods"])
+        if not methods:
+            methods = "none"
+        reps = ", ".join(f"`{path}`" for path in row["representative_paths"])
+        lines.append(
+            f"- `{key}` ({row['display']}): {row['families']} families, "
+            f"{row['cases']} quantity-case hits, "
+            f"{row['gold_cases']} gold, {row['silver_cases']} silver"
+        )
+        lines.append(f"  observable: {row['observable']}")
+        lines.append(f"  validation focus: {row['validation_focus']}")
+        lines.append(f"  methods: {methods}")
+        if reps:
+            lines.append(f"  representatives: {reps}")
+
+    lines.extend(["", "## Family Routes"])
+    shown = summary["families"][: max(0, max_families)]
+    for row in shown:
+        quantities = ", ".join(f"`{key}`" for key in row["quantity_keys"])
+        methods = ", ".join(
+            f"`{method['check']}`" for method in row["validation_methods"]
+        )
+        if not methods:
+            methods = "none"
+        lines.append(
+            f"- `{row['family']}`: {row['cases']} cases, "
+            f"`{row['quality_label']}`, quantities: {quantities}"
+        )
+        lines.append(f"  validation: `{row['validation_level']}`, methods: {methods}")
+        if row["representative_paths"]:
+            lines.append(
+                "  representative: "
+                + ", ".join(f"`{path}`" for path in row["representative_paths"][:2])
+            )
+        if row["recommended_calls"]:
+            lines.append(f"  next call: `{row['recommended_calls'][0]}`")
+    hidden = summary["selected_family_count"] - len(shown)
+    if hidden > 0:
+        lines.append(f"- ... {hidden} more families. Narrow with `quantity=`, `family=`, or `label=`.")
+
+    lines.extend(["", "## Public-Safe Notes"])
+    lines.extend(f"- {note}" for note in summary["notes"])
     return "\n".join(lines).rstrip()
 
 

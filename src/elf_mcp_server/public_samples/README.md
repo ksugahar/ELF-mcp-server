@@ -72,6 +72,10 @@ Representative routing:
   flux linkage, inductance/co-energy, force/torque-gradient, AC-loss,
   magnetic-circuit, permanent-magnet, transformer-coupling, WPT, MRI,
   actuator, and accelerator quantities without bundling solver outputs.
+- `elf_sample_decks_validation_matrix(quantity="transformer")` joins physical
+  quantity, public observable, quality label, validation methods,
+  representative `.mai` decks, and next MCP calls so agents can answer prompts
+  without guessing which quantity to evaluate.
 - `elf_sample_decks_cross_validation()` audits the validation contract across
   all 1600 cases. It requires every family to have an independent NGSolve
   cross-check, reports that no family is missing one, and separates stronger

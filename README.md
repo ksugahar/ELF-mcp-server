@@ -12,7 +12,7 @@ This server does **not** execute ELF600 simulations — it provides curated docu
 
 ## Features
 
-**31 tools + 1 prompt** providing curated docs, workflow recipes, ELF-runnable public sample decks, representative sample tours, quality labels, physical-quantity coverage, cross-validation audits, prompt-to-sample routing, validation summaries, promotion copy, and raw access to ELF600 help HTM, example inputs, vendor wiki, and Python ctypes API:
+**32 tools + 1 prompt** providing curated docs, workflow recipes, ELF-runnable public sample decks, representative sample tours, quality labels, physical-quantity coverage, validation matrices, cross-validation audits, prompt-to-sample routing, validation summaries, promotion copy, and raw access to ELF600 help HTM, example inputs, vendor wiki, and Python ctypes API:
 
 | Tool family | Purpose | Files |
 |---|---|---|
@@ -31,7 +31,7 @@ summarizes 100 `.mai` examples as compact cards with detected SOL blocks,
 element families, feature tags, companion `.mei/.model` files, and reuse hints.
 The recipe family also has `elf_plan_workflow(goal)`, which chooses a short
 public-safe recipe sequence from a natural-language analysis goal.
-The sample deck family has `elf_sample_decks_index/search/route/validation/cross_validation/quality/physics/representatives/get/playbook`
+The sample deck family has `elf_sample_decks_index/search/route/validation/validation_matrix/cross_validation/quality/physics/representatives/get/playbook`
 for ELF-runnable public `.mai`/`.meg` decks. `elf_sample_decks_route(goal)`
 maps a user prompt such as "IPM hairpin motor flux linkage" or
 "WPT misalignment" to the most relevant public deck families, follow-up MCP
@@ -46,7 +46,9 @@ manifest coverage, public-boundary hygiene, solver-output exclusion, and the
 `application/motor` hierarchy. `elf_sample_decks_physics()` maps the corpus to
 physical quantities such as flux linkage, inductance/co-energy, force/torque,
 AC loss, permanent-magnet flux, transformer coupling, WPT coupling, and MRI
-shield response. `elf_sample_decks_cross_validation()` audits whether every
+shield response. `elf_sample_decks_validation_matrix()` joins quantities,
+quality labels, validation methods, representative decks, and next MCP calls
+into a prompt-routing audit table. `elf_sample_decks_cross_validation()` audits whether every
 family has an independent NGSolve cross-check, separates gold dual-invariant
 families from silver proxy-energy families, and lists silver-to-gold upgrade
 candidates. `elf_public_promotion()` returns public-safe Japanese/English
@@ -74,6 +76,8 @@ public boundary. The most useful calls while authoring ELF/MAGIC inputs are:
   numeric-invariant families
 - `elf_sample_decks_physics(quantity="force")` to inspect physical-quantity
   coverage before choosing sample decks or making validation claims
+- `elf_sample_decks_validation_matrix(quantity="transformer")` to map prompt
+  intent to physical quantity, quality label, validation method, and first deck
 - `elf_sample_decks_cross_validation()` to audit independent cross-validation
   coverage and find any remaining validation gaps
 - `elf_public_promotion(audience="ja")` to draft a public-safe Japanese
