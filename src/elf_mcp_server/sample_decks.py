@@ -41,8 +41,9 @@ VALIDATION_LIMITATIONS = (
     "`ngsolve_proxy_energy` is a broad independent proxy-field gate for deck "
     "sanity, not a full absolute field/force/torque/loss agreement suite.",
     "`ngsolve_numeric_invariant` is used for numeric anchor families where "
-    "ELF FLUM-derived flux, energy, force/torque-gradient, AC-loss, and "
-    "magnetic-circuit invariants and NGSolve proxy invariants are both checked.",
+    "ELF FLUM-derived flux, energy, force/torque-gradient, AC-loss, "
+    "magnetic-circuit, and permanent-magnet invariants and NGSolve proxy "
+    "invariants are both checked.",
 )
 
 FAMILY_META = {
@@ -978,6 +979,36 @@ FAMILY_META.update(
             ),
             "hint": "Use for MMB8T/HBUN/HBCU magnetic-circuit decks with FLUM and NGSolve proxy checks covering B-H slope, air-gap reluctance, core area/depth, current/turn scaling, return-yoke continuity, and add/cancel bias behavior.",
         },
+        "application/numeric_permanent_magnet_100": {
+            "title": "Numeric permanent-magnet and magnetization validation campaign",
+            "tags": (
+                "application",
+                "numeric-validation",
+                "permanent-magnet",
+                "pm",
+                "magnetization",
+                "hbrm",
+                "hbcn",
+                "vec3",
+                "mwl8t",
+                "pickup-coupling",
+                "remanence",
+                "distance-decay",
+                "magnet-volume",
+                "angle-cosine",
+                "polarity-reversal",
+                "lateral-symmetry",
+                "add-cancel",
+                "array-count",
+                "pickup-turn-scaling",
+                "flum",
+                "ngsolve-crossval",
+                "ngsolve-numeric-invariant",
+                "validation-level:numeric-invariant",
+                "mcl8t",
+            ),
+            "hint": "Use for MWL8T/HBRM/HBCN/VEC3 permanent-magnet decks with pickup FLUM and NGSolve proxy checks covering remanence, distance, magnet volume/depth, magnetization angle, polarity reversal, symmetry, add/cancel, array count, and pickup-turn scaling.",
+        },
         "application/numeric_force_torque_100": {
             "title": "Numeric force and torque-gradient validation campaign",
             "tags": (
@@ -1250,6 +1281,32 @@ SAMPLE_ROUTE_RULES: tuple[dict[str, Any], ...] = (
 )
 
 SAMPLE_ROUTE_RULES = (
+    {
+        "intent": "Numeric permanent-magnet and magnetization validation",
+        "family": "application/numeric_permanent_magnet_100",
+        "query": "numeric permanent magnet HBRM HBCN VEC3 magnetization angle polarity FLUM",
+        "recipe": "pm_airgap_field",
+        "terms": (
+            "permanent magnet",
+            "permanent-magnet",
+            "pm scaling",
+            "hbrm",
+            "hbcn",
+            "vec3",
+            "mwl8t",
+            "magnetization angle",
+            "magnet angle",
+            "remanence",
+            "polarity reversal",
+            "magnet polarity",
+            "magnet volume",
+            "pickup turn",
+            "magnet array",
+            "add cancel",
+            "add/cancel",
+        ),
+        "why": "Use these decks when the prompt asks how to validate MWL8T/HBRM/HBCN/VEC3 permanent-magnet behavior, magnetization direction, polarity, PM volume, array count, or pickup-turn coupling before detailed motor PM studies.",
+    },
     {
         "intent": "Numeric magnetic-circuit and B-H scaling validation",
         "family": "application/numeric_magnetic_circuit_100",
@@ -1699,12 +1756,14 @@ def build_validation_summary(
         "limitations": list(VALIDATION_LIMITATIONS),
         "recommended_calls": [
             'elf_sample_decks_validation(level="ngsolve_numeric_invariant")',
+            'elf_sample_decks_validation(family="numeric_permanent_magnet")',
             'elf_sample_decks_validation(family="numeric_magnetic_circuit")',
             'elf_sample_decks_validation(family="numeric_ac_loss")',
             'elf_sample_decks_validation(family="numeric_force_torque")',
             'elf_sample_decks_validation(family="numeric_inductance_energy")',
             'elf_sample_decks_validation(family="numeric_flum_law")',
             'elf_sample_decks_validation(family="numeric_validation")',
+            'elf_sample_decks_route("permanent magnet HBRM polarity FLUM")',
             'elf_sample_decks_route("magnetic circuit air gap HBCU")',
             'elf_sample_decks_route("AC loss frequency square OHM2")',
             'elf_sample_decks_route("force torque co-energy gradient")',

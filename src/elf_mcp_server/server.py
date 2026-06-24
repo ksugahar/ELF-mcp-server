@@ -132,8 +132,8 @@ def elf_overview() -> dict:
                 "call": "elf_sample_decks_route('IPM hairpin motor flux linkage')",
             },
             {
-                "goal": "Learn from the 1400 public input-deck cases",
-                "call": "elf_sample_decks_playbook(limit=20, query='magnetic circuit air gap')",
+                "goal": "Learn from the 1500 public input-deck cases",
+                "call": "elf_sample_decks_playbook(limit=20, query='permanent magnet HBRM')",
             },
             {
                 "goal": "Check validation levels before claiming a deck is validated",
@@ -539,7 +539,7 @@ def elf_sample_decks_get(path: str, max_chars: int = 60000) -> str:
 @mcp.tool()
 def elf_sample_decks_playbook(limit: int = 100, family: str = "", query: str = "") -> str:
     """
-    Build compact cards from the 1400 public ELF-runnable `.mai`/`.meg` cases.
+    Build compact cards from the 1500 public ELF-runnable `.mai`/`.meg` cases.
 
     Each card links the `.mai` and `.meg` pair and summarizes detected SOL
     blocks, PRE keywords, element types, feature tags, and a reuse hint. This
@@ -547,7 +547,7 @@ def elf_sample_decks_playbook(limit: int = 100, family: str = "", query: str = "
     every raw file.
 
     Args:
-        limit: Number of cards to return. Default 100. Max 1400.
+        limit: Number of cards to return. Default 100. Max 1500.
         family: Optional family substring, e.g. "pm_square", "cosine",
             "spm", "srm", "sr_motor", "induction", "ipm",
             "emdlab", "afpm", "linear_pm", "stepper", "wound_field",
@@ -558,7 +558,8 @@ def elf_sample_decks_playbook(limit: int = 100, family: str = "", query: str = "
             "relay_solenoid", "hall_sensor", "clutch", or
             "numeric_validation", "numeric_flum_law",
             "numeric_inductance_energy", "numeric_force_torque",
-            "numeric_ac_loss", or "numeric_magnetic_circuit".
+            "numeric_ac_loss", "numeric_magnetic_circuit", or
+            "numeric_permanent_magnet".
         query: Optional keyword filter across paths, tags, and deck text.
 
     Returns:
@@ -582,7 +583,7 @@ def elf_sample_decks_validation(family: str = "", level: str = "") -> str:
         family: Optional family substring such as "numeric_validation",
             "numeric_flum_law", "numeric_inductance_energy",
             "numeric_force_torque", "numeric_ac_loss",
-            "numeric_magnetic_circuit",
+            "numeric_magnetic_circuit", "numeric_permanent_magnet",
             "emdlab_ipm", "wpt", or "motor".
         level: Optional exact validation level, e.g.
             "ngsolve_proxy_energy" or "ngsolve_numeric_invariant".
@@ -1080,8 +1081,9 @@ def main():
         assert "application/numeric_force_torque_100/nft001/nft001.mai" in sd
         assert "application/numeric_ac_loss_100/nal001/nal001.mai" in sd
         assert "application/numeric_magnetic_circuit_100/nmc001/nmc001.mai" in sd
+        assert "application/numeric_permanent_magnet_100/npm001/npm001.mai" in sd
         sd_mai = elf_sample_decks_index(ext="mai")
-        assert sd_mai.count(".mai") == 1400, "Expected 1400 public .mai decks"
+        assert sd_mai.count(".mai") == 1500, "Expected 1500 public .mai decks"
         sd_search = elf_sample_decks_search("HBCN FLUM", top_k=5, ext="mai")
         assert "pm001.mai" in sd_search and "No sample deck matches" not in sd_search
         sd_spm_search = elf_sample_decks_search("SPM HBRM FLUM", top_k=5, ext="mai")
@@ -1135,6 +1137,10 @@ def main():
         assert "application/numeric_magnetic_circuit_100" in sd_magnetic_circuit_search
         sd_magnetic_circuit_route = elf_sample_decks_route("magnetic circuit air gap HBCU", limit=2)
         assert "application/numeric_magnetic_circuit_100" in sd_magnetic_circuit_route
+        sd_permanent_magnet_search = elf_sample_decks_search("permanent magnet HBRM polarity FLUM", top_k=5, ext="mai")
+        assert "application/numeric_permanent_magnet_100" in sd_permanent_magnet_search
+        sd_permanent_magnet_route = elf_sample_decks_route("permanent magnet HBRM polarity FLUM", limit=2)
+        assert "application/numeric_permanent_magnet_100" in sd_permanent_magnet_route
         sd_app_search = elf_sample_decks_search("MRI OHM2 FREQ", top_k=5, ext="mai")
         assert "application/mri" in sd_app_search
         sd_wpt_search = elf_sample_decks_search("WPT MOMC FLUM", top_k=5, ext="mai")
@@ -1204,8 +1210,10 @@ def main():
         assert sd_ac_loss_pb.count("\n## ") == 100, "Expected numeric AC loss cards"
         sd_magnetic_circuit_pb = elf_sample_decks_playbook(limit=110, family="numeric_magnetic_circuit")
         assert sd_magnetic_circuit_pb.count("\n## ") == 100, "Expected numeric magnetic circuit cards"
+        sd_permanent_magnet_pb = elf_sample_decks_playbook(limit=110, family="numeric_permanent_magnet")
+        assert sd_permanent_magnet_pb.count("\n## ") == 100, "Expected numeric permanent magnet cards"
         sd_validation = elf_sample_decks_validation()
-        assert "1400 cases" in sd_validation
+        assert "1500 cases" in sd_validation
         assert "ngsolve_proxy_energy" in sd_validation
         assert "ngsolve_numeric_invariant" in sd_validation
         assert "not a full absolute field/force/torque/loss agreement suite" in sd_validation
@@ -1229,14 +1237,18 @@ def main():
         sd_magnetic_circuit_validation = elf_sample_decks_validation(family="numeric_magnetic_circuit")
         assert "application/numeric_magnetic_circuit_100" in sd_magnetic_circuit_validation
         assert "100 cases" in sd_magnetic_circuit_validation
+        sd_permanent_magnet_validation = elf_sample_decks_validation(family="numeric_permanent_magnet")
+        assert "application/numeric_permanent_magnet_100" in sd_permanent_magnet_validation
+        assert "100 cases" in sd_permanent_magnet_validation
         sd_invariant_validation = elf_sample_decks_validation(level="ngsolve_numeric_invariant")
-        assert "474 cases" in sd_invariant_validation
+        assert "574 cases" in sd_invariant_validation
         assert "application/numeric_validation_anchors_10" in sd_invariant_validation
         assert "application/numeric_flum_law_64" in sd_invariant_validation
         assert "application/numeric_inductance_energy_100" in sd_invariant_validation
         assert "application/numeric_force_torque_100" in sd_invariant_validation
         assert "application/numeric_ac_loss_100" in sd_invariant_validation
         assert "application/numeric_magnetic_circuit_100" in sd_invariant_validation
+        assert "application/numeric_permanent_magnet_100" in sd_invariant_validation
         sd_loop13_motor_pb = elf_sample_decks_playbook(limit=50, query="Loop13 motor")
         assert sd_loop13_motor_pb.count("\n## ") == 50, "Expected Loop13 motor sample cards"
         assert "wound_field_sync_10" in sd_loop13_motor_pb
@@ -1256,10 +1268,13 @@ def main():
             + sd_ac_loss_search + sd_ac_loss_route + sd_ac_loss_pb
             + sd_magnetic_circuit_search + sd_magnetic_circuit_route
             + sd_magnetic_circuit_pb
+            + sd_permanent_magnet_search + sd_permanent_magnet_route
+            + sd_permanent_magnet_pb
             + sd_validation + sd_numeric_validation + sd_flum_law_validation
             + sd_inductance_validation + sd_force_validation
             + sd_ac_loss_validation
             + sd_magnetic_circuit_validation
+            + sd_permanent_magnet_validation
             + sd_invariant_validation
             + sd_loop13_motor_pb + sd_loop13_app_pb
             + sd_wpt_loop_search + sd_mri_loop_search + sd_sr_loop_search
@@ -1274,7 +1289,7 @@ def main():
         )
         forbidden_sample_markers = ("C:" + "\\temp", "S:" + "\\", "_cross" + "val", ".mag", ".mao")
         assert not any(marker in sample_text for marker in forbidden_sample_markers)
-        print("  1400-case .mai/.meg sample deck corpus OK")
+        print("  1500-case .mai/.meg sample deck corpus OK")
 
         # 10. Recipe tools
         print("[10/16] elf_recipe tools:")

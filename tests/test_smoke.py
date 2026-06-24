@@ -94,9 +94,9 @@ def test_public_sample_decks_are_runnable_inputs_only():
         get_sample_deck,
     )
     decks = list_sample_decks()
-    assert len(decks) == 2800
-    assert sum(1 for d in decks if d["ext"] == "mai") == 1400
-    assert sum(1 for d in decks if d["ext"] == "meg") == 1400
+    assert len(decks) == 3000
+    assert sum(1 for d in decks if d["ext"] == "mai") == 1500
+    assert sum(1 for d in decks if d["ext"] == "meg") == 1500
     assert any(d["path"] == "motor/pm_cosine_pickup_72/pm001/pm001.mai" for d in decks)
     assert any(d["path"] == "motor/spm_surface_pm_10/spm001/spm001.mai" for d in decks)
     assert any(d["path"] == "motor/srm_switched_reluctance_10/srm001/srm001.mai" for d in decks)
@@ -142,6 +142,10 @@ def test_public_sample_decks_are_runnable_inputs_only():
     )
     assert any(
         d["path"] == "application/numeric_magnetic_circuit_100/nmc001/nmc001.mai"
+        for d in decks
+    )
+    assert any(
+        d["path"] == "application/numeric_permanent_magnet_100/npm001/npm001.mai"
         for d in decks
     )
     assert any(d["path"] == "motor/ipm_interior_pm_10/ipm001/ipm001.mai" for d in decks)
@@ -240,9 +244,9 @@ def test_public_sample_decks_are_runnable_inputs_only():
     )
     with open(manifest_path, encoding="ascii") as f:
         manifest = json.load(f)
-    assert manifest["total_cases"] == 1400
-    assert manifest["total_input_files"] == 2800
-    assert len(manifest["families"]) == 70
+    assert manifest["total_cases"] == 1500
+    assert manifest["total_input_files"] == 3000
+    assert len(manifest["families"]) == 71
     assert all(v["validation"] == "passed" for v in manifest["families"].values())
     assert all(v["validation_level"] for v in manifest["families"].values())
     levels = {v["validation_level"] for v in manifest["families"].values()}
@@ -285,24 +289,29 @@ def test_public_sample_decks_are_runnable_inputs_only():
     assert magnetic_circuit_manifest["validation_level"] == "ngsolve_numeric_invariant"
     assert "elf_flux_invariants_passed" in magnetic_circuit_manifest["checks"]
     assert "ngsolve_numeric_invariants_passed" in magnetic_circuit_manifest["checks"]
+    permanent_magnet_manifest = manifest["families"]["application/numeric_permanent_magnet_100"]
+    assert permanent_magnet_manifest["cases"] == 100
+    assert permanent_magnet_manifest["validation_level"] == "ngsolve_numeric_invariant"
+    assert "elf_flux_invariants_passed" in permanent_magnet_manifest["checks"]
+    assert "ngsolve_numeric_invariants_passed" in permanent_magnet_manifest["checks"]
     validation_summary = build_validation_summary()
-    assert validation_summary["total_cases"] == 1400
-    assert validation_summary["total_input_files"] == 2800
-    assert validation_summary["total_families"] == 70
+    assert validation_summary["total_cases"] == 1500
+    assert validation_summary["total_input_files"] == 3000
+    assert validation_summary["total_families"] == 71
     assert validation_summary["level_counts"]["ngsolve_proxy_energy"]["families"] == 64
     assert validation_summary["level_counts"]["ngsolve_proxy_energy"]["cases"] == 926
-    assert validation_summary["level_counts"]["ngsolve_numeric_invariant"]["families"] == 6
-    assert validation_summary["level_counts"]["ngsolve_numeric_invariant"]["cases"] == 474
+    assert validation_summary["level_counts"]["ngsolve_numeric_invariant"]["families"] == 7
+    assert validation_summary["level_counts"]["ngsolve_numeric_invariant"]["cases"] == 574
     publication_batches = build_publication_batch_summary()
     assert publication_batches["checkpoint_size"] == 100
-    assert publication_batches["total_cases"] == 1400
-    assert publication_batches["total_batches"] == 14
-    assert publication_batches["full_100_case_batches"] == 14
+    assert publication_batches["total_cases"] == 1500
+    assert publication_batches["total_batches"] == 15
+    assert publication_batches["full_100_case_batches"] == 15
     assert publication_batches["remainder_cases"] == 0
-    assert publication_batches["next_checkpoint_cases"] == 1500
+    assert publication_batches["next_checkpoint_cases"] == 1600
     assert publication_batches["additional_cases_needed_for_next_100_case_checkpoint"] == 100
     validation_text = format_validation_summary(validation_summary)
-    assert "1400 cases" in validation_text
+    assert "1500 cases" in validation_text
     assert "ngsolve_proxy_energy" in validation_text
     assert "not a full absolute field/force/torque/loss agreement suite" in validation_text
     assert "100-case publication checkpoints" in validation_text
@@ -332,6 +341,10 @@ def test_public_sample_decks_are_runnable_inputs_only():
     assert magnetic_circuit_summary["selected_family_count"] == 1
     assert magnetic_circuit_summary["families"][0]["family"] == "application/numeric_magnetic_circuit_100"
     assert magnetic_circuit_summary["families"][0]["cases"] == 100
+    permanent_magnet_summary = build_validation_summary(family="numeric_permanent_magnet")
+    assert permanent_magnet_summary["selected_family_count"] == 1
+    assert permanent_magnet_summary["families"][0]["family"] == "application/numeric_permanent_magnet_100"
+    assert permanent_magnet_summary["families"][0]["cases"] == 100
     hits = search_sample_decks("HBCN FLUM", ext="mai")
     assert hits
     assert hits[0]["path"].endswith(".mai")
@@ -394,6 +407,9 @@ def test_public_sample_decks_are_runnable_inputs_only():
     magnetic_circuit_hits = search_sample_decks("magnetic circuit air gap HBCU", ext="mai")
     assert magnetic_circuit_hits
     assert magnetic_circuit_hits[0]["path"].startswith("application/numeric_magnetic_circuit_100")
+    permanent_magnet_hits = search_sample_decks("permanent magnet HBRM polarity FLUM", ext="mai")
+    assert permanent_magnet_hits
+    assert permanent_magnet_hits[0]["path"].startswith("application/numeric_permanent_magnet_100")
     route = route_sample_decks("I want an IPM hairpin motor flux linkage deck", limit=3)
     assert route
     assert route[0]["family"] == "motor/emdlab_ipm_hairpin_10"
@@ -420,6 +436,8 @@ def test_public_sample_decks_are_runnable_inputs_only():
     assert ac_loss_route[0]["family"] == "application/numeric_ac_loss_100"
     magnetic_circuit_route = route_sample_decks("magnetic circuit air gap HBCU", limit=2)
     assert magnetic_circuit_route[0]["family"] == "application/numeric_magnetic_circuit_100"
+    permanent_magnet_route = route_sample_decks("permanent magnet HBRM polarity FLUM", limit=2)
+    assert permanent_magnet_route[0]["family"] == "application/numeric_permanent_magnet_100"
     wound_route = route_sample_decks("wound-field synchronous motor rotor field", limit=2)
     assert wound_route[0]["family"] == "motor/wound_field_sync_10"
     stepper_route = route_sample_decks("stepper motor detent angle", limit=2)
@@ -490,8 +508,8 @@ def test_public_sample_decks_are_runnable_inputs_only():
     assert "HBCN 1 0 1" in text
     assert "HBCN 2 0 2" in text
     assert "FLUM  49" in text
-    cards = build_sample_deck_cards(limit=1400)
-    assert len(cards) == 1400
+    cards = build_sample_deck_cards(limit=1500)
+    assert len(cards) == 1500
     spm_cards = build_sample_deck_cards(limit=20, family="spm_surface_pm_10")
     assert len(spm_cards) == 10
     assert "spm" in spm_cards[0]["tags"]
@@ -562,6 +580,7 @@ def test_public_sample_decks_are_runnable_inputs_only():
         ("application/numeric_force_torque_100", "force", "MCL8T"),
         ("application/numeric_ac_loss_100", "ac-loss", "MAB8T"),
         ("application/numeric_magnetic_circuit_100", "magnetic-circuit", "MMB8T"),
+        ("application/numeric_permanent_magnet_100", "permanent-magnet", "MWL8T"),
     ]
     expected_family_lengths = {
         "application/numeric_flum_law_64": 64,
@@ -569,6 +588,7 @@ def test_public_sample_decks_are_runnable_inputs_only():
         "application/numeric_force_torque_100": 100,
         "application/numeric_ac_loss_100": 100,
         "application/numeric_magnetic_circuit_100": 100,
+        "application/numeric_permanent_magnet_100": 100,
     }
     for family, tag, element in loop_family_checks:
         family_cards = build_sample_deck_cards(limit=120, family=family)

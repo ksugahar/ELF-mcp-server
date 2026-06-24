@@ -10,9 +10,10 @@ workflow recipes, public PM/BLDC/SPM/IPM/IM/SynRM/SRM/AFPM/linear/
 stepper/wound-field/reluctance/hysteresis motor and WPT/MRI/IH/transformer/
 accelerator-electromagnet/actuator/maglev/brake/NDT/magnetic-gear/voice-coil/
 relay-solenoid/Hall-sensor/clutch/benchmark/numeric-anchor/FLUM-law/
-inductance-energy/force-torque-gradient/AC-loss/magnetic-circuit sample-deck playbooks,
+inductance-energy/force-torque-gradient/AC-loss/magnetic-circuit/
+permanent-magnet sample-deck playbooks,
 bundled help/example/wiki/Python API search, and compact planning aids for
 authoring ELF input files.
 """
 
-__version__ = "1.50.0"
+__version__ = "1.51.0"
