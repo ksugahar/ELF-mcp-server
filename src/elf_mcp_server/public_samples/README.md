@@ -88,6 +88,17 @@ Representative routing:
   cross-check, reports that no family is missing one, and separates stronger
   `gold_numeric_invariant` families from enhanced `silver_observable_contract`
   and broader `silver_proxy_energy` proxy-check families.
+- `elf_sample_decks_duplicates()` audits apparent duplicates before deletion:
+  exact `.mai` + `.meg` pair duplicates are deletion candidates, while `.mai`
+  or `.meg` reuse is treated as intentional design-space coverage that MCP
+  clients should collapse or summarize in concise views.
+- `elf_local_simulation_handoff(goal)` converts a natural-language simulation
+  goal into a public-safe local-runner contract: deck family, physical
+  quantities, runner inputs, parser outputs, and motor design-loop steps. The
+  public MCP server still does not execute ELF/MAGIC or bundle solver outputs.
+- `elf_mcp_readiness()` aggregates the public quality gates, cross-validation
+  gates, duplicate audit, local-runner handoff boundary, and high-value route
+  checks into a release-readiness report before tag push.
 
 For these compact public examples, `.meg` files are generated as small ASCII
 ELF/MAGIC mesh decks directly by lab-authored Python generators. They are not

@@ -58,6 +58,7 @@ def test_tool_surface_and_no_work_family():
     assert "elf_recipe_search" in names
     assert "elf_recipe_get" in names
     assert "elf_plan_workflow" in names
+    assert "elf_mcp_readiness" in names
     assert "elf_sample_decks_index" in names
     assert "elf_sample_decks_get" in names
     assert "elf_sample_decks_route" in names
@@ -69,11 +70,13 @@ def test_tool_surface_and_no_work_family():
     assert "elf_sample_decks_validation_matrix" in names
     assert "elf_sample_decks_observable_contracts" in names
     assert "elf_sample_decks_cross_validation" in names
+    assert "elf_sample_decks_duplicates" in names
+    assert "elf_local_simulation_handoff" in names
     assert "elf_public_promotion" in names
     assert "elf_python_team28" in names
     overview = elf_overview()
     overview_text = str(overview)
-    assert overview["n_tools"] == 33
+    assert overview["n_tools"] == 36
     assert "public_boundary" in overview
     assert "recommended_calls" in overview
     assert "COMSOL" not in overview_text
@@ -91,6 +94,9 @@ def test_public_sample_decks_are_runnable_inputs_only():
         build_sample_deck_cards,
         build_publication_batch_summary,
         build_cross_validation_summary,
+        build_duplicate_audit,
+        build_local_simulation_handoff,
+        build_mcp_readiness,
         build_quality_summary,
         build_observable_contract_summary,
         build_physical_quantity_summary,
@@ -100,6 +106,9 @@ def test_public_sample_decks_are_runnable_inputs_only():
         build_validation_summary,
         format_public_promotion,
         format_cross_validation_summary,
+        format_duplicate_audit,
+        format_local_simulation_handoff,
+        format_mcp_readiness,
         format_observable_contract_summary,
         format_physical_quantity_summary,
         format_quality_summary,
@@ -353,6 +362,7 @@ def test_public_sample_decks_are_runnable_inputs_only():
     assert all(gate["status"] == "PASS" for gate in quality_summary["quality_gates"])
     assert {gate["gate"] for gate in quality_summary["quality_gates"]} >= {
         "paired_mai_meg",
+        "exact_sample_pairs_unique",
         "manifest_matches_files",
         "publication_batches_cover_cases",
         "public_boundary_text",
@@ -419,6 +429,47 @@ def test_public_sample_decks_are_runnable_inputs_only():
     assert "Cross-Validation Gates (PASS)" in cross_validation_text
     assert "No family is missing independent NGSolve cross-validation" in cross_validation_text
     assert "Silver-To-Gold Upgrade Candidates" in cross_validation_text
+    duplicate_audit = build_duplicate_audit()
+    assert duplicate_audit["audit_gate_status"] == "PASS"
+    assert duplicate_audit["delete_recommendation"] == "no_public_deck_deletion_recommended"
+    assert duplicate_audit["exact_pair_duplicate_groups"] == 0
+    assert duplicate_audit["exact_pair_delete_candidates"] == 0
+    assert duplicate_audit["mai_reuse_groups"] >= 1
+    assert duplicate_audit["meg_reuse_groups"] >= 1
+    assert any(
+        gate["gate"] == "exact_sample_pairs_unique" and gate["status"] == "PASS"
+        for gate in duplicate_audit["gates"]
+    )
+    duplicate_text = format_duplicate_audit(duplicate_audit)
+    assert "No exact pair duplicates were found" in duplicate_text
+    assert "MCP Collapse Candidates" in duplicate_text
+    handoff = build_local_simulation_handoff(
+        "SPM motor flux linkage sweep",
+        family="spm",
+        quantity="motor",
+    )
+    assert handoff["schema_version"] == "elf-local-simulation-handoff/v1"
+    assert handoff["selected_routes"]
+    assert handoff["selected_routes"][0]["family"] == "application/motor/spm_surface_pm_10"
+    assert handoff["selected_routes"][0]["representative_decks"]
+    assert "mai_text or mai_path" in handoff["runner_input_contract"]["required"]
+    assert "flux_linkage_FLUM" in handoff["parser_output_contract"]["parsed_observables"]
+    handoff_text = format_local_simulation_handoff(handoff)
+    assert "does not execute ELF/MAGIC" in handoff_text
+    assert "Runner Input Contract" in handoff_text
+    assert "Motor Design Loop" in handoff_text
+    readiness = build_mcp_readiness()
+    assert readiness["readiness"] == "ready_for_tag_push"
+    assert all(gate["status"] == "PASS" for gate in readiness["gates"])
+    assert any(
+        row["name"] == "spm_handoff_routes_to_compact_spm"
+        and row["first_family"] == "application/motor/spm_surface_pm_10"
+        for row in readiness["route_checks"]
+    )
+    readiness_text = format_mcp_readiness(readiness)
+    assert "ready_for_tag_push" in readiness_text
+    assert "Release Steps" in readiness_text
+    assert "S:" + "\\" not in readiness_text
     matrix_summary = build_validation_matrix()
     assert matrix_summary["validation_matrix_gate_status"] == "PASS"
     assert all(
@@ -513,6 +564,8 @@ def test_public_sample_decks_are_runnable_inputs_only():
     srm_hits = search_sample_decks("SRM reluctance FLUM", top_k=20, ext="mai")
     assert srm_hits
     assert any(h["path"].startswith("application/motor/srm_switched_reluctance_10") for h in srm_hits)
+    spm_route = route_sample_decks("SPM motor flux linkage sweep", limit=3)
+    assert spm_route[0]["family"] == "application/motor/spm_surface_pm_10"
     emdlab_ipm_hits = search_sample_decks("EMDLAB-style IPM hairpin FLUM", ext="mai")
     assert emdlab_ipm_hits
     assert emdlab_ipm_hits[0]["path"].startswith("application/motor/emdlab_ipm_hairpin_10")

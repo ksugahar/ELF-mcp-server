@@ -40,6 +40,9 @@ from .sample_decks import (
     build_representative_cards,
     build_team28_cards,
     build_cross_validation_summary,
+    build_duplicate_audit,
+    build_local_simulation_handoff,
+    build_mcp_readiness,
     build_quality_summary,
     build_observable_contract_summary,
     build_physical_quantity_summary,
@@ -48,6 +51,9 @@ from .sample_decks import (
     format_public_promotion,
     format_sample_deck_cards,
     format_cross_validation_summary,
+    format_duplicate_audit,
+    format_local_simulation_handoff,
+    format_mcp_readiness,
     format_observable_contract_summary,
     format_validation_matrix,
     format_representative_cards,
@@ -90,9 +96,9 @@ _TOOL_CATALOG = [
     ("elf_examples_index / search / get / playbook", "C:/ELF600/examples/ "
                                                        "(332 .mai/.mei/.txt, 533 KB) "
                                                        "plus 100 compact example cards"),
-    ("elf_sample_decks_index / search / route / validation / validation_matrix / "
-     "observable_contracts / cross_validation / quality / physics / "
-     "representatives / get / playbook",
+    ("elf_sample_decks_index / search / route / handoff / validation / readiness / "
+     "validation_matrix / observable_contracts / cross_validation / duplicates / "
+     "quality / physics / representatives / get / playbook",
                                               "Lab-authored ELF-runnable "
                                               "public .mai/.meg input decks "
                                               "(input files only; no solver outputs; "
@@ -120,16 +126,16 @@ _RELATED_PUBLIC_PACKAGES = [
 
 @mcp.tool()
 def elf_overview() -> dict:
-    """RECOMMENDED FIRST CALL. Catalog of ELF MCP's 33 tools + 1
+    """RECOMMENDED FIRST CALL. Catalog of ELF MCP's 36 tools + 1
     prompt, with public-safe routing hints for MCP clients.
 
     Returns:
-        dict with `tool_families` (curated 33-tool grouping), `n_tools`,
+        dict with `tool_families` (curated 36-tool grouping), `n_tools`,
         public boundary notes, recommended calls, and public companion package
         hints.
     """
     return {
-        "n_tools": 33,
+        "n_tools": 36,
         "n_prompts": 1,
         "tool_families": [
             {"signature": sig, "description": desc}
@@ -141,12 +147,20 @@ def elf_overview() -> dict:
                 "call": "elf_overview()",
             },
             {
+                "goal": "Check whether the public MCP package is ready for tag push",
+                "call": "elf_mcp_readiness()",
+            },
+            {
                 "goal": "Find the right ELF/MAGIC command pattern",
                 "call": "elf_usage(topic='all') or elf_recipe_search(query)",
             },
             {
                 "goal": "Route a user prompt to the right public input-deck family",
                 "call": "elf_sample_decks_route('IPM hairpin motor flux linkage')",
+            },
+            {
+                "goal": "Prepare a public-safe handoff to a user-local ELF/MAGIC runner",
+                "call": "elf_local_simulation_handoff('SPM motor flux linkage sweep')",
             },
             {
                 "goal": "Learn from the 1600 public input-deck cases",
@@ -175,6 +189,10 @@ def elf_overview() -> dict:
             {
                 "goal": "Audit cross-validation coverage and gaps",
                 "call": "elf_sample_decks_cross_validation()",
+            },
+            {
+                "goal": "Audit duplicate/deck-reuse groups before deleting samples",
+                "call": "elf_sample_decks_duplicates()",
             },
             {
                 "goal": "Draft public-safe promotion copy",
@@ -206,14 +224,17 @@ def elf_overview() -> dict:
         "next_step_hint":
             "Call elf_usage(topic='all') for the 31 curated topic "
             "catalogue, elf_plan_workflow('goal') for a workflow plan, "
+            "elf_mcp_readiness() for release-quality gates, "
             "elf_recipe_search('keyword') for decision cards, or "
             "elf_sample_decks_playbook() for ELF-runnable public .mai/.meg decks, "
             "elf_sample_decks_representatives() for curated first-stop decks, "
             "elf_sample_decks_quality() for quality labels, "
             "elf_sample_decks_physics() for physical-quantity coverage, "
+            "elf_local_simulation_handoff('goal') for public-safe local runner contracts, "
             "elf_sample_decks_validation_matrix() for quantity-to-validation routing, "
             "elf_sample_decks_observable_contracts() for the 500-case observable-contract audit, "
             "elf_sample_decks_cross_validation() for cross-validation gaps, "
+            "elf_sample_decks_duplicates() before deleting apparent duplicates, "
             "elf_sample_decks_validation() for public validation levels and limits, "
             "elf_public_promotion() for public-safe promotion copy, "
             "elf_python_team28() for the Python-interface team28 seed manifest, "
@@ -287,6 +308,23 @@ def elf_usage(topic: str = "all") -> str:
                                  _R return variants, common pitfalls
     """
     return get_elf_documentation(topic)
+
+
+@mcp.tool()
+def elf_mcp_readiness() -> str:
+    """
+    Check public MCP readiness before release/tag push.
+
+    This aggregates publication-quality gates, cross-validation gates, exact
+    duplicate checks, local-runner handoff boundary checks, and high-value
+    prompt routing checks. It is intended for MCP clients and maintainers to
+    decide whether the public package is ready to tag and publish.
+
+    Returns:
+        Markdown readiness report. `ready_for_tag_push` means the public MCP
+        quality gates pass locally; GitHub/PyPI still require tag push and CI.
+    """
+    return format_mcp_readiness(build_mcp_readiness())
 
 
 @mcp.tool()
@@ -564,6 +602,42 @@ def elf_sample_decks_route(goal: str, limit: int = 5) -> str:
 
 
 @mcp.tool()
+def elf_local_simulation_handoff(
+    goal: str,
+    family: str = "",
+    quantity: str = "",
+    limit: int = 3,
+) -> str:
+    """
+    Prepare a public-safe handoff contract for a user-local ELF/MAGIC runner.
+
+    This is the public MCP bridge between LLM prompt routing and actual local
+    simulation. It selects public validated deck families, physical quantities,
+    runner input fields, parser output fields, and a motor-design loop. It does
+    not execute ELF/MAGIC, launch GUI/CLI solvers, or bundle solver outputs.
+
+    Args:
+        goal: Natural-language simulation goal, e.g.
+            "SPM motor flux linkage sweep" or "SRM torque angle sweep".
+        family: Optional public sample family substring, e.g. "spm",
+            "srm", "induction", "ipm", "wpt", or "transformer".
+        quantity: Optional physical-quantity substring, e.g. "flux",
+            "force", "torque", "loss", "motor", or "transformer".
+        limit: Number of candidate deck routes to include. Default 3. Max 8.
+
+    Returns:
+        Markdown handoff contract for a private/local runner and parser.
+    """
+    handoff = build_local_simulation_handoff(
+        goal=goal,
+        family=family or None,
+        quantity=quantity or None,
+        limit=limit,
+    )
+    return format_local_simulation_handoff(handoff)
+
+
+@mcp.tool()
 def elf_sample_decks_get(path: str, max_chars: int = 60000) -> str:
     """
     Get full text of a public runnable ELF/MAGIC sample deck.
@@ -804,6 +878,30 @@ def elf_sample_decks_cross_validation(family: str = "", level: str = "") -> str:
         level=level or None,
     )
     return format_cross_validation_summary(summary)
+
+
+@mcp.tool()
+def elf_sample_decks_duplicates(family: str = "", max_groups: int = 12) -> str:
+    """
+    Audit exact duplicates and intentional deck reuse in the public sample corpus.
+
+    Use this before deleting examples. Exact `.mai` + `.meg` duplicate pairs are
+    the only automatic deletion candidates. Single-file reuse is reported as an
+    MCP display/collapse candidate because it usually means one control pattern
+    is swept across different geometry, or one geometry is swept across
+    different controls, quantities, or validation intents.
+
+    Args:
+        family: Optional family substring such as "motor", "pm_square",
+            "numeric", "srm", "wpt", or "transformer".
+        max_groups: Maximum duplicate/reuse groups to show. Default 12. Max 50.
+
+    Returns:
+        Markdown audit with deletion recommendation, duplicate gates, exact
+        duplicate groups, and single-file reuse groups.
+    """
+    summary = build_duplicate_audit(family=family or None, max_groups=max_groups)
+    return format_duplicate_audit(summary, max_groups=max_groups)
 
 
 @mcp.tool()
@@ -1173,6 +1271,9 @@ def main():
 
         # 1. Curated topics
         print("[1/16] elf_usage topics:")
+        readiness = elf_mcp_readiness()
+        assert "ready_for_tag_push" in readiness
+        assert "S:" + "\\" not in readiness
         topics = [
             "overview", "mai_format", "mei_format", "meg_format",
             "magic", "elfin", "beam", "element_types", "bh_curves",
@@ -1340,6 +1441,8 @@ def main():
         sd_route = elf_sample_decks_route("IPM hairpin motor flux linkage", limit=3)
         assert "application/motor/emdlab_ipm_hairpin_10" in sd_route
         assert "elf_sample_decks_playbook" in sd_route
+        sd_spm_route = elf_sample_decks_route("SPM motor flux linkage sweep", limit=3)
+        assert "application/motor/spm_surface_pm_10" in sd_spm_route.split("## 2.", 1)[0]
         sd_wpt_route = elf_sample_decks_route("WPT misalignment with conducting shield", limit=2)
         assert "application/wpt_misalignment_10" in sd_wpt_route
         sd_outer_route = elf_sample_decks_route("BLDC outer rotor motor", limit=2)
@@ -1516,6 +1619,18 @@ def main():
         sd_gold_cross_validation = elf_sample_decks_cross_validation(level="ngsolve_numeric_invariant")
         assert "674 cases" in sd_gold_cross_validation
         assert "application/numeric_transformer_coupling_100" in sd_gold_cross_validation
+        sd_duplicates = elf_sample_decks_duplicates()
+        assert "Duplicate Gates (PASS)" in sd_duplicates
+        assert "No exact pair duplicates were found" in sd_duplicates
+        sd_handoff = elf_local_simulation_handoff(
+            "SPM motor flux linkage sweep",
+            family="spm",
+            quantity="motor",
+        )
+        assert "ELF/MAGIC local simulation handoff" in sd_handoff
+        assert "Runner Input Contract" in sd_handoff
+        assert "application/motor/spm_surface_pm_10" in sd_handoff
+        assert "does not execute ELF/MAGIC" in sd_handoff
         sd_representatives = elf_sample_decks_representatives()
         assert "why representative" in sd_representatives
         assert "application/motor/emdlab_ipm_hairpin_10/eip001/eip001.mai" in sd_representatives
@@ -1546,7 +1661,7 @@ def main():
             + sd_emdlab_srm_search + sd_emdlab_afpm_search + sd_emdlab_pb
             + sd_loop13_wound_search + sd_loop13_stepper_search
             + sd_loop13_wpt_search + sd_loop13_mri_search
-            + sd_route + sd_wpt_route + sd_outer_route
+            + sd_route + sd_spm_route + sd_wpt_route + sd_outer_route
             + sd_transformer_static_route + sd_ccore_route + sd_numeric_route
             + sd_flum_law_route + sd_inductance_route + sd_force_route
             + sd_ac_loss_search + sd_ac_loss_route + sd_ac_loss_pb
@@ -1566,6 +1681,7 @@ def main():
             + sd_observable_contracts + sd_physics + sd_force_physics
             + sd_validation_matrix + sd_transformer_matrix
             + sd_cross_validation + sd_gold_cross_validation
+            + sd_duplicates + sd_handoff
             + sd_representatives
             + sd_motor_representatives + sd_promotion
             + sd_invariant_validation

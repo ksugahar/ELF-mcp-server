@@ -12,7 +12,7 @@ This server does **not** execute ELF600 simulations — it provides curated docu
 
 ## Features
 
-**33 tools + 1 prompt** providing curated docs, workflow recipes, ELF-runnable public sample decks, representative sample tours, quality labels, physical-quantity coverage, validation matrices, observable-contract audits, cross-validation audits, prompt-to-sample routing, validation summaries, promotion copy, and raw access to ELF600 help HTM, example inputs, vendor wiki, and Python ctypes API:
+**36 tools + 1 prompt** providing curated docs, workflow recipes, ELF-runnable public sample decks, representative sample tours, quality labels, physical-quantity coverage, validation matrices, observable-contract audits, cross-validation audits, duplicate/reuse audits, local simulation handoff contracts, release-readiness gates, prompt-to-sample routing, validation summaries, promotion copy, and raw access to ELF600 help HTM, example inputs, vendor wiki, and Python ctypes API:
 
 | Tool family | Purpose | Files |
 |---|---|---|
@@ -31,7 +31,7 @@ summarizes 100 `.mai` examples as compact cards with detected SOL blocks,
 element families, feature tags, companion `.mei/.model` files, and reuse hints.
 The recipe family also has `elf_plan_workflow(goal)`, which chooses a short
 public-safe recipe sequence from a natural-language analysis goal.
-The sample deck family has `elf_sample_decks_index/search/route/validation/validation_matrix/observable_contracts/cross_validation/quality/physics/representatives/get/playbook`
+The sample deck family has `elf_sample_decks_index/search/route/handoff/validation/readiness/validation_matrix/observable_contracts/cross_validation/duplicates/quality/physics/representatives/get/playbook`
 for ELF-runnable public `.mai`/`.meg` decks. `elf_sample_decks_route(goal)`
 maps a user prompt such as "IPM hairpin motor flux linkage" or
 "WPT misalignment" to the most relevant public deck families, follow-up MCP
@@ -54,7 +54,17 @@ expected FLUM/OHM2/FREQ/HBRM/HBCU markers for their mapped physical quantities.
 `elf_sample_decks_cross_validation()` audits whether every
 family has an independent NGSolve cross-check, separates gold dual-invariant
 families from silver proxy-energy families, and lists silver-to-gold upgrade
-candidates. `elf_public_promotion()` returns public-safe Japanese/English
+candidates. `elf_sample_decks_duplicates()` audits exact duplicate `.mai` +
+`.meg` pairs and separates those deletion candidates from intentional `.mai`
+or `.meg` reuse that MCP clients should collapse or summarize rather than
+delete. `elf_local_simulation_handoff(goal)` turns a prompt into a public-safe
+handoff contract for a user-local ELF/MAGIC runner: selected deck families,
+physical quantities, runner input fields, parser output fields, and the motor
+iteration loop. It does not execute ELF/MAGIC or publish solver outputs.
+`elf_mcp_readiness()` aggregates public quality gates, cross-validation gates,
+duplicate checks, local-runner handoff boundary checks, and key route checks
+into a release-readiness report for maintainers.
+`elf_public_promotion()` returns public-safe Japanese/English
 promotion copy for the corpus.
 The Python family also has
 `elf_python_team28()`: a compact 28-case seed manifest from the public motor
@@ -71,6 +81,7 @@ public boundary. The most useful calls while authoring ELF/MAGIC inputs are:
 - `elf_sample_decks_route("IPM hairpin motor flux linkage")` to map a user
   prompt to the right sample family, playbook call, recipe, and representative
   `.mai` decks
+- `elf_mcp_readiness()` to check release-quality gates before tag push
 - `elf_sample_decks_validation()` to check the public validation levels,
   counts, and limitations before claiming a deck is validated
 - `elf_sample_decks_representatives()` to start from curated first-stop decks
@@ -85,6 +96,10 @@ public boundary. The most useful calls while authoring ELF/MAGIC inputs are:
   observable-contract quality upgrade before publication
 - `elf_sample_decks_cross_validation()` to audit independent cross-validation
   coverage and find any remaining validation gaps
+- `elf_sample_decks_duplicates()` to check whether apparent duplicates are
+  true `.mai` + `.meg` duplicates or intentional geometry/control reuse
+- `elf_local_simulation_handoff("SPM motor flux linkage sweep")` to prepare
+  the runner/parser contract for a user-local ELF/MAGIC execution layer
 - `elf_public_promotion(audience="ja")` to draft a public-safe Japanese
   introduction of the 1600-case corpus
 - `elf_plan_workflow("WPT misalignment with conducting shield")` to get both

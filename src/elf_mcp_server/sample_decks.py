@@ -8,6 +8,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from functools import lru_cache
 from importlib import resources
+import hashlib
 import json
 import re
 from typing import Any
@@ -1617,6 +1618,32 @@ REPRESENTATIVE_CASES: tuple[dict[str, str], ...] = (
 
 SAMPLE_ROUTE_RULES: tuple[dict[str, Any], ...] = (
     {
+        "intent": "Compact surface-PM motor",
+        "family": "application/motor/spm_surface_pm_10",
+        "query": "SPM surface-PM HBRM FLUM motor flux linkage",
+        "recipe": "pm_airgap_field",
+        "terms": (
+            "spm motor",
+            "spm",
+            "motor flux linkage",
+            "surface pm",
+            "surface-pm",
+            "surface permanent magnet",
+            "surface-mounted",
+            "surface mounted",
+            "hbrm",
+        ),
+        "why": "Use these compact SPM decks first when the prompt asks for surface-PM motor flux linkage without requiring a BLDC slot campaign.",
+    },
+    {
+        "intent": "Loop-reviewed SPM motor",
+        "family": "application/motor/spm_loop_10",
+        "query": "Loop10 SPM HBRM FLUM surface-PM motor",
+        "recipe": "pm_airgap_field",
+        "terms": ("loop10 spm", "loop 10 spm", "spm loop", "loop-reviewed spm"),
+        "why": "Use these loop-reviewed SPM decks when the prompt explicitly asks for the Loop10 SPM family or reviewed surface-PM examples.",
+    },
+    {
         "intent": "BLDC or surface-PM motor",
         "family": "application/motor/emdlab_bldc_spm_10",
         "query": "EMDLAB-style BLDC SPM surface-pm FLUM",
@@ -2185,6 +2212,212 @@ def _public_gate(name: str, passed: bool, detail: str) -> dict[str, str]:
     }
 
 
+def _normalise_duplicate_text(text: str) -> str:
+    """Normalize deck text for stable duplicate checks without changing semantics."""
+    normalised = text.replace("\r\n", "\n").replace("\r", "\n")
+    return "\n".join(line.rstrip() for line in normalised.split("\n")).strip()
+
+
+def _duplicate_hash(text: str) -> str:
+    return hashlib.sha256(_normalise_duplicate_text(text).encode("utf-8")).hexdigest()
+
+
+def _sample_duplicate_facts(decks: dict[str, SampleDeck]) -> dict[str, Any]:
+    """Classify exact case duplicates and single-file reuse in public decks."""
+    pair_hashes: dict[str, list[dict[str, str]]] = {}
+    mai_hashes: dict[str, list[dict[str, str]]] = {}
+    meg_hashes: dict[str, list[dict[str, str]]] = {}
+    missing_meg: list[str] = []
+    missing_mai: list[str] = []
+
+    for deck in decks.values():
+        entry = {
+            "path": deck.path,
+            "family": deck.family,
+            "case": deck.case,
+            "ext": deck.ext,
+        }
+        if deck.ext == "mai":
+            mai_hashes.setdefault(_duplicate_hash(deck.text), []).append(entry)
+            meg_path = deck.path.rsplit(".", 1)[0] + ".meg"
+            meg = decks.get(meg_path)
+            if meg is None:
+                missing_meg.append(deck.path)
+                continue
+            pair_key = hashlib.sha256(
+                (
+                    _normalise_duplicate_text(deck.text)
+                    + "\n---MEG---\n"
+                    + _normalise_duplicate_text(meg.text)
+                ).encode("utf-8")
+            ).hexdigest()
+            pair_hashes.setdefault(pair_key, []).append(
+                {
+                    "family": deck.family,
+                    "case": deck.case,
+                    "mai_path": deck.path,
+                    "meg_path": meg_path,
+                }
+            )
+        elif deck.ext == "meg":
+            meg_hashes.setdefault(_duplicate_hash(deck.text), []).append(entry)
+            mai_path = deck.path.rsplit(".", 1)[0] + ".mai"
+            if mai_path not in decks:
+                missing_mai.append(deck.path)
+
+    pair_duplicate_groups = {
+        key: rows for key, rows in pair_hashes.items() if len(rows) > 1
+    }
+    mai_reuse_groups = {
+        key: rows for key, rows in mai_hashes.items() if len(rows) > 1
+    }
+    meg_reuse_groups = {
+        key: rows for key, rows in meg_hashes.items() if len(rows) > 1
+    }
+    cross_family_meg_reuse_groups = {
+        key: rows
+        for key, rows in meg_reuse_groups.items()
+        if len({row["family"] for row in rows}) > 1
+    }
+
+    return {
+        "case_pairs": len(pair_hashes),
+        "missing_meg": sorted(missing_meg),
+        "missing_mai": sorted(missing_mai),
+        "pair_duplicate_groups": pair_duplicate_groups,
+        "mai_reuse_groups": mai_reuse_groups,
+        "meg_reuse_groups": meg_reuse_groups,
+        "cross_family_meg_reuse_groups": cross_family_meg_reuse_groups,
+        "pair_duplicate_cases": sum(len(rows) for rows in pair_duplicate_groups.values()),
+        "pair_delete_candidates": sum(len(rows) - 1 for rows in pair_duplicate_groups.values()),
+        "mai_reuse_files": sum(len(rows) for rows in mai_reuse_groups.values()),
+        "meg_reuse_files": sum(len(rows) for rows in meg_reuse_groups.values()),
+        "cross_family_meg_reuse_files": sum(
+            len(rows) for rows in cross_family_meg_reuse_groups.values()
+        ),
+    }
+
+
+def _duplicate_group_rows(
+    groups: dict[str, list[dict[str, str]]],
+    max_groups: int,
+    *,
+    pair: bool = False,
+) -> list[dict[str, Any]]:
+    rows = []
+    ordered = sorted(groups.items(), key=lambda item: (-len(item[1]), item[0]))
+    for key, entries in ordered[:max(0, max_groups)]:
+        families = sorted({entry["family"] for entry in entries})
+        row: dict[str, Any] = {
+            "hash": key[:12],
+            "count": len(entries),
+            "family_count": len(families),
+            "families": families[:10],
+        }
+        if pair:
+            row["cases"] = [
+                {
+                    "family": entry["family"],
+                    "case": entry["case"],
+                    "mai_path": entry["mai_path"],
+                    "meg_path": entry["meg_path"],
+                }
+                for entry in entries[:10]
+            ]
+        else:
+            row["paths"] = [entry["path"] for entry in entries[:10]]
+        rows.append(row)
+    return rows
+
+
+def build_duplicate_audit(family: str | None = None, max_groups: int = 12) -> dict[str, Any]:
+    """Build an MCP-oriented duplicate audit for public sample decks."""
+    all_decks = load_sample_decks()
+    family_filter = family.lower() if family else ""
+    decks = {
+        path: deck
+        for path, deck in all_decks.items()
+        if not family_filter or family_filter in deck.family.lower()
+    }
+    facts = _sample_duplicate_facts(decks)
+    total_cases = sum(1 for deck in decks.values() if deck.ext == "mai")
+    total_meg = sum(1 for deck in decks.values() if deck.ext == "meg")
+    group_limit = max(0, min(max_groups, 50))
+    pair_duplicate_groups = facts["pair_duplicate_groups"]
+    mai_reuse_groups = facts["mai_reuse_groups"]
+    meg_reuse_groups = facts["meg_reuse_groups"]
+    cross_family_meg_reuse_groups = facts["cross_family_meg_reuse_groups"]
+    gates = [
+        _public_gate(
+            "paired_mai_meg_for_duplicate_audit",
+            not facts["missing_meg"] and not facts["missing_mai"] and total_cases == total_meg,
+            (
+                f"{total_cases} .mai files, {total_meg} .meg files, "
+                f"{len(facts['missing_meg'])} missing .meg, "
+                f"{len(facts['missing_mai'])} missing .mai"
+            ),
+        ),
+        _public_gate(
+            "exact_sample_pairs_unique",
+            not pair_duplicate_groups,
+            (
+                f"{len(pair_duplicate_groups)} duplicate .mai+.meg groups, "
+                f"{facts['pair_delete_candidates']} safe-delete candidates"
+            ),
+        ),
+        _public_gate(
+            "single_file_reuse_classified",
+            True,
+            (
+                f"{len(mai_reuse_groups)} .mai reuse groups and "
+                f"{len(meg_reuse_groups)} .meg reuse groups are reported as "
+                "MCP collapse/display candidates, not automatic deletion candidates"
+            ),
+        ),
+    ]
+    return {
+        "total_cases": total_cases,
+        "total_input_files": len(decks),
+        "family_filter": family or "",
+        "delete_recommendation": (
+            "delete_exact_pair_duplicates"
+            if pair_duplicate_groups
+            else "no_public_deck_deletion_recommended"
+        ),
+        "mcp_display_recommendation": (
+            "Keep single-file reuse as design-space coverage, but collapse or "
+            "summarize those groups in MCP views when the user wants a concise tour."
+        ),
+        "audit_gate_status": (
+            "PASS" if all(gate["status"] == "PASS" for gate in gates) else "FAIL"
+        ),
+        "gates": gates,
+        "exact_pair_duplicate_groups": len(pair_duplicate_groups),
+        "exact_pair_duplicate_cases": facts["pair_duplicate_cases"],
+        "exact_pair_delete_candidates": facts["pair_delete_candidates"],
+        "mai_reuse_groups": len(mai_reuse_groups),
+        "mai_reuse_files": facts["mai_reuse_files"],
+        "meg_reuse_groups": len(meg_reuse_groups),
+        "meg_reuse_files": facts["meg_reuse_files"],
+        "cross_family_meg_reuse_groups": len(cross_family_meg_reuse_groups),
+        "cross_family_meg_reuse_files": facts["cross_family_meg_reuse_files"],
+        "exact_pair_duplicates": _duplicate_group_rows(
+            pair_duplicate_groups, group_limit, pair=True
+        ),
+        "mai_reuse_examples": _duplicate_group_rows(mai_reuse_groups, group_limit),
+        "meg_reuse_examples": _duplicate_group_rows(meg_reuse_groups, group_limit),
+        "cross_family_meg_reuse_examples": _duplicate_group_rows(
+            cross_family_meg_reuse_groups, group_limit
+        ),
+        "public_use_notes": [
+            "Exact `.mai` + `.meg` pair duplicates are the only automatic deletion candidates.",
+            "Identical `.mai` with different `.meg` means the same analysis-control pattern is reused over different geometry.",
+            "Identical `.meg` with different `.mai` means the same geometry is reused for different currents, frequency, material, output, or validation intent.",
+            "For MCP clients, representative routing and playbooks should prefer one representative from each reuse group before showing the whole sweep.",
+        ],
+    }
+
+
 def build_public_quality_gates() -> list[dict[str, str]]:
     """Return publication-readiness gates for the bundled public sample corpus."""
     manifest = load_validated_manifest()
@@ -2208,6 +2441,17 @@ def build_public_quality_gates() -> list[dict[str, str]]:
             ),
         )
     ]
+    duplicate_facts = _sample_duplicate_facts(decks)
+    gates.append(
+        _public_gate(
+            "exact_sample_pairs_unique",
+            not duplicate_facts["pair_duplicate_groups"],
+            (
+                f"{len(duplicate_facts['pair_duplicate_groups'])} duplicate .mai+.meg groups, "
+                f"{duplicate_facts['pair_delete_candidates']} safe-delete candidates"
+            ),
+        )
+    )
 
     manifest_families = manifest.get("families", {})
     deck_case_counts: dict[str, int] = {}
@@ -3958,6 +4202,97 @@ def format_cross_validation_summary(
     return "\n".join(lines).rstrip()
 
 
+def format_duplicate_audit(summary: dict[str, Any], max_groups: int = 8) -> str:
+    """Format the MCP-oriented duplicate audit as Markdown."""
+    lines = [
+        "# Public sample-deck duplicate audit",
+        "",
+        (
+            f"- corpus: {summary['total_cases']} cases, "
+            f"{summary['total_input_files']} input files"
+        ),
+        f"- filter: {summary['family_filter'] or 'none'}",
+        f"- deletion recommendation: `{summary['delete_recommendation']}`",
+        f"- MCP display recommendation: {summary['mcp_display_recommendation']}",
+        "",
+        f"## Duplicate Gates ({summary['audit_gate_status']})",
+    ]
+    for gate in summary["gates"]:
+        lines.append(f"- {gate['status']} `{gate['gate']}`: {gate['detail']}")
+
+    lines.extend(
+        [
+            "",
+            "## Exact Pair Duplicates",
+            (
+                f"- exact `.mai` + `.meg` duplicate groups: "
+                f"{summary['exact_pair_duplicate_groups']}"
+            ),
+            (
+                f"- duplicate cases: {summary['exact_pair_duplicate_cases']}; "
+                f"safe-delete candidates: {summary['exact_pair_delete_candidates']}"
+            ),
+        ]
+    )
+    if summary["exact_pair_duplicates"]:
+        for row in summary["exact_pair_duplicates"][: max(0, max_groups)]:
+            lines.append(
+                f"- hash `{row['hash']}`: {row['count']} cases, "
+                f"{row['family_count']} families"
+            )
+            for case in row["cases"][:4]:
+                lines.append(f"  - `{case['mai_path']}` + `{case['meg_path']}`")
+    else:
+        lines.append("- No exact pair duplicates were found; no deck deletion is recommended.")
+
+    lines.extend(
+        [
+            "",
+            "## MCP Collapse Candidates",
+            (
+                f"- `.mai` reuse groups: {summary['mai_reuse_groups']} groups, "
+                f"{summary['mai_reuse_files']} files"
+            ),
+            (
+                f"- `.meg` reuse groups: {summary['meg_reuse_groups']} groups, "
+                f"{summary['meg_reuse_files']} files"
+            ),
+            (
+                f"- cross-family `.meg` reuse: "
+                f"{summary['cross_family_meg_reuse_groups']} groups, "
+                f"{summary['cross_family_meg_reuse_files']} files"
+            ),
+        ]
+    )
+
+    def add_reuse_section(title: str, rows: list[dict[str, Any]]) -> None:
+        lines.extend(["", f"### {title}"])
+        if not rows:
+            lines.append("- none")
+            return
+        for row in rows[: max(0, max_groups)]:
+            families = ", ".join(f"`{family}`" for family in row["families"][:4])
+            if row["family_count"] > 4:
+                families += f", ... {row['family_count'] - 4} more"
+            lines.append(
+                f"- hash `{row['hash']}`: {row['count']} files, "
+                f"{row['family_count']} families ({families})"
+            )
+            for path in row.get("paths", [])[:4]:
+                lines.append(f"  - `{path}`")
+
+    add_reuse_section(".mai control reuse", summary["mai_reuse_examples"])
+    add_reuse_section(".meg geometry reuse", summary["meg_reuse_examples"])
+    add_reuse_section(
+        "cross-family .meg geometry reuse",
+        summary["cross_family_meg_reuse_examples"],
+    )
+
+    lines.extend(["", "## Public-Safe Notes"])
+    lines.extend(f"- {note}" for note in summary["public_use_notes"])
+    return "\n".join(lines).rstrip()
+
+
 def _walk_files(node, prefix: str = "") -> list[tuple[str, Any]]:
     files: list[tuple[str, Any]] = []
     for child in sorted(node.iterdir(), key=lambda p: p.name):
@@ -4165,6 +4500,333 @@ def format_sample_deck_routes(routes: list[dict[str, Any]], goal: str) -> str:
             lines.append("- representative decks:")
             lines.extend(f"  - `{path}`" for path in route["representative_decks"])
         lines.append("")
+    return "\n".join(lines).rstrip()
+
+
+def build_local_simulation_handoff(
+    goal: str,
+    family: str | None = None,
+    quantity: str | None = None,
+    limit: int = 3,
+) -> dict[str, Any]:
+    """Build a public-safe handoff contract for a user-local ELF runner."""
+    max_routes = max(1, min(limit, 8))
+    route_goal = " ".join(part for part in (goal, family or "", quantity or "") if part).strip()
+    routes = route_sample_decks(route_goal or goal, limit=max_routes * 2)
+    family_filter = family.lower() if family else ""
+    if family_filter:
+        matching = [route for route in routes if family_filter in route["family"].lower()]
+        other = [route for route in routes if route not in matching]
+        routes = (matching + other)[:max_routes]
+    unique_routes = []
+    seen_families: set[str] = set()
+    for route in routes:
+        if route["family"] in seen_families:
+            continue
+        seen_families.add(route["family"])
+        unique_routes.append(route)
+    routes = unique_routes[:max_routes]
+
+    selected_routes = []
+    for route in routes:
+        matrix = build_validation_matrix(family=route["family"], quantity=quantity)
+        families = matrix.get("families", [])
+        quantity_keys = families[0]["quantity_keys"] if families else []
+        representative_decks = route["representative_decks"][:3]
+        selected_routes.append(
+            {
+                "intent": route["intent"],
+                "family": route["family"],
+                "title": route["title"],
+                "quality_label": route["quality_label"],
+                "validation_level": route["validation_level"],
+                "representative_decks": representative_decks,
+                "physical_quantities": quantity_keys,
+                "why": route["why"],
+                "next_public_calls": route["next_calls"],
+            }
+        )
+
+    return {
+        "schema_version": "elf-local-simulation-handoff/v1",
+        "goal": goal,
+        "family_filter": family or "",
+        "quantity_filter": quantity or "",
+        "public_boundary": (
+            "This public MCP server selects decks, quantities, validation labels, "
+            "and runner/parser contracts. It does not execute ELF/MAGIC, launch "
+            "GUI/CLI solvers, or bundle solver outputs."
+        ),
+        "selected_routes": selected_routes,
+        "runner_input_contract": {
+            "required": [
+                "goal",
+                "working_directory",
+                "mai_text or mai_path",
+                "meg_text or meg_path",
+                "run_mode",
+                "requested_observables",
+            ],
+            "recommended": [
+                "case_id",
+                "source_public_deck_paths",
+                "parameter_overrides",
+                "timeout_seconds",
+                "keep_outputs",
+            ],
+            "run_modes": [
+                "copy_public_deck_and_run",
+                "mutate_public_deck_then_run",
+                "generate_new_deck_from_recipe_then_run",
+                "dry_run_validate_inputs_only",
+            ],
+        },
+        "parser_output_contract": {
+            "required": [
+                "case_id",
+                "status",
+                "exit_code",
+                "stdout_summary",
+                "stderr_summary",
+                "generated_files",
+                "parsed_observables",
+            ],
+            "parsed_observables": [
+                "flux_linkage_FLUM",
+                "field_probe",
+                "force_or_torque",
+                "loss_or_eddy_current_proxy",
+                "convergence_or_error_messages",
+            ],
+            "public_rule": (
+                "Keep raw solver outputs and numeric product-run references in "
+                "the user's local/private workspace unless they are explicitly "
+                "scrubbed into public-safe general documentation."
+            ),
+        },
+        "motor_design_loop": [
+            "Route the prompt with this handoff tool and choose the strongest matching public deck family.",
+            "Open representative `.mai` and `.meg` decks with `elf_sample_decks_get(...)`.",
+            "Choose the physical observable before editing parameters: FLUM for flux linkage, co-energy gradients for force/torque, MOMC/FREQ/OHM2 for AC or eddy-current behavior.",
+            "Send the runner input contract to a user-local/private runner that has access to the installed ELF/MAGIC product.",
+            "Parse the runner output into the parser output contract.",
+            "Compare trends against the public validation label and quantity focus; only then propose the next geometry/current/frequency/material mutation.",
+        ],
+        "recommended_public_calls": [
+            f'elf_sample_decks_route("{goal}")',
+            'elf_sample_decks_validation_matrix(quantity="motor")',
+            'elf_sample_decks_cross_validation(family="motor")',
+            'elf_sample_decks_duplicates(family="motor")',
+            'elf_plan_workflow("motor flux linkage or torque sweep")',
+        ],
+    }
+
+
+def format_local_simulation_handoff(handoff: dict[str, Any]) -> str:
+    """Format the public-safe local runner handoff contract as Markdown."""
+    lines = [
+        "# ELF/MAGIC local simulation handoff",
+        "",
+        f"- schema: `{handoff['schema_version']}`",
+        f"- goal: {handoff['goal']}",
+        f"- family filter: {handoff['family_filter'] or 'none'}",
+        f"- quantity filter: {handoff['quantity_filter'] or 'none'}",
+        f"- boundary: {handoff['public_boundary']}",
+        "",
+        "## Recommended Deck Routes",
+    ]
+    if not handoff["selected_routes"]:
+        lines.append("- No route was selected. Try `elf_sample_decks_search(goal, ext=\"mai\")`.")
+    for index, route in enumerate(handoff["selected_routes"], 1):
+        quantities = ", ".join(f"`{item}`" for item in route["physical_quantities"]) or "not mapped"
+        reps = ", ".join(f"`{path}`" for path in route["representative_decks"]) or "none"
+        lines.append(f"{index}. `{route['family']}` -- {route['title']}")
+        lines.append(f"   intent: {route['intent']}")
+        lines.append(f"   quality: `{route['quality_label']}`, validation: `{route['validation_level']}`")
+        lines.append(f"   quantities: {quantities}")
+        lines.append(f"   why: {route['why']}")
+        lines.append(f"   representative decks: {reps}")
+
+    runner = handoff["runner_input_contract"]
+    lines.extend(["", "## Runner Input Contract"])
+    lines.append("- required fields: " + ", ".join(f"`{item}`" for item in runner["required"]))
+    lines.append("- recommended fields: " + ", ".join(f"`{item}`" for item in runner["recommended"]))
+    lines.append("- run modes: " + ", ".join(f"`{item}`" for item in runner["run_modes"]))
+
+    parser = handoff["parser_output_contract"]
+    lines.extend(["", "## Parser Output Contract"])
+    lines.append("- required fields: " + ", ".join(f"`{item}`" for item in parser["required"]))
+    lines.append("- observables: " + ", ".join(f"`{item}`" for item in parser["parsed_observables"]))
+    lines.append(f"- public rule: {parser['public_rule']}")
+
+    lines.extend(["", "## Motor Design Loop"])
+    for index, step in enumerate(handoff["motor_design_loop"], 1):
+        lines.append(f"{index}. {step}")
+
+    lines.extend(["", "## Recommended Public MCP Calls"])
+    lines.extend(f"- `{call}`" for call in handoff["recommended_public_calls"])
+    return "\n".join(lines).rstrip()
+
+
+MCP_READINESS_ROUTE_CHECKS: tuple[dict[str, str], ...] = (
+    {
+        "name": "spm_handoff_routes_to_compact_spm",
+        "goal": "SPM motor flux linkage sweep",
+        "family": "spm",
+        "quantity": "motor",
+        "expected_family": "application/motor/spm_surface_pm_10",
+    },
+    {
+        "name": "ipm_route_targets_hairpin_family",
+        "goal": "IPM hairpin motor flux linkage",
+        "family": "ipm",
+        "quantity": "motor",
+        "expected_family": "application/motor/emdlab_ipm_hairpin_10",
+    },
+    {
+        "name": "wpt_route_targets_misalignment_family",
+        "goal": "WPT misalignment with conducting shield",
+        "family": "wpt",
+        "quantity": "wpt",
+        "expected_family": "application/wpt_misalignment_10",
+    },
+    {
+        "name": "transformer_coupling_route_targets_gold_numeric_family",
+        "goal": "transformer coupling turns ratio HBCU FLUM",
+        "family": "numeric_transformer_coupling",
+        "quantity": "transformer",
+        "expected_family": "application/numeric_transformer_coupling_100",
+    },
+)
+
+
+def build_mcp_readiness() -> dict[str, Any]:
+    """Aggregate MCP-quality gates before public release/tag push."""
+    quality = build_quality_summary()
+    cross_validation = build_cross_validation_summary()
+    duplicate = build_duplicate_audit(max_groups=3)
+
+    route_rows = []
+    route_gates = []
+    for check in MCP_READINESS_ROUTE_CHECKS:
+        handoff = build_local_simulation_handoff(
+            check["goal"],
+            family=check["family"],
+            quantity=check["quantity"],
+            limit=3,
+        )
+        first_family = (
+            handoff["selected_routes"][0]["family"]
+            if handoff.get("selected_routes")
+            else ""
+        )
+        passed = first_family == check["expected_family"]
+        route_rows.append(
+            {
+                "name": check["name"],
+                "goal": check["goal"],
+                "expected_family": check["expected_family"],
+                "first_family": first_family,
+                "status": "PASS" if passed else "FAIL",
+                "handoff_schema": handoff["schema_version"],
+                "selected_families": [
+                    route["family"] for route in handoff.get("selected_routes", [])
+                ],
+            }
+        )
+        route_gates.append(
+            _public_gate(
+                check["name"],
+                passed,
+                f"first route `{first_family}` expected `{check['expected_family']}`",
+            )
+        )
+
+    gates = [
+        _public_gate(
+            "public_quality_gates_pass",
+            quality["quality_gate_status"] == "PASS",
+            f"quality gate status {quality['quality_gate_status']}",
+        ),
+        _public_gate(
+            "cross_validation_gates_pass",
+            cross_validation["cross_validation_gate_status"] == "PASS",
+            f"cross-validation gate status {cross_validation['cross_validation_gate_status']}",
+        ),
+        _public_gate(
+            "exact_pair_duplicates_absent",
+            duplicate["exact_pair_delete_candidates"] == 0,
+            (
+                f"{duplicate['exact_pair_duplicate_groups']} duplicate pair groups, "
+                f"{duplicate['exact_pair_delete_candidates']} delete candidates"
+            ),
+        ),
+        _public_gate(
+            "local_handoff_boundary_declared",
+            "does not execute ELF/MAGIC" in build_local_simulation_handoff(
+                "SPM motor flux linkage sweep",
+                family="spm",
+                quantity="motor",
+            )["public_boundary"],
+            "handoff contract states that public MCP does not execute ELF/MAGIC",
+        ),
+        *route_gates,
+    ]
+    readiness = "ready_for_tag_push" if all(gate["status"] == "PASS" for gate in gates) else "blocked"
+    return {
+        "readiness": readiness,
+        "schema_version": "elf-mcp-readiness/v1",
+        "total_cases": quality["total_cases"],
+        "total_input_files": quality["total_input_files"],
+        "quality_gate_status": quality["quality_gate_status"],
+        "cross_validation_gate_status": cross_validation["cross_validation_gate_status"],
+        "duplicate_delete_candidates": duplicate["exact_pair_delete_candidates"],
+        "route_checks": route_rows,
+        "gates": gates,
+        "recommended_release_steps": [
+            "python -m pytest",
+            "python -m elf_mcp_server.policy_lint <repo>",
+            "python -m elf_mcp_server.server --selftest",
+            "python -m build --outdir <temp-dist-dir>",
+            "git commit, git tag v1.54.0, git push origin main, git push origin v1.54.0",
+        ],
+        "public_boundary": (
+            "Readiness uses public input decks and metadata only. It does not "
+            "execute ELF/MAGIC or expose private validation provenance."
+        ),
+    }
+
+
+def format_mcp_readiness(summary: dict[str, Any]) -> str:
+    """Format MCP publication readiness as Markdown."""
+    lines = [
+        "# ELF MCP readiness",
+        "",
+        f"- schema: `{summary['schema_version']}`",
+        f"- readiness: `{summary['readiness']}`",
+        (
+            f"- corpus: {summary['total_cases']} cases, "
+            f"{summary['total_input_files']} input files"
+        ),
+        f"- public boundary: {summary['public_boundary']}",
+        "",
+        "## Gates",
+    ]
+    for gate in summary["gates"]:
+        lines.append(f"- {gate['status']} `{gate['gate']}`: {gate['detail']}")
+
+    lines.extend(["", "## Route Checks"])
+    for row in summary["route_checks"]:
+        selected = ", ".join(f"`{family}`" for family in row["selected_families"])
+        lines.append(
+            f"- {row['status']} `{row['name']}`: `{row['goal']}` -> "
+            f"`{row['first_family']}`"
+        )
+        lines.append(f"  expected: `{row['expected_family']}`")
+        lines.append(f"  selected: {selected}")
+
+    lines.extend(["", "## Release Steps"])
+    lines.extend(f"- `{step}`" for step in summary["recommended_release_steps"])
     return "\n".join(lines).rstrip()
 
 
