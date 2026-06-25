@@ -22,7 +22,7 @@
 ## Motor API Vocabulary
 - `MotorSpec`
   required: `motor_type`, `pole_pairs`, `stator_slots`, `rotor_topology`, `airgap_m`, `stack_length_m`, `materials`, `windings`, `studies`
-  motor_type_values: `spm`, `ipm`, `induction`, `srm`, `synrm`, `hysteresis`, `wound_field_sync`, `axial_flux_pm`, `linear_pm`, `stepper`
+  motor_type_values: `spm`, `ipm`, `pm_assisted_synrm`, `bldc`, `line_start_pm`, `induction`, `deep_bar_induction`, `srm`, `synrm`, `hysteresis`, `wound_field_sync`, `axial_flux_pm`, `linear_pm`, `stepper`, `flux_switching_pm`, `vernier_pm`, `transverse_flux_pm`, `slotless_pm`, `claw_pole`, `commutator_dc`
 - `StudySpec`
   values: `static_flux_linkage`, `static_torque_angle`, `back_emf_speed_sweep`, `dq_inductance`, `cogging_torque`, `induction_slip_loss`, `ac_loss_frequency_sweep`, `thermal_loss_export`
 - `ObservableRequest`
@@ -124,4 +124,4 @@
 - `P0 design contract` [started]: public API/layer design in MCP, motor schema and observable vocabulary, backend adapter protocol, validation gate list
 - `P1 public facade skeleton` [next]: standalone dataclasses and JSON schema export, deck bundle builder interface, dry-run lints over public .mai/.meg decks, no product binary dependency
 - `P2 user-local backend adapter` [private/user-local]: runtime discovery, local run request/response, result parser to normalized observables, private validation logs outside the public package
-- `P3 motor integrated workflow` [planned]: SPM/IPM/induction/SRM/SynRM/hysteresis routing, AGE validation target selection, MMM quick-check trend labels, MCP prompt-to-runner orchestration
+- `P3 motor integrated workflow` [planned]: SPM/IPM/PMa-SynRM/BLDC/line-start PM/deep-bar IM/flux-switching/Vernier/transverse-flux/slotless/claw-pole/commutator routing, AGE validation target selection, MMM quick-check trend labels, MCP prompt-to-runner orchestration

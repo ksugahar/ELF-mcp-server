@@ -21,4 +21,4 @@ bundled help/example/wiki/Python API search, and compact planning aids for
 authoring ELF input files, plus release-readiness gates for MCP maintainers.
 """
 
-__version__ = "1.57.1"
+__version__ = "1.58.0"

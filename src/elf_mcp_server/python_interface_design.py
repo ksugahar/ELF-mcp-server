@@ -154,7 +154,11 @@ MOTOR_SCHEMA: dict[str, Any] = {
         "motor_type_values": [
             "spm",
             "ipm",
+            "pm_assisted_synrm",
+            "bldc",
+            "line_start_pm",
             "induction",
+            "deep_bar_induction",
             "srm",
             "synrm",
             "hysteresis",
@@ -162,6 +166,12 @@ MOTOR_SCHEMA: dict[str, Any] = {
             "axial_flux_pm",
             "linear_pm",
             "stepper",
+            "flux_switching_pm",
+            "vernier_pm",
+            "transverse_flux_pm",
+            "slotless_pm",
+            "claw_pole",
+            "commutator_dc",
         ],
     },
     "StudySpec": {
@@ -602,7 +612,7 @@ ROADMAP: list[dict[str, Any]] = [
         "phase": "P3 motor integrated workflow",
         "status": "planned",
         "deliverables": [
-            "SPM/IPM/induction/SRM/SynRM/hysteresis routing",
+            "SPM/IPM/PMa-SynRM/BLDC/line-start PM/deep-bar IM/flux-switching/Vernier/transverse-flux/slotless/claw-pole/commutator routing",
             "AGE validation target selection",
             "MMM quick-check trend labels",
             "MCP prompt-to-runner orchestration",

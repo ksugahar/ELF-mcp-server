@@ -242,8 +242,8 @@ _TOOL_CATALOG = [
      "reluctance_design_plan",
                             "Motor-design API layer for Id/Iq maps, "
                             "PM-vs-reluctance torque decomposition, MTPA "
-                            "searches, SynRM saliency, and SRM aligned/"
-                            "unaligned inductance planning"),
+                            "searches, SynRM/PMa-SynRM saliency, and SRM "
+                            "aligned/unaligned inductance planning"),
     ("elf_python_motor_winding_layout_plan / topology_parameter_plan / "
      "demag_margin_plan / drive_cycle_plan / optimization_study_plan",
                             "Motor-design API layer for phase-belt winding "
@@ -437,8 +437,12 @@ def elf_overview() -> dict:
                 "call": "elf_python_motor_mtpa_search_plan(motor_type='ipm')",
             },
             {
-                "goal": "Plan SynRM/SRM reluctance motor design",
-                "call": "elf_python_reluctance_motor_design_plan(motor_type='synrm')",
+                "goal": "Plan SynRM/PMa-SynRM/SRM reluctance motor design",
+                "call": "elf_python_reluctance_motor_design_plan(motor_type='pm_assisted_synrm')",
+            },
+            {
+                "goal": "Start an advanced motor model: BLDC, line-start PM, deep-bar IM, flux-switching, Vernier, transverse-flux, slotless, claw-pole, or commutator",
+                "call": "elf_python_motor_design_plan(goal='six-step BLDC torque ripple')",
             },
             {
                 "goal": "Build a phase-belt winding layout and winding-factor proxy",
@@ -610,7 +614,7 @@ def elf_overview() -> dict:
             "operating rows, PWM harmonic screening, and saturated Ld/Lq maps, "
             "elf_python_motor_dq_axis_map_plan() / elf_python_motor_mtpa_search_plan() / "
             "elf_python_reluctance_motor_design_plan() for Id/Iq maps, "
-            "MTPA, SynRM, and SRM reluctance design, "
+            "MTPA, SynRM, PMa-SynRM, and SRM reluctance design, "
             "elf_python_motor_winding_layout_plan() / "
             "elf_python_motor_topology_parameter_plan() / "
             "elf_python_motor_demag_margin_plan() / "
@@ -1814,14 +1818,14 @@ def elf_python_reluctance_motor_design_plan(
     current_limit_a_peak: float = 40.0,
 ) -> str:
     """
-    Build a reluctance-focused design plan for SynRM or SRM.
+    Build a reluctance-focused design plan for SynRM, PMa-SynRM, or SRM.
 
     This makes saliency and reluctance torque explicit: design variables,
-    Ld/Lq extraction, Id/Iq map, MTPA-style current-angle scan, SynRM flux
-    barrier planning, and SRM aligned/unaligned inductance checks.
+    Ld/Lq extraction, Id/Iq map, MTPA-style current-angle scan, SynRM/PMa-SynRM
+    flux-barrier planning, and SRM aligned/unaligned inductance checks.
 
     Args:
-        motor_type: "synrm", "srm", "reluctance", or "switched".
+        motor_type: "synrm", "pm_assisted_synrm", "srm", "reluctance", or "switched".
         pole_pairs: Pole-pair count.
         stator_slots: Stator slot count.
         rotor_topology: Topology label such as "flux_barrier" or "salient_pole".
@@ -1890,9 +1894,11 @@ def elf_python_motor_topology_parameter_plan(
     """
     Build topology-specific motor geometry variables and constraints.
 
-    The plan exposes common dimensions plus SPM, IPM, SynRM, SRM, or induction
-    variables with ranges and affected observables. It is a design contract,
-    not a mesh or solver run.
+    The plan exposes common dimensions plus SPM, IPM, PMa-SynRM, BLDC,
+    line-start PM, deep-bar IM, flux-switching PM, Vernier PM,
+    transverse-flux PM, slotless PM, claw-pole, commutator, SynRM, SRM, or
+    induction variables with ranges and affected observables. It is a design
+    contract, not a mesh or solver run.
 
     Args:
         motor_type: Motor family.

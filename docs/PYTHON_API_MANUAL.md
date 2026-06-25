@@ -280,6 +280,20 @@
 - `elf_python_motor_thermal_network_plan(target_market="industrial_servo", total_loss_w=120)`
 - `elf_python_motor_manufacturing_tolerance_plan(motor_type="induction", airgap_mm=0.6)`
 - `elf_python_motor_observable_contract(motor_type="induction", study="induction_slip_loss")`
+### Advanced motor model coverage
+- `elf_python_motor_design_plan("PM-assisted SynRM efficiency map", motor_type="pm_assisted_synrm")`
+- `elf_python_motor_design_plan("six-step BLDC torque ripple", motor_type="bldc")`
+- `elf_python_motor_design_plan("line-start PM pull-in torque", motor_type="line_start_pm")`
+- `elf_python_motor_design_plan("deep-bar induction starting torque", motor_type="deep_bar_induction")`
+- `elf_python_motor_design_plan("flux-switching PM torque ripple", motor_type="flux_switching_pm")`
+- `elf_python_motor_design_plan("Vernier PM low-speed high-torque map", motor_type="vernier_pm")`
+- `elf_python_motor_design_plan("transverse-flux PM 3D module", motor_type="transverse_flux_pm")`
+- `elf_python_motor_design_plan("slotless coreless PM low-cogging motor", motor_type="slotless_pm")`
+- `elf_python_motor_design_plan("claw-pole Lundell field-current sweep", motor_type="claw_pole")`
+- `elf_python_motor_design_plan("commutator universal motor torque and loss", motor_type="commutator_dc")`
+- `elf_python_motor_topology_parameter_plan(motor_type="<advanced_motor_type>")`
+- `elf_python_2d_motor_template("<advanced_motor_type>")`
+- `elf_python_motor_optimization_study_plan(motor_type="<advanced_motor_type>", objective="torque_density")`
 ### 3D WPT or shielded application mesh
 - `elf_python_meg_generation_plan("3D WPT shielded coils", dimension="3d")`
 - `elf_local_simulation_handoff("WPT shielded coupling")`

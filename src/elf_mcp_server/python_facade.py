@@ -16,7 +16,11 @@ import re
 MOTOR_TYPES = (
     "spm",
     "ipm",
+    "pm_assisted_synrm",
+    "bldc",
+    "line_start_pm",
     "induction",
+    "deep_bar_induction",
     "srm",
     "synrm",
     "hysteresis",
@@ -24,7 +28,43 @@ MOTOR_TYPES = (
     "axial_flux_pm",
     "linear_pm",
     "stepper",
+    "flux_switching_pm",
+    "vernier_pm",
+    "transverse_flux_pm",
+    "slotless_pm",
+    "claw_pole",
+    "commutator_dc",
 )
+
+PM_MOTOR_TYPES = {
+    "spm",
+    "ipm",
+    "pm_assisted_synrm",
+    "bldc",
+    "line_start_pm",
+    "flux_switching_pm",
+    "vernier_pm",
+    "transverse_flux_pm",
+    "slotless_pm",
+    "axial_flux_pm",
+    "linear_pm",
+    "stepper",
+}
+
+RELUCTANCE_MOTOR_TYPES = {
+    "ipm",
+    "pm_assisted_synrm",
+    "synrm",
+    "srm",
+    "flux_switching_pm",
+    "vernier_pm",
+}
+
+INDUCTION_MOTOR_TYPES = {
+    "induction",
+    "deep_bar_induction",
+    "line_start_pm",
+}
 
 STUDY_TYPES = (
     "static_flux_linkage",
@@ -74,7 +114,11 @@ OBSERVABLE_MARKERS = {
 MOTOR_DEFAULT_OBSERVABLES = {
     "spm": ("flux_linkage", "back_emf_constant", "torque", "cogging_torque"),
     "ipm": ("flux_linkage", "torque", "ld_lq", "back_emf_constant"),
+    "pm_assisted_synrm": ("flux_linkage", "torque", "ld_lq", "back_emf_constant"),
+    "bldc": ("back_emf_constant", "torque", "torque_ripple", "cogging_torque"),
+    "line_start_pm": ("flux_linkage", "loss_proxy", "torque", "back_emf_constant"),
     "induction": ("flux_linkage", "loss_proxy", "torque"),
+    "deep_bar_induction": ("flux_linkage", "loss_proxy", "torque"),
     "srm": ("flux_linkage", "torque", "ld_lq"),
     "synrm": ("flux_linkage", "torque", "ld_lq"),
     "hysteresis": ("torque", "loss_proxy", "field_probe"),
@@ -82,6 +126,12 @@ MOTOR_DEFAULT_OBSERVABLES = {
     "axial_flux_pm": ("flux_linkage", "back_emf_constant", "torque"),
     "linear_pm": ("force", "flux_linkage", "field_probe"),
     "stepper": ("cogging_torque", "torque", "flux_linkage"),
+    "flux_switching_pm": ("flux_linkage", "back_emf_constant", "torque", "torque_ripple"),
+    "vernier_pm": ("flux_linkage", "back_emf_constant", "torque", "torque_ripple"),
+    "transverse_flux_pm": ("flux_linkage", "back_emf_constant", "torque", "field_probe"),
+    "slotless_pm": ("flux_linkage", "back_emf_constant", "torque", "field_probe"),
+    "claw_pole": ("flux_linkage", "torque", "field_probe", "loss_proxy"),
+    "commutator_dc": ("torque", "loss_proxy", "field_probe", "convergence_status"),
 }
 
 MOTOR_DESIGN_VARIABLES: dict[str, tuple[dict[str, Any], ...]] = {
@@ -99,12 +149,36 @@ MOTOR_DESIGN_VARIABLES: dict[str, tuple[dict[str, Any], ...]] = {
         {"name": "current_angle_deg", "unit": "deg_e", "default": 35.0, "range": (0.0, 70.0), "affects": ("torque", "mtpa", "field_weakening")},
         {"name": "turns_per_phase", "unit": "turn", "default": 50.0, "range": (20.0, 90.0), "affects": ("flux_linkage", "back_emf_constant")},
     ),
+    "pm_assisted_synrm": (
+        {"name": "barrier_count", "unit": "count", "default": 3, "range": (1, 5), "affects": ("ld_lq", "reluctance_torque")},
+        {"name": "assist_magnet_volume_fraction", "unit": "1", "default": 0.18, "range": (0.02, 0.35), "affects": ("back_emf_constant", "demag_margin", "material_reduction")},
+        {"name": "barrier_arc_fraction", "unit": "1", "default": 0.55, "range": (0.25, 0.85), "affects": ("saliency", "torque_ripple")},
+        {"name": "current_angle_deg", "unit": "deg_e", "default": 50.0, "range": (0.0, 85.0), "affects": ("mtpa", "field_weakening")},
+    ),
+    "bldc": (
+        {"name": "magnet_arc_fraction", "unit": "1", "default": 0.80, "range": (0.55, 0.95), "affects": ("trapezoidal_back_emf", "cogging_torque")},
+        {"name": "commutation_advance_deg", "unit": "deg_e", "default": 0.0, "range": (-20.0, 30.0), "affects": ("six_step_torque", "torque_ripple")},
+        {"name": "phase_conduction_deg", "unit": "deg_e", "default": 120.0, "range": (90.0, 150.0), "affects": ("torque", "copper_loss_proxy")},
+        {"name": "skew_fraction", "unit": "slot_pitch", "default": 0.0, "range": (0.0, 1.0), "affects": ("cogging_torque", "torque_ripple")},
+    ),
+    "line_start_pm": (
+        {"name": "cage_bar_depth_m", "unit": "m", "default": 0.006, "range": (0.002, 0.014), "affects": ("starting_torque", "rotor_loss_proxy")},
+        {"name": "pm_flux_fraction", "unit": "1", "default": 0.45, "range": (0.10, 0.80), "affects": ("pull_in_torque", "back_emf_constant")},
+        {"name": "synchronizing_torque_angle_deg", "unit": "deg_e", "default": 25.0, "range": (5.0, 60.0), "affects": ("pull_in_margin", "torque_ripple")},
+        {"name": "slip_hz", "unit": "Hz", "default": 5.0, "range": (0.5, 25.0), "affects": ("acceleration", "cage_loss_proxy")},
+    ),
     "induction": (
         {"name": "slip_hz", "unit": "Hz", "default": 5.0, "range": (0.5, 20.0), "affects": ("torque", "rotor_loss_proxy")},
         {"name": "rotor_bar_depth_m", "unit": "m", "default": 0.008, "range": (0.003, 0.018), "affects": ("starting_torque", "skin_effect_proxy")},
         {"name": "bar_conductivity_scale", "unit": "1", "default": 1.0, "range": (0.4, 1.4), "affects": ("rotor_loss_proxy", "pullout_torque")},
         {"name": "stator_current_a_peak", "unit": "A", "default": 10.0, "range": (2.0, 30.0), "affects": ("torque", "copper_loss_proxy")},
         {"name": "frequency_hz", "unit": "Hz", "default": 50.0, "range": (10.0, 400.0), "affects": ("skin_effect_proxy", "loss_proxy")},
+    ),
+    "deep_bar_induction": (
+        {"name": "outer_bar_depth_m", "unit": "m", "default": 0.004, "range": (0.0015, 0.010), "affects": ("starting_torque", "skin_effect_proxy")},
+        {"name": "inner_bar_depth_m", "unit": "m", "default": 0.012, "range": (0.004, 0.030), "affects": ("rated_efficiency", "rotor_loss_proxy")},
+        {"name": "bar_neck_width_fraction", "unit": "1", "default": 0.35, "range": (0.15, 0.70), "affects": ("leakage_reactance", "breakdown_torque")},
+        {"name": "slip_hz", "unit": "Hz", "default": 7.5, "range": (0.5, 35.0), "affects": ("torque", "rotor_loss_proxy")},
     ),
     "srm": (
         {"name": "turn_on_deg", "unit": "deg_e", "default": -10.0, "range": (-30.0, 5.0), "affects": ("average_torque", "torque_ripple")},
@@ -123,6 +197,66 @@ MOTOR_DESIGN_VARIABLES: dict[str, tuple[dict[str, Any], ...]] = {
         {"name": "hysteresis_loss_tangent", "unit": "1", "default": 0.08, "range": (0.01, 0.25), "affects": ("loss_proxy", "torque")},
         {"name": "rotor_shell_thickness_m", "unit": "m", "default": 0.003, "range": (0.001, 0.010), "affects": ("loss_proxy", "thermal_margin_proxy")},
         {"name": "airgap_m", "unit": "m", "default": 0.001, "range": (0.0006, 0.002), "affects": ("field_probe", "torque")},
+    ),
+    "wound_field_sync": (
+        {"name": "field_current_a", "unit": "A", "default": 2.0, "range": (0.0, 12.0), "affects": ("flux_linkage", "voltage_regulation")},
+        {"name": "field_turns", "unit": "turn", "default": 80.0, "range": (20.0, 200.0), "affects": ("field_loss_proxy", "thermal")},
+        {"name": "salient_pole_arc_fraction", "unit": "1", "default": 0.55, "range": (0.25, 0.85), "affects": ("torque", "airgap_harmonics")},
+        {"name": "damper_bar_conductivity_scale", "unit": "1", "default": 1.0, "range": (0.2, 1.5), "affects": ("transient_damping", "loss_proxy")},
+    ),
+    "axial_flux_pm": (
+        {"name": "magnet_arc_fraction", "unit": "1", "default": 0.75, "range": (0.50, 0.95), "affects": ("back_emf_constant", "cogging_torque")},
+        {"name": "airgap_m", "unit": "m", "default": 0.0012, "range": (0.0005, 0.003), "affects": ("torque", "manufacturing")},
+        {"name": "disc_radius_ratio", "unit": "1", "default": 0.55, "range": (0.25, 0.85), "affects": ("torque_density", "mass")},
+        {"name": "magnet_thickness_m", "unit": "m", "default": 0.004, "range": (0.0015, 0.010), "affects": ("flux_linkage", "demag_margin")},
+    ),
+    "linear_pm": (
+        {"name": "pole_pitch_m", "unit": "m", "default": 0.024, "range": (0.006, 0.080), "affects": ("force", "back_emf_constant")},
+        {"name": "magnet_height_m", "unit": "m", "default": 0.004, "range": (0.001, 0.012), "affects": ("flux_linkage", "normal_force")},
+        {"name": "translator_gap_m", "unit": "m", "default": 0.001, "range": (0.0004, 0.003), "affects": ("force", "manufacturing")},
+        {"name": "coil_pitch_fraction", "unit": "1", "default": 0.85, "range": (0.45, 1.0), "affects": ("force_ripple", "copper_loss_proxy")},
+    ),
+    "stepper": (
+        {"name": "tooth_count", "unit": "count", "default": 50, "range": (12, 200), "affects": ("step_angle", "detent_torque")},
+        {"name": "pm_flux_scale", "unit": "1", "default": 1.0, "range": (0.3, 1.5), "affects": ("holding_torque", "demag_margin")},
+        {"name": "tooth_pitch_fraction", "unit": "1", "default": 0.50, "range": (0.25, 0.75), "affects": ("torque_ripple", "detent")},
+        {"name": "phase_current_a_peak", "unit": "A", "default": 2.0, "range": (0.1, 15.0), "affects": ("holding_torque", "copper_loss_proxy")},
+    ),
+    "flux_switching_pm": (
+        {"name": "stator_pm_arc_fraction", "unit": "1", "default": 0.45, "range": (0.20, 0.70), "affects": ("flux_linkage", "torque_ripple")},
+        {"name": "rotor_pole_arc_fraction", "unit": "1", "default": 0.50, "range": (0.25, 0.75), "affects": ("switching_flux", "cogging_torque")},
+        {"name": "slot_opening_fraction", "unit": "1", "default": 0.22, "range": (0.05, 0.45), "affects": ("leakage_flux", "manufacturability")},
+        {"name": "current_advance_deg", "unit": "deg_e", "default": 15.0, "range": (-20.0, 60.0), "affects": ("torque", "mtpa")},
+    ),
+    "vernier_pm": (
+        {"name": "modulation_pole_count", "unit": "count", "default": 18, "range": (6, 72), "affects": ("gear_ratio", "torque_density")},
+        {"name": "pm_pole_pair_count", "unit": "count", "default": 10, "range": (2, 40), "affects": ("flux_modulation", "back_emf_constant")},
+        {"name": "modulation_tooth_width_fraction", "unit": "1", "default": 0.45, "range": (0.20, 0.75), "affects": ("airgap_harmonics", "torque_ripple")},
+        {"name": "magnet_arc_fraction", "unit": "1", "default": 0.75, "range": (0.45, 0.95), "affects": ("torque", "cogging_torque")},
+    ),
+    "transverse_flux_pm": (
+        {"name": "module_count", "unit": "count", "default": 3, "range": (1, 12), "affects": ("torque_density", "3d_flux_path")},
+        {"name": "claw_tooth_overlap_fraction", "unit": "1", "default": 0.55, "range": (0.20, 0.85), "affects": ("leakage_flux", "torque")},
+        {"name": "magnet_thickness_m", "unit": "m", "default": 0.004, "range": (0.0015, 0.010), "affects": ("flux_linkage", "demag_margin")},
+        {"name": "axial_gap_m", "unit": "m", "default": 0.001, "range": (0.0005, 0.003), "affects": ("torque", "manufacturing")},
+    ),
+    "slotless_pm": (
+        {"name": "airgap_m", "unit": "m", "default": 0.002, "range": (0.0008, 0.006), "affects": ("torque", "cogging_torque")},
+        {"name": "coil_span_fraction", "unit": "1", "default": 0.80, "range": (0.45, 0.98), "affects": ("winding_factor", "copper_loss_proxy")},
+        {"name": "magnet_arc_fraction", "unit": "1", "default": 0.85, "range": (0.55, 0.98), "affects": ("back_emf_constant", "ripple")},
+        {"name": "support_tube_thickness_m", "unit": "m", "default": 0.001, "range": (0.0002, 0.003), "affects": ("thermal", "mechanical_gap")},
+    ),
+    "claw_pole": (
+        {"name": "field_current_a", "unit": "A", "default": 2.0, "range": (0.0, 10.0), "affects": ("flux_linkage", "voltage_regulation")},
+        {"name": "claw_overlap_fraction", "unit": "1", "default": 0.55, "range": (0.25, 0.85), "affects": ("leakage_flux", "torque_ripple")},
+        {"name": "pole_tip_taper_fraction", "unit": "1", "default": 0.25, "range": (0.0, 0.60), "affects": ("airgap_harmonics", "noise")},
+        {"name": "rotor_field_turns", "unit": "turn", "default": 80.0, "range": (20.0, 200.0), "affects": ("field_loss_proxy", "thermal")},
+    ),
+    "commutator_dc": (
+        {"name": "brush_advance_deg", "unit": "deg_e", "default": 0.0, "range": (-20.0, 30.0), "affects": ("commutation", "torque_ripple")},
+        {"name": "series_field_turns", "unit": "turn", "default": 40.0, "range": (5.0, 120.0), "affects": ("starting_torque", "field_loss_proxy")},
+        {"name": "armature_current_a", "unit": "A", "default": 10.0, "range": (0.5, 80.0), "affects": ("torque", "copper_loss_proxy")},
+        {"name": "supply_mode_ac_fraction", "unit": "1", "default": 0.0, "range": (0.0, 1.0), "affects": ("universal_motor_loss", "reactive_voltage_drop")},
     ),
 }
 
@@ -452,10 +586,10 @@ def build_motor_spec_template(motor_type: str = "spm") -> dict[str, Any]:
     if family not in MOTOR_TYPES:
         family = "spm"
     observables = MOTOR_DEFAULT_OBSERVABLES.get(family, MOTOR_DEFAULT_OBSERVABLES["spm"])
-    study_name = "induction_slip_loss" if family == "induction" else "static_flux_linkage"
-    if family in {"spm", "ipm", "axial_flux_pm"}:
+    study_name = "induction_slip_loss" if family in INDUCTION_MOTOR_TYPES else "static_flux_linkage"
+    if family in PM_MOTOR_TYPES:
         study_name = "back_emf_speed_sweep"
-    if family in {"srm", "synrm", "stepper"}:
+    if family in {"srm", "synrm", "pm_assisted_synrm", "stepper", "commutator_dc"}:
         study_name = "static_torque_angle"
     spec = MotorSpec(
         motor_type=family,
@@ -1124,9 +1258,9 @@ def build_motor_drawing_bom_handoff(
         {"item": "insulation_and_potting", "quantity": 1, "role": "electrical and thermal support", "spec": "thermal class TBD"},
         {"item": "housing_or_fixture", "quantity": 1, "role": "prototype assembly", "spec": "cooling and mounting mode TBD"},
     ]
-    if family in {"spm", "ipm", "axial_flux_pm", "linear_pm", "stepper"}:
+    if family in PM_MOTOR_TYPES:
         bom.insert(2, {"item": "permanent_magnets", "quantity": 2 * pp, "role": "field source", "spec": "Br/Hcj grade TBD; demag plan required"})
-    if family == "induction":
+    if family in INDUCTION_MOTOR_TYPES:
         bom.insert(2, {"item": "rotor_bars_and_end_rings", "quantity": 1, "role": "secondary conductor", "spec": "conductivity and bar geometry TBD"})
     drawing_views = [
         {"view": "assembly_cross_section", "contents": ["stator_yoke", "slots", "airgap", "rotor", "shaft_or_hub"]},
@@ -1201,11 +1335,11 @@ def build_motor_operating_point_run_queue(
     torque_axis = _axis_values(torque_min_nm, torque_max_nm, torque_points)
     speed_axis = _axis_values(speed_min_rpm, speed_max_rpm, speed_points)
     requested = ["torque", "loss_proxy", "field_probe", "convergence_status"]
-    if family in {"spm", "ipm", "axial_flux_pm", "linear_pm", "stepper", "wound_field_sync"}:
+    if family in PM_MOTOR_TYPES or family in {"wound_field_sync", "claw_pole"}:
         requested.append("back_emf_constant")
-    if family in {"ipm", "synrm", "srm"}:
+    if family in RELUCTANCE_MOTOR_TYPES:
         requested.append("ld_lq")
-    if family == "induction":
+    if family in INDUCTION_MOTOR_TYPES:
         requested.extend(["flux_linkage", "loss_proxy"])
     rows = []
     for speed in speed_axis:
@@ -1356,9 +1490,9 @@ def build_motor_saturation_inductance_map_plan(
     limit = max(float(current_limit_a_peak), 1.0e-9)
     current_axis = _axis_values(limit / max(int(current_points), 1), limit, current_points)
     angle_axis = _axis_values(-70.0, 70.0, angle_points)
-    ld0 = float(ld_unsat_h) if ld_unsat_h is not None else (0.00075 if family in {"ipm", "synrm"} else 0.0012)
-    lq0 = float(lq_unsat_h) if lq_unsat_h is not None else (0.00155 if family in {"ipm", "synrm"} else 0.0012)
-    psi = float(pm_flux_wb) if pm_flux_wb is not None else (0.045 if family in {"spm", "ipm", "axial_flux_pm"} else 0.0)
+    ld0 = float(ld_unsat_h) if ld_unsat_h is not None else (0.00075 if family in RELUCTANCE_MOTOR_TYPES else 0.0012)
+    lq0 = float(lq_unsat_h) if lq_unsat_h is not None else (0.00155 if family in RELUCTANCE_MOTOR_TYPES else 0.0012)
+    psi = float(pm_flux_wb) if pm_flux_wb is not None else (0.045 if family in PM_MOTOR_TYPES else 0.0)
     rows = []
     for current in current_axis:
         saturation = min((current / limit) ** 1.4, 1.0)
@@ -1564,10 +1698,39 @@ def build_meg_generation_plan(
     dim = dimension.strip().lower() or "auto"
     complexity = geometry_complexity.strip().lower() or "auto"
     wants_3d = dim in {"3d", "solid"} or any(
-        token in goal_l for token in ("3d", "axial", "mri", "wpt", "shield", "end winding")
+        token in goal_l for token in (
+            "3d",
+            "axial",
+            "transverse flux",
+            "tfpm",
+            "claw pole",
+            "lundell",
+            "mri",
+            "wpt",
+            "shield",
+            "end winding",
+        )
     )
     wants_simple_2d = dim in {"2d", "planar", "cross_section"} or any(
-        token in goal_l for token in ("2d", "cross-section", "cross section", "spm", "ipm", "srm", "synrm")
+        token in goal_l for token in (
+            "2d",
+            "cross-section",
+            "cross section",
+            "spm",
+            "ipm",
+            "bldc",
+            "srm",
+            "synrm",
+            "vernier",
+            "slotless",
+            "line-start",
+            "line start",
+            "deep-bar",
+            "deep bar",
+            "flux-switching",
+            "flux switching",
+            "commutator",
+        )
     )
     if complexity == "high" or wants_3d:
         primary = "cubit_mesh_export"
@@ -1636,10 +1799,39 @@ def build_meg_generation_plan(
 
 def _infer_motor_type(goal: str, fallback: str = "spm") -> str:
     goal_l = goal.lower()
-    for name in MOTOR_TYPES:
-        if name in goal_l:
+    normalized_goal = re.sub(r"[^a-z0-9]+", "_", goal_l).strip("_")
+    for name in sorted(MOTOR_TYPES, key=len, reverse=True):
+        if re.search(rf"(?:^|_){re.escape(name)}(?:_|$)", normalized_goal):
             return name
     aliases = {
+        "pm-assisted": "pm_assisted_synrm",
+        "pm assisted": "pm_assisted_synrm",
+        "pma synrm": "pm_assisted_synrm",
+        "pmasynrm": "pm_assisted_synrm",
+        "bldc": "bldc",
+        "six-step": "bldc",
+        "six step": "bldc",
+        "trapezoidal": "bldc",
+        "line-start": "line_start_pm",
+        "line start": "line_start_pm",
+        "lspm": "line_start_pm",
+        "deep-bar": "deep_bar_induction",
+        "deep bar": "deep_bar_induction",
+        "double-cage": "deep_bar_induction",
+        "double cage": "deep_bar_induction",
+        "flux switching": "flux_switching_pm",
+        "switched flux": "flux_switching_pm",
+        "vernier": "vernier_pm",
+        "flux modulation": "vernier_pm",
+        "transverse flux": "transverse_flux_pm",
+        "tfpm": "transverse_flux_pm",
+        "slotless": "slotless_pm",
+        "coreless": "slotless_pm",
+        "claw pole": "claw_pole",
+        "lundell": "claw_pole",
+        "commutator": "commutator_dc",
+        "brushed dc": "commutator_dc",
+        "universal motor": "commutator_dc",
         "surface": "spm",
         "pm motor": "spm",
         "permanent magnet": "spm",
@@ -1687,8 +1879,8 @@ def build_motor_design_plan(
         studies.append("static_torque_angle")
     if "ld_lq" in MOTOR_DEFAULT_OBSERVABLES.get(family, ()):
         studies.append("dq_inductance")
-    if family == "induction" or "loss_proxy" in observables:
-        studies.append("ac_loss_frequency_sweep" if family != "induction" else "induction_slip_loss")
+    if family in INDUCTION_MOTOR_TYPES or "loss_proxy" in observables:
+        studies.append("induction_slip_loss" if family in INDUCTION_MOTOR_TYPES else "ac_loss_frequency_sweep")
     if not studies:
         studies.append("static_flux_linkage")
     return {
@@ -1834,7 +2026,7 @@ def build_motor_loss_model_contract(
             "source": "user-supplied mechanical loss model",
         },
     ]
-    if family == "induction":
+    if family in INDUCTION_MOTOR_TYPES:
         terms.insert(
             2,
             {
@@ -1991,7 +2183,7 @@ def build_motor_efficiency_map_plan(
                 }
             )
     studies = ["static_torque_angle", "back_emf_speed_sweep", "ac_loss_frequency_sweep"]
-    if family == "induction":
+    if family in INDUCTION_MOTOR_TYPES:
         studies = ["induction_slip_loss", "ac_loss_frequency_sweep"]
     return {
         "schema_version": "elf-python-motor-efficiency-map-plan/v1",
@@ -2114,12 +2306,16 @@ def build_induction_motor_slip_sweep_plan(
 
 def _default_dq_parameters(family: str, current_limit_a_peak: float) -> dict[str, float]:
     current = max(float(current_limit_a_peak), 1.0e-9)
-    if family == "spm":
+    if family in {"spm", "bldc", "slotless_pm", "axial_flux_pm", "linear_pm", "stepper"}:
         return {"ld_h": 1.0e-3, "lq_h": 1.0e-3, "pm_flux_wb": 0.045, "id_min": -0.6 * current, "id_max": 0.0}
-    if family == "ipm":
+    if family in {"ipm", "line_start_pm"}:
         return {"ld_h": 0.75e-3, "lq_h": 1.45e-3, "pm_flux_wb": 0.055, "id_min": -0.9 * current, "id_max": 0.1 * current}
+    if family == "pm_assisted_synrm":
+        return {"ld_h": 1.8e-3, "lq_h": 0.75e-3, "pm_flux_wb": 0.020, "id_min": 0.0, "id_max": current}
     if family in {"synrm", "srm"}:
         return {"ld_h": 2.0e-3, "lq_h": 0.65e-3, "pm_flux_wb": 0.0, "id_min": 0.0, "id_max": current}
+    if family in {"flux_switching_pm", "vernier_pm"}:
+        return {"ld_h": 1.1e-3, "lq_h": 1.8e-3, "pm_flux_wb": 0.035, "id_min": -0.5 * current, "id_max": 0.5 * current}
     return {"ld_h": 1.0e-3, "lq_h": 1.2e-3, "pm_flux_wb": 0.02, "id_min": -0.5 * current, "id_max": 0.5 * current}
 
 
@@ -2298,9 +2494,9 @@ def build_reluctance_motor_design_plan(
     rotor_topology: str = "flux_barrier",
     current_limit_a_peak: float = 40.0,
 ) -> dict[str, Any]:
-    """Build a reluctance-focused motor design plan for SynRM or SRM."""
+    """Build a reluctance-focused motor design plan for SynRM, PMa-SynRM, or SRM."""
     family = _infer_motor_type(motor_type, "synrm")
-    if family not in {"synrm", "srm"}:
+    if family not in {"synrm", "pm_assisted_synrm", "srm"}:
         family = "synrm"
     variables = list(MOTOR_DESIGN_VARIABLES[family])
     dq_plan = build_motor_dq_axis_map_plan(
@@ -2314,11 +2510,13 @@ def build_reluctance_motor_design_plan(
         motor_type=family,
         pole_pairs=pole_pairs,
         current_limit_a_peak=current_limit_a_peak,
-        angle_min_deg=0.0 if family == "synrm" else -20.0,
-        angle_max_deg=90.0 if family == "synrm" else 60.0,
+        angle_min_deg=0.0 if family in {"synrm", "pm_assisted_synrm"} else -20.0,
+        angle_max_deg=90.0 if family in {"synrm", "pm_assisted_synrm"} else 60.0,
         angle_points=10,
     )
     studies = ["dq_inductance", "static_torque_angle"]
+    if family == "pm_assisted_synrm":
+        studies.append("back_emf_speed_sweep")
     if family == "srm":
         studies.extend(["turn_on_turn_off_angle_sweep", "aligned_unaligned_inductance"])
     return {
@@ -2459,6 +2657,21 @@ def build_motor_topology_parameter_plan(
             {"name": "bridge_thickness_mm", "default": 1.2, "range": (0.5, 3.0), "affects": ("leakage", "stress")},
             {"name": "magnet_v_angle_deg", "default": 120.0, "range": (80.0, 155.0), "affects": ("reluctance_torque", "demag")},
         ],
+        "pm_assisted_synrm": [
+            {"name": "barrier_count", "default": 3, "range": (1, 5), "affects": ("Ld_Lq", "ripple")},
+            {"name": "assist_magnet_depth_mm", "default": 2.0, "range": (0.4, 6.0), "affects": ("back_emf", "demag")},
+            {"name": "rib_thickness_mm", "default": 1.0, "range": (0.4, 3.0), "affects": ("stress", "leakage")},
+        ],
+        "bldc": [
+            {"name": "magnet_arc_fraction", "default": 0.80, "range": (0.55, 0.95), "affects": ("trapezoidal_emf", "cogging")},
+            {"name": "hall_sensor_advance_deg", "default": 0.0, "range": (-20.0, 30.0), "affects": ("six_step_commutation", "ripple")},
+            {"name": "skew_fraction", "default": 0.0, "range": (0.0, 1.0), "affects": ("cogging", "average_torque")},
+        ],
+        "line_start_pm": [
+            {"name": "cage_bar_count", "default": max(stator_slots // 2, 12), "range": (12, 96), "affects": ("starting_torque", "ripple")},
+            {"name": "pm_arc_fraction", "default": 0.55, "range": (0.25, 0.85), "affects": ("synchronizing_torque", "back_emf")},
+            {"name": "barrier_bridge_mm", "default": 1.2, "range": (0.5, 3.0), "affects": ("stress", "leakage")},
+        ],
         "synrm": [
             {"name": "barrier_count", "default": 3, "range": (1, 5), "affects": ("Ld_Lq", "ripple")},
             {"name": "barrier_arc_fraction", "default": 0.55, "range": (0.25, 0.85), "affects": ("saliency", "stress")},
@@ -2473,6 +2686,41 @@ def build_motor_topology_parameter_plan(
             {"name": "rotor_bar_count", "default": max(2 * stator_slots // 3, 12), "range": (12, 96), "affects": ("torque_ripple", "starting_torque")},
             {"name": "rotor_bar_depth_mm", "default": 8.0, "range": (3.0, 20.0), "affects": ("skin_effect", "rotor_loss")},
             {"name": "end_ring_area_scale", "default": 1.0, "range": (0.5, 2.0), "affects": ("rotor_loss", "thermal")},
+        ],
+        "deep_bar_induction": [
+            {"name": "outer_bar_depth_mm", "default": 4.0, "range": (1.5, 10.0), "affects": ("starting_torque", "skin_effect")},
+            {"name": "inner_bar_depth_mm", "default": 12.0, "range": (4.0, 30.0), "affects": ("rated_efficiency", "rotor_loss")},
+            {"name": "bar_neck_width_fraction", "default": 0.35, "range": (0.15, 0.70), "affects": ("leakage", "breakdown_torque")},
+        ],
+        "flux_switching_pm": [
+            {"name": "stator_pm_arc_fraction", "default": 0.45, "range": (0.20, 0.70), "affects": ("flux_switching", "torque")},
+            {"name": "rotor_pole_arc_fraction", "default": 0.50, "range": (0.25, 0.75), "affects": ("cogging", "torque_ripple")},
+            {"name": "stator_pm_bridge_mm", "default": 1.0, "range": (0.4, 3.0), "affects": ("leakage", "stress")},
+        ],
+        "vernier_pm": [
+            {"name": "modulation_pole_count", "default": 18, "range": (6, 72), "affects": ("gear_ratio", "torque_density")},
+            {"name": "modulation_tooth_width_fraction", "default": 0.45, "range": (0.20, 0.75), "affects": ("airgap_harmonics", "ripple")},
+            {"name": "pm_arc_fraction", "default": 0.75, "range": (0.45, 0.95), "affects": ("back_emf", "cogging")},
+        ],
+        "transverse_flux_pm": [
+            {"name": "module_count", "default": 3, "range": (1, 12), "affects": ("torque_density", "3d_flux")},
+            {"name": "claw_overlap_fraction", "default": 0.55, "range": (0.20, 0.85), "affects": ("leakage", "torque")},
+            {"name": "axial_gap_mm", "default": 1.0, "range": (0.5, 3.0), "affects": ("torque", "manufacturing")},
+        ],
+        "slotless_pm": [
+            {"name": "coil_span_fraction", "default": 0.80, "range": (0.45, 0.98), "affects": ("winding_factor", "copper_loss")},
+            {"name": "airgap_mm", "default": 2.0, "range": (0.8, 6.0), "affects": ("torque", "thermal")},
+            {"name": "support_tube_thickness_mm", "default": 1.0, "range": (0.2, 3.0), "affects": ("mechanical_gap", "heat_path")},
+        ],
+        "claw_pole": [
+            {"name": "claw_overlap_fraction", "default": 0.55, "range": (0.25, 0.85), "affects": ("leakage", "airgap_harmonics")},
+            {"name": "pole_tip_taper_fraction", "default": 0.25, "range": (0.0, 0.60), "affects": ("noise", "voltage_waveform")},
+            {"name": "rotor_field_window_fraction", "default": 0.35, "range": (0.15, 0.70), "affects": ("field_current", "thermal")},
+        ],
+        "commutator_dc": [
+            {"name": "brush_advance_deg", "default": 0.0, "range": (-20.0, 30.0), "affects": ("commutation", "torque_ripple")},
+            {"name": "commutator_segment_count", "default": 24, "range": (8, 96), "affects": ("torque_ripple", "manufacturing")},
+            {"name": "series_field_window_fraction", "default": 0.35, "range": (0.10, 0.70), "affects": ("starting_torque", "field_loss")},
         ],
     }
     return {
@@ -3009,7 +3257,7 @@ def build_motor_market_brief(
     topology = (rotor_topology or profile["default_rotor_topology"]).strip().lower()
     if topology not in {"outer_rotor", "inner_rotor", "linear", "axial_flux"}:
         topology = profile["default_rotor_topology"]
-    objective = "back_emf_target" if family in {"spm", "ipm"} else "torque_density"
+    objective = "back_emf_target" if family in PM_MOTOR_TYPES else "torque_density"
     if market_key == "robot_drone":
         objective = "ripple_reduction" if "low_ripple" in profile["design_priorities"] else objective
     return {
@@ -3277,7 +3525,7 @@ def build_2d_motor_template(
     pp = max(1, int(pole_pairs))
     slots = max(3, int(stator_slots))
     rotor_features: list[dict[str, Any]]
-    if family in {"spm", "axial_flux_pm", "linear_pm", "stepper"}:
+    if family in {"spm", "bldc", "slotless_pm", "axial_flux_pm", "linear_pm", "stepper"}:
         rotor_features = [
             {
                 "name": "surface_pm_pole",
@@ -3287,7 +3535,7 @@ def build_2d_motor_template(
                 "radial_layer": "surface_pm",
             }
         ]
-    elif family == "ipm":
+    elif family in {"ipm", "pm_assisted_synrm", "line_start_pm"}:
         rotor_features = [
             {
                 "name": "buried_pm_barrier",
@@ -3297,15 +3545,96 @@ def build_2d_motor_template(
                 "radial_layer": "ipm_pocket",
             }
         ]
-    elif family == "induction":
+        if family == "line_start_pm":
+            rotor_features.append(
+                {
+                    "name": "line_start_cage_bar",
+                    "count": max(2 * pp * 5, slots // 2),
+                    "material_role": "conducting_bar",
+                    "angle_span_fraction_of_slot_pitch": 0.35,
+                    "radial_layer": "rotor_cage",
+                }
+            )
+    elif family in {"induction", "deep_bar_induction"}:
         rotor_features = [
             {
-                "name": "rotor_bar",
+                "name": "deep_rotor_bar" if family == "deep_bar_induction" else "rotor_bar",
                 "count": max(2 * pp * 5, slots // 2),
                 "material_role": "conducting_bar",
                 "angle_span_fraction_of_slot_pitch": 0.45,
                 "radial_layer": "rotor_cage",
             }
+        ]
+    elif family == "flux_switching_pm":
+        rotor_features = [
+            {
+                "name": "salient_rotor_pole",
+                "count": 2 * pp,
+                "material_role": "rotor_iron",
+                "angle_span_fraction_of_pole_pitch": 0.55,
+                "radial_layer": "rotor_saliency",
+            },
+            {
+                "name": "stator_pm_piece",
+                "count": slots,
+                "material_role": "permanent_magnet",
+                "angle_span_fraction_of_slot_pitch": 0.30,
+                "radial_layer": "stator_tooth_slot",
+            },
+        ]
+    elif family == "vernier_pm":
+        rotor_features = [
+            {
+                "name": "flux_modulation_tooth",
+                "count": max(slots, 2 * pp),
+                "material_role": "modulation_iron",
+                "angle_span_fraction_of_slot_pitch": 0.45,
+                "radial_layer": "rotor_feature_layer",
+            },
+            {
+                "name": "vernier_pm_pole",
+                "count": 2 * pp,
+                "material_role": "permanent_magnet",
+                "angle_span_fraction_of_pole_pitch": 0.70,
+                "radial_layer": "surface_pm",
+            },
+        ]
+    elif family == "transverse_flux_pm":
+        rotor_features = [
+            {
+                "name": "transverse_flux_module",
+                "count": 2 * pp,
+                "material_role": "3d_pm_flux_path",
+                "angle_span_fraction_of_pole_pitch": 0.60,
+                "radial_layer": "rotor_feature_layer",
+            }
+        ]
+    elif family == "claw_pole":
+        rotor_features = [
+            {
+                "name": "claw_pole_tooth",
+                "count": 2 * pp,
+                "material_role": "wound_field_rotor_iron",
+                "angle_span_fraction_of_pole_pitch": 0.55,
+                "radial_layer": "rotor_saliency",
+            }
+        ]
+    elif family == "commutator_dc":
+        rotor_features = [
+            {
+                "name": "armature_slot",
+                "count": max(slots // 2, 12),
+                "material_role": "armature_winding",
+                "angle_span_fraction_of_slot_pitch": 0.45,
+                "radial_layer": "rotor_feature_layer",
+            },
+            {
+                "name": "field_pole",
+                "count": 2 * pp,
+                "material_role": "series_or_shunt_field",
+                "angle_span_fraction_of_pole_pitch": 0.60,
+                "radial_layer": "stator_tooth_slot",
+            },
         ]
     else:
         rotor_features = [
@@ -3352,6 +3681,9 @@ def build_2d_motor_template(
             "coil_conductor",
             "permanent_magnet",
             "conducting_bar",
+            "modulation_iron",
+            "armature_winding",
+            "series_or_shunt_field",
         ],
         "requested_observables": observables,
         "meg_generation_path": "llm_2d_template_then_netgen_2d_remesh",

@@ -223,6 +223,7 @@ def test_python_facade_schema_lint_and_generation_plan():
         format_run_result_parse,
         format_reluctance_motor_design_plan,
         lint_mai_text,
+        MOTOR_TYPES,
         python_api_schema,
         validate_motor_spec_dict,
     )
@@ -241,6 +242,37 @@ def test_python_facade_schema_lint_and_generation_plan():
     assert schema["policy"]["product_python_role"] == "reference"
     assert schema["policy"]["vendor_dll_mutable_by_public_package"] is False
     assert schema["policy"]["public_facade_can_extend_api"] is True
+    advanced_motor_types = [
+        "pm_assisted_synrm",
+        "bldc",
+        "line_start_pm",
+        "deep_bar_induction",
+        "flux_switching_pm",
+        "vernier_pm",
+        "transverse_flux_pm",
+        "slotless_pm",
+        "claw_pole",
+        "commutator_dc",
+    ]
+    for motor_type in advanced_motor_types:
+        assert motor_type in MOTOR_TYPES
+        assert motor_type in schema["enums"]["motor_types"]
+        advanced_template = build_motor_spec_template(motor_type)
+        assert advanced_template["motor_type"] == motor_type
+        assert validate_motor_spec_dict(advanced_template)["status"] == "PASS"
+        assert advanced_template["design_variables"]
+        advanced_topology = build_motor_topology_parameter_plan(motor_type)
+        assert advanced_topology["motor_type"] == motor_type
+        assert len(advanced_topology["parameters"]) >= 7
+        advanced_2d = build_2d_motor_template(motor_type, pole_pairs=4, stator_slots=48)
+        assert advanced_2d["motor_type"] == motor_type
+        assert advanced_2d["angular_features"]
+        advanced_optimization = build_motor_optimization_study_plan(motor_type, budget=6)
+        assert advanced_optimization["motor_type"] == motor_type
+        assert advanced_optimization["design_variables"]
+    assert build_motor_design_plan("six-step BLDC torque ripple")["motor_type"] == "bldc"
+    assert build_motor_design_plan("line-start PM pull-in torque")["motor_type"] == "line_start_pm"
+    assert build_motor_design_plan("deep-bar induction starting torque")["motor_type"] == "deep_bar_induction"
 
     template = build_motor_spec_template("ipm")
     lint = validate_motor_spec_dict(template)
