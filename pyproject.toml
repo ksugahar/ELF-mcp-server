@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ELF-mcp-server"
-version = "1.57.0"
-description = "MCP server for ELF600 electromagnetic analysis docs, workflow recipes, Cubit/Netgen MEG notes, motor-design Python facade contracts for winding layout, topology parameters, demag margin, voltage/field weakening, cogging/ripple, air-gap harmonic NVH, thermal networks, manufacturing tolerance, material variation, feasibility gates, drive cycles, optimization studies, operating-point run queues, inverter/PWM harmonic screening, saturated Ld/Lq maps, rotor stress/retention screening, validation scorecards, RunResult parsing, closed-loop candidate ranking, NGSolve runtime cross-checks, drawing/BOM handoffs, dq-axis maps, MTPA, reluctance/SynRM/SRM design, efficiency maps, loss models, torque-speed envelopes, IM slip sweeps, open NGSolve thermal/NVH/stress validation script generation, and 1600 verified public ELF/MAGIC .mai/.meg sample decks with quality, physics, validation matrix, observable-contract, cross-validation, duplicate/reuse, motor-readiness, ELF/radia/MMM hybrid routing, 2D MMM motor quick checks, local simulation handoff, and release-readiness audits."
+version = "1.57.1"
+description = "MCP server for ELF600 docs, public sample decks, and motor-design Python facade contracts: run queues, efficiency maps, dq/MTPA, PWM harmonics, NGSolve validation, RunResult parsing, optimization loops, drawing/BOM handoffs, and release-quality audits."
 readme = "README.md"
 license = {text = "BSD-3-Clause"}
 requires-python = ">=3.10"
