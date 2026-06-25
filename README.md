@@ -12,7 +12,7 @@ This server does **not** execute ELF600 simulations — it provides curated docu
 
 ## Features
 
-**40 tools + 1 prompt** providing curated docs, workflow recipes, ELF-runnable public sample decks, representative sample tours, quality labels, physical-quantity coverage, validation matrices, observable-contract audits, cross-validation audits, duplicate/reuse audits, motor-readiness audits, ELF/radia/MMM hybrid motor routing, 2D MMM/BEM-like motor quick checks, local simulation handoff contracts, release-readiness gates, prompt-to-sample routing, validation summaries, promotion copy, and raw access to ELF600 help HTM, example inputs, vendor wiki, and Python ctypes API:
+**82 tools + 1 prompt** providing curated docs, workflow recipes, ELF-runnable public sample decks, representative sample tours, quality labels, physical-quantity coverage, validation matrices, observable-contract audits, cross-validation audits, duplicate/reuse audits, motor-readiness audits, ELF/radia/MMM hybrid motor routing, 2D MMM/BEM-like motor quick checks, local simulation handoff contracts, public Python-interface design contracts, an LLM-oriented API manual, typed Python facade schemas, motor-design variables/objectives/sweeps, winding-layout plans, topology-parameter plans, demagnetization-margin plans, voltage/field-weakening plans, cogging/ripple plans, air-gap harmonic NVH plans, thermal-network plans, manufacturing-tolerance plans, material-variation plans, feasibility gates, drive-cycle plans, optimization-study plans, concrete operating-point run queues, inverter/PWM harmonic screening, saturated Ld/Lq maps, high-speed rotor stress/retention gates, validation scorecards, RunResult parsing, closed-loop candidate ranking, NGSolve runtime cross-checks, drawing/BOM prototype handoffs, dq-axis maps, MTPA searches, reluctance/SynRM/SRM design plans, efficiency-map operating grids, loss-model contracts, torque-speed envelopes, IM slip sweeps, robotics/drone design-agent handoffs, executable NGSolve thermal/NVH/stress validation script generation, `.mai` deck lint, `.meg` generation routing, constrained 2D motor templates, release-readiness gates, prompt-to-sample routing, validation summaries, promotion copy, and raw access to ELF600 help HTM, example inputs, vendor wiki, and Python ctypes API:
 
 | Tool family | Purpose | Files |
 |---|---|---|
@@ -23,6 +23,18 @@ This server does **not** execute ELF600 simulations — it provides curated docu
 | `elf_recipe_*(...)` | Workflow decision cards for elements, PRE/SOL blocks, outputs, checks, and pitfalls | public-safe recipes |
 | `elf_wiki_*(...)` | Vendor wiki pages from elf.co.jp PukiWiki | 146 pages, 211k chars |
 | `elf_python_*(...)` | Python ctypes API + configs from `C:/ELF600/bin/` | 15 files, 246k chars |
+| `elf_python_interface_design(topic)` | Public facade/API design above a user-local product backend | policy, schema, backend, validation |
+| `elf_python_api_manual(topic)` | LLM-oriented Python facade manual | call order, lint rules, examples |
+| `elf_python_api_schema / motor_spec_lint / deck_lint / run_contract / meg_generation_plan / 2d_motor_template` | Concrete public Python facade contracts | MotorSpec, DeckBundle, RunRequest, MEG backend routing |
+| `elf_python_motor_design_plan / motor_sweep_matrix / motor_observable_contract` | Motor design API layer | variables, objectives, DOE rows, parser keys, validation |
+| `elf_python_motor_dq_axis_map_plan / motor_mtpa_search_plan / reluctance_motor_design_plan` | DQ and reluctance motor API layer | Id/Iq maps, PM-vs-reluctance torque, MTPA, SynRM/SRM saliency |
+| `elf_python_motor_winding_layout_plan / motor_topology_parameter_plan / motor_demag_margin_plan / motor_drive_cycle_plan / motor_optimization_study_plan` | Motor design-suite API layer | winding layout, geometry variables, demag screening, duty points, constrained ranking |
+| `elf_python_motor_voltage_field_weakening_plan / motor_cogging_ripple_plan / motor_airgap_harmonics_nvh_plan / motor_thermal_network_plan / motor_manufacturing_tolerance_plan / motor_material_variation_plan / motor_feasibility_study` | Production-style motor design gates | voltage limits, ripple, NVH orders, thermal screening, tolerance, materials, feasibility |
+| `elf_python_motor_operating_point_run_queue / motor_inverter_pwm_harmonic_plan / motor_saturation_inductance_map_plan` | Motor execution-planning API layer | operating-point rows, PWM sidebands, saturated Ld/Lq current maps |
+| `elf_python_run_result_parse / motor_optimization_loop / motor_ngsolve_result_crosscheck / motor_drawing_bom_handoff / motor_rotor_stress_retention_plan / motor_validation_scorecard` | Closed-loop motor design workflow | parsed observables, candidate ranking, NGSolve reconciliation, rotor stress screening, drawing/BOM handoff, scorecards |
+| `elf_python_motor_efficiency_map_plan / motor_loss_model_contract / motor_torque_speed_envelope / induction_slip_sweep_plan` | Motor map API layer | efficiency maps, loss terms, torque-speed clipping, IM slip |
+| `elf_python_motor_market_brief / motor_design_agent_handoff` | Spec-to-design-agent workflow | robot/drone SPM, GUI-free backend handoff, drawings/BOM/prototype gates |
+| `elf_python_ngsolve_validation_plan / ngsolve_validation_script` | Executable open multiphysics validation | NGSolve thermal, NVH, and stress script generation |
 | `elf_public_promotion(...)` | Public-safe promotion copy for the 1600-case corpus | Japanese/English drafts |
 
 Each `_*` family has 3 tools: `_index`, `_search(query)`, `_get(path)`.
@@ -80,12 +92,60 @@ cases for ELF Python-interface orchestration. `team28` is not a normal
 ELF GUI/CLI deck-execution workflow. Solver outputs, comparison metrics,
 executable orchestration state, and Python-interface runtime state are not
 bundled.
+`elf_python_interface_design(topic)` defines the public Python facade policy:
+the product-side Python implementation is reference material rather than a
+required dependency, the vendor DLL is an immutable product boundary, and the
+public MCP/Python layer may add typed schemas, deck builders, validators,
+routers, and result contracts above that boundary.
+The concrete facade tools add `MotorSpec` / `DeckBundle` / `RunRequest` /
+`RunResult` vocabulary, dry-run `.mai` lint for requested observables, and
+`.meg` generation routing. Recommended `.meg` paths are Cubit mesh export for
+3D or CAD-like geometry, Netgen for deterministic 2D motor cross-sections, and
+constrained LLM-authored 2D templates for simple prompt-to-deck prototypes
+that still must pass lint and validation gates.
+`elf_python_2d_motor_template()` returns a bounded radial-layer / angular-feature
+schema for LLM-assisted 2D drafting before deterministic remeshing.
+The motor-design tools add explicit design variables, objective-specific
+observables, sweep/DOE rows, parser keys, and validation gates so an LLM can
+iterate a motor design without inventing hidden parameters.
+The map-oriented tools add motor-design deliverables that users naturally ask
+for: efficiency-map torque/speed grids, loss-term contracts, torque-speed
+envelope clipping, and induction-motor slip sweeps with synchronous speed,
+slip frequency, rotor-speed, and rotor-copper-loss relations.
+The dq/reluctance tools add Id/Iq maps, PM-vs-reluctance torque decomposition,
+MTPA current-angle scans, SynRM saliency planning, and SRM aligned/unaligned
+inductance checks.
+The design-suite tools add phase-belt winding layouts, topology-specific
+geometry variables, PM demagnetization screening, weighted drive-cycle points,
+and constrained optimization-study plans so an LLM can move from user specs to
+ranked candidates without hiding assumptions.
+The production-style design gates add voltage/current limit and field-weakening
+plans, cogging/ripple reduction contracts, air-gap harmonic force-order routing
+for NVH, reduced thermal-network screening, manufacturing tolerance DOE,
+material variation sweeps, and feasibility gates that state what MCP can and
+cannot claim before prototype handoff.
+The closed-loop tools normalize user-local RunResult payloads into parsed
+observables, rank candidates, reconcile NGSolve runtime JSON with validation
+labels, and prepare drawing/BOM handoff content while keeping raw outputs and
+private run directories outside the public package.
+The design-agent handoff tools target workflows such as robotics/drone
+outer-rotor or inner-rotor SPM/PMSM: users provide specifications, the agent
+routes ELF/radia/MMM validation, and downstream teams receive drawing/BOM and
+prototype-gate intent without requiring the user to operate analysis software.
+`elf_python_ngsolve_validation_plan()` and
+`elf_python_ngsolve_validation_script()` implement the required open
+multiphysics validation lane: after local electromagnetic observables are
+parsed, the MCP can generate NGSolve jobs/scripts for thermal rise, NVH modal
+order separation, and mechanical stress margin checks.
 
 ### MCP quick start
 
 For MCP clients, start with `elf_overview()` to discover the server surface and
 public boundary. The most useful calls while authoring ELF/MAGIC inputs are:
 
+- `elf_python_api_manual("quickstart")` to load the LLM-oriented Python facade
+  manual: policy, object vocabulary, call order, deck lint, `.meg` generation,
+  local backend contract, validation rules, and examples
 - `elf_sample_decks_route("IPM hairpin motor flux linkage")` to map a user
   prompt to the right sample family, playbook call, recipe, and representative
   `.mai` decks
@@ -216,9 +276,89 @@ public boundary. The most useful calls while authoring ELF/MAGIC inputs are:
 - `elf_sample_decks_get("application/motor/pm_cosine_pickup_72/pm001/pm001.mai")` to open a
   concrete public deck
 - `elf_python_team28()` to inspect the Python-interface seed manifest
+- `elf_python_interface_design("overview")` to inspect the public Python
+  facade contract, product-Python reference policy, immutable DLL boundary,
+  motor schemas, backend protocol, validation gates, and vendor proposal
+- `elf_python_api_schema("spm")` to get the concrete public MotorSpec,
+  DeckBundle, RunRequest, and RunResult vocabulary plus a JSON template
+- `elf_python_deck_lint(mai_path="application/motor/pm_cosine_pickup_72/pm001/pm001.mai", requested_observables="flux_linkage,back_emf_constant")`
+  to dry-run check a public `.mai` deck before local execution
+- `elf_python_run_contract("SPM motor back EMF sweep", motor_type="spm")` to
+  prepare a user-local backend request contract without calling product code
+- `elf_python_motor_design_plan("IPM torque density and Ld Lq", motor_type="ipm")`
+  to choose design variables, studies, observables, and validation gates
+- `elf_python_motor_sweep_matrix(motor_type="spm", objective="back_emf_target", budget=9)`
+  to create explicit DOE rows for local product runs
+- `elf_python_motor_dq_axis_map_plan(motor_type="ipm")` to create Id/Iq map
+  points with PM and reluctance torque terms split out
+- `elf_python_motor_mtpa_search_plan(motor_type="ipm")` to scan current angle
+  candidates for torque per amp before local RunResult confirmation
+- `elf_python_reluctance_motor_design_plan(motor_type="synrm")` to plan
+  SynRM/SRM saliency, Ld/Lq extraction, and reluctance torque studies
+- `elf_python_motor_winding_layout_plan(stator_slots=48, pole_pairs=4)` to
+  create slot/phase assignment, q, coil-pitch, and winding-factor proxy
+- `elf_python_motor_topology_parameter_plan(motor_type="ipm", rotor_topology="inner_rotor")`
+  to expose topology-specific geometry variables, ranges, constraints, and
+  region labels
+- `elf_python_motor_demag_margin_plan(motor_type="spm", temperature_c=120)` to
+  record PM hot-Br, Hcj, negative-Id screening, required field observables, and
+  risk labels
+- `elf_python_motor_voltage_field_weakening_plan(motor_type="ipm", dc_bus_v=48)`
+  to screen voltage margin and high-speed negative-Id demand
+- `elf_python_motor_cogging_ripple_plan(stator_slots=48, pole_pairs=4)` to
+  separate cogging, loaded ripple, harmonic orders, and mitigation variables
+- `elf_python_motor_airgap_harmonics_nvh_plan(stator_slots=48, pole_pairs=4)`
+  to route slot/pole force orders into NGSolve NVH validation
+- `elf_python_motor_efficiency_map_plan(motor_type="spm")` to create an
+  efficiency-map torque/speed grid, required observables, loss terms, and
+  postprocess outputs such as `eta_grid`
+- `elf_python_motor_loss_model_contract(motor_type="spm")` to separate copper,
+  iron, magnet, mechanical, rotor, and optional inverter loss assumptions
+- `elf_python_motor_torque_speed_envelope(motor_type="spm")` to clip map points
+  by current-limited constant-torque and voltage-limited field-weakening regions
+- `elf_python_motor_drive_cycle_plan(target_market="robot_drone")` to attach
+  weighted duty points for cycle efficiency, loss, and multiphysics follow-up
+- `elf_python_motor_thermal_network_plan(total_loss_w=25)` to build a reduced
+  thermal screening model before NGSolve thermal validation
+- `elf_python_motor_manufacturing_tolerance_plan(motor_type="spm", airgap_mm=0.8)`
+  to create tolerance variables and robustness DOE rows
+- `elf_python_motor_material_variation_plan(motor_type="spm", focus="all")` to
+  plan magnet, steel, and conductor sensitivity sweeps
+- `elf_python_motor_optimization_study_plan(motor_type="spm", objective="cycle_efficiency")`
+  to define variables, constraints, ranking outputs, and validation promotion
+- `elf_python_motor_feasibility_study("outer-rotor drone SPM motor")` to review
+  electromagnetic, thermal, NVH, stress, manufacturing, and governance gates
+- `elf_python_run_result_parse(payload="torque_nm=0.82\nloss_w=12.5")` to
+  normalize local/private results into parsed observables
+- `elf_python_motor_optimization_loop(motor_type="spm", objective="cycle_efficiency")`
+  to rank parsed candidates and propose next DOE rows
+- `elf_python_motor_ngsolve_result_crosscheck(run_result_payload="{...}", ngsolve_result_payload="{...}")`
+  to reconcile local RunResult observables with NGSolve runtime JSON
+- `elf_python_motor_drawing_bom_handoff(motor_type="spm", validation_label="crosscheck_pass")`
+  to prepare drawing views, key dimensions, BOM, export intent, and validation
+  attachments
+- `elf_python_induction_slip_sweep_plan(pole_pairs=2, supply_frequency_hz=50)`
+  to build an IM slip sweep with synchronous speed, slip frequency, rotor speed,
+  and rotor-copper-loss relations
+- `elf_python_motor_observable_contract(motor_type="ipm", study="dq_inductance")`
+  to map studies to ELF markers, parser keys, validation checks, and AGE targets
+- `elf_python_motor_market_brief(target_market="robot_drone", motor_type="spm", rotor_topology="outer_rotor")`
+  to define robotics/drone spec intake and GUI-free user experience policy
+- `elf_python_motor_design_agent_handoff("outer-rotor drone SPM motor", target_market="robot_drone")`
+  to prepare design-agent deliverables, required NGSolve NVH/thermal/stress routing, and manufacturing/prototype handoff
+- `elf_python_ngsolve_validation_plan("outer-rotor drone SPM motor")` to build
+  required NGSolve thermal/NVH/stress jobs from public specs and parsed observables
+- `elf_python_ngsolve_validation_script("outer-rotor drone SPM motor", lane="all")`
+  to generate a runnable NGSolve Python validation script
+- `elf_python_meg_generation_plan("2D SPM motor cross-section", dimension="2d")`
+  to choose Cubit, Netgen 2D, or constrained LLM 2D `.meg` generation paths
+- `elf_python_2d_motor_template("spm", pole_pairs=4, stator_slots=48)` to
+  create a bounded 2D drafting template before Netgen remeshing and validation
 
-This MCP server is documentation and input-deck retrieval only; it does not
-launch ELF, run solvers, manage licenses, or publish validation outputs.
+This MCP server provides documentation, public input-deck retrieval, public
+facade contracts, and open-validation script generation. It does not launch
+ELF, execute product solvers, manage product licenses, or publish raw validation
+outputs.
 
 ### ELF/MAGIC application input authoring
 

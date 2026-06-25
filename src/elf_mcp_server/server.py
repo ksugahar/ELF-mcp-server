@@ -23,6 +23,8 @@ Usage:
     elf-mcp-server --selftest   # Run self-test
 """
 
+import json
+import re
 import sys
 
 from mcp.server.fastmcp import FastMCP
@@ -69,6 +71,99 @@ from .sample_decks import (
     format_physical_quantity_summary,
     format_validation_summary,
 )
+from .python_interface_design import (
+    build_python_interface_design,
+    format_python_interface_design,
+)
+from .python_api_manual import build_python_api_manual, format_python_api_manual
+from .python_facade import (
+    build_2d_motor_template,
+    build_meg_generation_plan,
+    build_induction_motor_slip_sweep_plan,
+    build_motor_design_agent_handoff,
+    build_motor_design_plan,
+    build_motor_demag_margin_plan,
+    build_motor_drive_cycle_plan,
+    build_motor_dq_axis_map_plan,
+    build_motor_efficiency_map_plan,
+    build_motor_airgap_harmonics_nvh_plan,
+    build_motor_cogging_ripple_plan,
+    build_motor_feasibility_study,
+    build_motor_loss_model_contract,
+    build_motor_manufacturing_tolerance_plan,
+    build_motor_market_brief,
+    build_motor_material_variation_plan,
+    build_motor_mtpa_search_plan,
+    build_motor_ngsolve_result_crosscheck,
+    build_motor_observable_contract,
+    build_motor_operating_point_run_queue,
+    build_motor_optimization_study_plan,
+    build_motor_optimization_loop,
+    build_motor_inverter_pwm_harmonic_plan,
+    build_motor_saturation_inductance_map_plan,
+    build_motor_rotor_stress_retention_plan,
+    build_motor_spec_template,
+    build_motor_sweep_matrix,
+    build_motor_topology_parameter_plan,
+    build_motor_torque_speed_envelope,
+    build_motor_thermal_network_plan,
+    build_motor_validation_scorecard,
+    build_motor_voltage_field_weakening_plan,
+    build_motor_winding_layout_plan,
+    build_motor_drawing_bom_handoff,
+    build_reluctance_motor_design_plan,
+    build_run_request_contract,
+    parse_run_result_payload,
+    format_deck_lint,
+    format_2d_motor_template,
+    format_induction_motor_slip_sweep_plan,
+    format_meg_generation_plan,
+    format_motor_drawing_bom_handoff,
+    format_motor_design_agent_handoff,
+    format_motor_demag_margin_plan,
+    format_motor_design_plan,
+    format_motor_drive_cycle_plan,
+    format_motor_dq_axis_map_plan,
+    format_motor_efficiency_map_plan,
+    format_motor_airgap_harmonics_nvh_plan,
+    format_motor_cogging_ripple_plan,
+    format_motor_feasibility_study,
+    format_motor_loss_model_contract,
+    format_motor_manufacturing_tolerance_plan,
+    format_motor_market_brief,
+    format_motor_material_variation_plan,
+    format_motor_mtpa_search_plan,
+    format_motor_ngsolve_result_crosscheck,
+    format_motor_observable_contract,
+    format_motor_operating_point_run_queue,
+    format_motor_optimization_study_plan,
+    format_motor_optimization_loop,
+    format_motor_inverter_pwm_harmonic_plan,
+    format_motor_saturation_inductance_map_plan,
+    format_motor_rotor_stress_retention_plan,
+    format_motor_topology_parameter_plan,
+    format_motor_winding_layout_plan,
+    format_reluctance_motor_design_plan,
+    format_motor_spec_lint,
+    format_motor_sweep_matrix,
+    format_motor_torque_speed_envelope,
+    format_motor_thermal_network_plan,
+    format_motor_validation_scorecard,
+    format_motor_voltage_field_weakening_plan,
+    format_python_api_schema,
+    format_run_request_contract,
+    format_run_result_parse,
+    lint_mai_text,
+    python_api_schema,
+    validate_motor_spec_dict,
+)
+from .ngsolve_multiphysics import (
+    build_ngsolve_validation_plan,
+    build_ngsolve_validation_script,
+    build_ngsolve_validation_spec,
+    format_ngsolve_validation_plan,
+    format_ngsolve_validation_script,
+)
 from .recipes import (
     list_recipes,
     search_recipes,
@@ -111,6 +206,79 @@ _TOOL_CATALOG = [
                                               "machine-readable validation levels)"),
     ("elf_public_promotion", "Public-safe Japanese/English promotion copy "
                               "for the 1600-case corpus"),
+    ("elf_python_interface_design(topic)", "Public-safe design contract for "
+                                           "a richer Python facade above a "
+                                           "user-local ELF/MAGIC product "
+                                           "backend; product Python is "
+                                           "reference-only, vendor DLL is an "
+                                           "immutable boundary"),
+    ("elf_python_api_manual(topic)", "LLM-oriented Python facade manual: "
+                                    "policy, object vocabulary, call order, "
+                                    "deck lint, MEG generation, backend "
+                                    "contract, validation, and examples"),
+    ("elf_python_api_schema / motor_spec_lint / deck_lint / run_contract / "
+     "meg_generation_plan / 2d_motor_template",
+                            "Typed public Python facade: MotorSpec schema, "
+                            "deck lint, local backend contract, MEG "
+                            "generation routing across Cubit, Netgen 2D, "
+                            "and constrained LLM 2D motor templates"),
+    ("elf_python_motor_design_plan / motor_sweep_matrix / motor_observable_contract",
+                            "Motor-design API layer: design variables, "
+                            "objectives, sweep/DOE rows, ELF observable "
+                            "markers, parser keys, and validation targets"),
+    ("elf_python_motor_efficiency_map_plan / loss_model_contract / "
+     "torque_speed_envelope / induction_slip_sweep_plan",
+                            "Motor-design API layer for efficiency maps, "
+                            "loss-term accounting, torque-speed envelopes, "
+                            "and IM slip sweeps"),
+    ("elf_python_motor_operating_point_run_queue / "
+     "motor_inverter_pwm_harmonic_plan / "
+     "motor_saturation_inductance_map_plan",
+                            "Motor execution-planning API layer for concrete "
+                            "operating-point run rows, inverter/PWM harmonic "
+                            "loss and ripple screening, and saturated Ld/Lq "
+                            "current maps"),
+    ("elf_python_motor_dq_axis_map_plan / mtpa_search_plan / "
+     "reluctance_design_plan",
+                            "Motor-design API layer for Id/Iq maps, "
+                            "PM-vs-reluctance torque decomposition, MTPA "
+                            "searches, SynRM saliency, and SRM aligned/"
+                            "unaligned inductance planning"),
+    ("elf_python_motor_winding_layout_plan / topology_parameter_plan / "
+     "demag_margin_plan / drive_cycle_plan / optimization_study_plan",
+                            "Motor-design API layer for phase-belt winding "
+                            "layout, topology-specific geometry variables, "
+                            "PM demagnetization margin screening, weighted "
+                            "drive-cycle points, and constrained candidate "
+                            "ranking"),
+    ("elf_python_motor_voltage_field_weakening_plan / cogging_ripple_plan / "
+     "airgap_harmonics_nvh_plan / thermal_network_plan / "
+     "manufacturing_tolerance_plan / material_variation_plan / feasibility_study",
+                            "Motor-design API layer for voltage/current "
+                            "limits, field weakening, cogging and torque "
+                            "ripple, air-gap harmonic NVH orders, reduced "
+                            "thermal networks, manufacturing robustness, "
+                            "material sensitivity, and feasibility gates"),
+    ("elf_python_run_result_parse / motor_optimization_loop / "
+     "motor_ngsolve_result_crosscheck / motor_drawing_bom_handoff / "
+     "motor_rotor_stress_retention_plan / motor_validation_scorecard",
+                            "Closed-loop motor design API layer: normalize "
+                            "local RunResult payloads, rank candidates, "
+                            "cross-check NGSolve runtime JSON, and prepare "
+                            "rotor-stress, drawing/BOM, and validation "
+                            "scorecard handoffs without exposing raw private "
+                            "outputs"),
+    ("elf_python_motor_market_brief / motor_design_agent_handoff",
+                            "Spec-to-design-agent layer for robotics/drone "
+                            "and servo markets: user spec intake, GUI-free "
+                            "licensed-backend handoff, required NGSolve "
+                            "NVH/thermal/stress routing, "
+                            "drawing/BOM/prototype deliverables"),
+    ("elf_python_ngsolve_validation_plan / validation_script",
+                            "Executable open-validation implementation for "
+                            "motor thermal, NVH, and mechanical stress checks: "
+                            "builds NGSolve lane jobs and runnable Python "
+                            "scripts from parsed observables and public specs"),
     ("elf_recipe_index / search / get / plan", "Public-safe workflow "
                                                 "recipes for choosing ELF "
                                                 "elements, PRE/SOL blocks, "
@@ -132,16 +300,16 @@ _RELATED_PUBLIC_PACKAGES = [
 
 @mcp.tool()
 def elf_overview() -> dict:
-    """RECOMMENDED FIRST CALL. Catalog of ELF MCP's 40 tools + 1
+    """RECOMMENDED FIRST CALL. Catalog of ELF MCP's 82 tools + 1
     prompt, with public-safe routing hints for MCP clients.
 
     Returns:
-        dict with `tool_families` (curated 40-tool grouping), `n_tools`,
+        dict with `tool_families` (curated 82-tool grouping), `n_tools`,
         public boundary notes, recommended calls, and public companion package
         hints.
     """
     return {
-        "n_tools": 40,
+        "n_tools": 82,
         "n_prompts": 1,
         "tool_families": [
             {"signature": sig, "description": desc}
@@ -228,6 +396,170 @@ def elf_overview() -> dict:
                 "goal": "Inspect the Python-interface team28 seed manifest",
                 "call": "elf_python_team28()",
             },
+            {
+                "goal": "Inspect the public Python facade and immutable DLL-boundary design",
+                "call": "elf_python_interface_design(topic='overview')",
+            },
+            {
+                "goal": "Load the LLM-oriented Python API manual and call order",
+                "call": "elf_python_api_manual(topic='quickstart')",
+            },
+            {
+                "goal": "Inspect the concrete public Python API schema and MotorSpec template",
+                "call": "elf_python_api_schema(motor_type='spm')",
+            },
+            {
+                "goal": "Lint a public .mai deck against requested observables before a local run",
+                "call": "elf_python_deck_lint(mai_path='application/motor/pm_cosine_pickup_72/pm001/pm001.mai', requested_observables='flux_linkage,back_emf_constant')",
+            },
+            {
+                "goal": "Choose a .meg generation backend for a 2D/3D motor prompt",
+                "call": "elf_python_meg_generation_plan(goal='2D SPM motor cross-section', dimension='2d')",
+            },
+            {
+                "goal": "Draft a constrained 2D motor geometry template before Netgen remeshing",
+                "call": "elf_python_2d_motor_template(motor_type='spm', pole_pairs=4, stator_slots=48)",
+            },
+            {
+                "goal": "Plan motor design variables, studies, observables, and validation gates",
+                "call": "elf_python_motor_design_plan(goal='IPM torque density and Ld/Lq')",
+            },
+            {
+                "goal": "Build a deterministic DOE/sweep matrix for motor design",
+                "call": "elf_python_motor_sweep_matrix(motor_type='spm', objective='back_emf_target', budget=9)",
+            },
+            {
+                "goal": "Build an Id/Iq map with PM and reluctance torque decomposition",
+                "call": "elf_python_motor_dq_axis_map_plan(motor_type='ipm')",
+            },
+            {
+                "goal": "Search MTPA current angle candidates",
+                "call": "elf_python_motor_mtpa_search_plan(motor_type='ipm')",
+            },
+            {
+                "goal": "Plan SynRM/SRM reluctance motor design",
+                "call": "elf_python_reluctance_motor_design_plan(motor_type='synrm')",
+            },
+            {
+                "goal": "Build a phase-belt winding layout and winding-factor proxy",
+                "call": "elf_python_motor_winding_layout_plan(stator_slots=48, pole_pairs=4)",
+            },
+            {
+                "goal": "Choose topology-specific geometry variables and constraints",
+                "call": "elf_python_motor_topology_parameter_plan(motor_type='ipm', rotor_topology='inner_rotor')",
+            },
+            {
+                "goal": "Screen PM demagnetization margin before high-current field weakening",
+                "call": "elf_python_motor_demag_margin_plan(motor_type='spm', temperature_c=120)",
+            },
+            {
+                "goal": "Plan voltage limits and field-weakening operating points",
+                "call": "elf_python_motor_voltage_field_weakening_plan(motor_type='ipm', dc_bus_v=48)",
+            },
+            {
+                "goal": "Plan cogging torque and torque-ripple reduction",
+                "call": "elf_python_motor_cogging_ripple_plan(stator_slots=48, pole_pairs=4)",
+            },
+            {
+                "goal": "Route air-gap harmonics into NVH force-order validation",
+                "call": "elf_python_motor_airgap_harmonics_nvh_plan(stator_slots=48, pole_pairs=4)",
+            },
+            {
+                "goal": "Build a motor efficiency-map operating grid",
+                "call": "elf_python_motor_efficiency_map_plan(motor_type='spm')",
+            },
+            {
+                "goal": "Turn map axes into concrete local-run operating rows",
+                "call": "elf_python_motor_operating_point_run_queue(motor_type='spm')",
+            },
+            {
+                "goal": "Plan inverter/PWM harmonic rows for AC loss and ripple screening",
+                "call": "elf_python_motor_inverter_pwm_harmonic_plan(motor_type='spm', switching_frequency_hz=20000)",
+            },
+            {
+                "goal": "Plan saturated Ld/Lq maps over current amplitude and current angle",
+                "call": "elf_python_motor_saturation_inductance_map_plan(motor_type='ipm')",
+            },
+            {
+                "goal": "Attach weighted drive-cycle points to an efficiency map",
+                "call": "elf_python_motor_drive_cycle_plan(target_market='robot_drone')",
+            },
+            {
+                "goal": "Plan a constrained motor optimization study",
+                "call": "elf_python_motor_optimization_study_plan(motor_type='spm', objective='cycle_efficiency')",
+            },
+            {
+                "goal": "Build a reduced thermal network before NGSolve thermal validation",
+                "call": "elf_python_motor_thermal_network_plan(total_loss_w=25)",
+            },
+            {
+                "goal": "Plan manufacturing tolerance robustness studies",
+                "call": "elf_python_motor_manufacturing_tolerance_plan(motor_type='spm', airgap_mm=0.8)",
+            },
+            {
+                "goal": "Plan material sensitivity studies",
+                "call": "elf_python_motor_material_variation_plan(motor_type='spm', focus='all')",
+            },
+            {
+                "goal": "Build a feasibility gate for prototype or small-lot motor work",
+                "call": "elf_python_motor_feasibility_study(goal='outer-rotor drone motor')",
+            },
+            {
+                "goal": "Define motor loss terms for efficiency-map postprocessing",
+                "call": "elf_python_motor_loss_model_contract(motor_type='spm')",
+            },
+            {
+                "goal": "Clip map points with a torque-speed envelope",
+                "call": "elf_python_motor_torque_speed_envelope(motor_type='spm')",
+            },
+            {
+                "goal": "Plan an induction-motor slip sweep",
+                "call": "elf_python_induction_slip_sweep_plan(pole_pairs=2, supply_frequency_hz=50)",
+            },
+            {
+                "goal": "Map a motor study to ELF markers and RunResult parser keys",
+                "call": "elf_python_motor_observable_contract(motor_type='ipm', study='dq_inductance')",
+            },
+            {
+                "goal": "Normalize a local RunResult payload into parsed observables",
+                "call": "elf_python_run_result_parse(payload='torque_nm=0.8\\nloss_w=12')",
+            },
+            {
+                "goal": "Rank parsed candidate results and choose next optimization rows",
+                "call": "elf_python_motor_optimization_loop(motor_type='spm', objective='cycle_efficiency')",
+            },
+            {
+                "goal": "Cross-check local RunResult observables against NGSolve runtime JSON",
+                "call": "elf_python_motor_ngsolve_result_crosscheck(run_result_payload='{}', ngsolve_result_payload='{}')",
+            },
+            {
+                "goal": "Prepare drawing/BOM prototype handoff after validation labels",
+                "call": "elf_python_motor_drawing_bom_handoff(motor_type='spm', validation_label='needs_local_run')",
+            },
+            {
+                "goal": "Screen high-speed rotor stress and retention before prototype release",
+                "call": "elf_python_motor_rotor_stress_retention_plan(motor_type='spm', max_speed_rpm=12000)",
+            },
+            {
+                "goal": "Combine parsed results, NGSolve lanes, and handoff labels into a promotion scorecard",
+                "call": "elf_python_motor_validation_scorecard(run_result_payload='{}', ngsolve_result_payload='{}')",
+            },
+            {
+                "goal": "Build a robotics/drone SPM spec-intake brief",
+                "call": "elf_python_motor_market_brief(target_market='robot_drone', motor_type='spm', rotor_topology='outer_rotor')",
+            },
+            {
+                "goal": "Prepare a spec-to-design-agent handoff for users who do not operate analysis software",
+                "call": "elf_python_motor_design_agent_handoff(goal='outer-rotor drone SPM motor', target_market='robot_drone')",
+            },
+            {
+                "goal": "Build required NGSolve thermal/NVH/stress validation jobs",
+                "call": "elf_python_ngsolve_validation_plan(goal='outer-rotor drone SPM motor')",
+            },
+            {
+                "goal": "Generate a runnable NGSolve validation script",
+                "call": "elf_python_ngsolve_validation_script(goal='outer-rotor drone SPM motor', lane='all')",
+            },
         ],
         "public_boundary": (
             "Documentation and lab-authored public input decks only. This MCP "
@@ -259,6 +591,51 @@ def elf_overview() -> dict:
             "elf_sample_decks_validation() for public validation levels and limits, "
             "elf_public_promotion() for public-safe promotion copy, "
             "elf_python_team28() for the Python-interface team28 seed manifest, "
+            "elf_python_interface_design() for the public Python facade contract, "
+            "elf_python_api_manual() for the LLM-oriented API manual, "
+            "elf_python_api_schema() / elf_python_deck_lint() / "
+            "elf_python_run_contract() for concrete Python facade contracts, "
+            "elf_python_meg_generation_plan() for Cubit/Netgen/LLM 2D MEG routing, "
+            "elf_python_2d_motor_template() for constrained 2D motor drafting, "
+            "elf_python_motor_design_plan() / elf_python_motor_sweep_matrix() / "
+            "elf_python_motor_observable_contract() for design-variable APIs, "
+            "elf_python_motor_efficiency_map_plan() / "
+            "elf_python_motor_loss_model_contract() / "
+            "elf_python_motor_torque_speed_envelope() / "
+            "elf_python_induction_slip_sweep_plan() for motor-design maps, "
+            "loss models, envelopes, and IM slip sweeps, "
+            "elf_python_motor_operating_point_run_queue() / "
+            "elf_python_motor_inverter_pwm_harmonic_plan() / "
+            "elf_python_motor_saturation_inductance_map_plan() for concrete "
+            "operating rows, PWM harmonic screening, and saturated Ld/Lq maps, "
+            "elf_python_motor_dq_axis_map_plan() / elf_python_motor_mtpa_search_plan() / "
+            "elf_python_reluctance_motor_design_plan() for Id/Iq maps, "
+            "MTPA, SynRM, and SRM reluctance design, "
+            "elf_python_motor_winding_layout_plan() / "
+            "elf_python_motor_topology_parameter_plan() / "
+            "elf_python_motor_demag_margin_plan() / "
+            "elf_python_motor_drive_cycle_plan() / "
+            "elf_python_motor_optimization_study_plan() for winding, "
+            "topology, demag, drive-cycle, and optimization design-suite APIs, "
+            "elf_python_motor_voltage_field_weakening_plan() / "
+            "elf_python_motor_cogging_ripple_plan() / "
+            "elf_python_motor_airgap_harmonics_nvh_plan() / "
+            "elf_python_motor_thermal_network_plan() / "
+            "elf_python_motor_manufacturing_tolerance_plan() / "
+            "elf_python_motor_material_variation_plan() / "
+            "elf_python_motor_feasibility_study() for production-style "
+            "motor design gates, "
+            "elf_python_run_result_parse() / elf_python_motor_optimization_loop() / "
+            "elf_python_motor_ngsolve_result_crosscheck() / "
+            "elf_python_motor_drawing_bom_handoff() / "
+            "elf_python_motor_rotor_stress_retention_plan() / "
+            "elf_python_motor_validation_scorecard() for closed-loop "
+            "RunResult parsing, candidate ranking, validation reconciliation, "
+            "rotor stress screening, scorecards, and prototype handoff, "
+            "elf_python_motor_market_brief() / elf_python_motor_design_agent_handoff() "
+            "for spec-to-design-agent workflows, "
+            "elf_python_ngsolve_validation_plan() / elf_python_ngsolve_validation_script() "
+            "for required open NGSolve multiphysics validation implementation, "
             "elf_help_search('keyword') / "
             "elf_examples_search('keyword') for raw access, or "
             "elf_examples_playbook(limit=100) for compact example cards.",
@@ -1064,6 +1441,1576 @@ def elf_python_team28() -> str:
 
 
 @mcp.tool()
+def elf_python_interface_design(topic: str = "overview") -> str:
+    """
+    Return the public-safe ELF/MAGIC Python-interface design contract.
+
+    The product-side Python implementation is treated as reference material,
+    not a required dependency. The vendor DLL boundary is treated as immutable
+    product territory. The public MCP/Python facade may still provide richer
+    typed schemas, deck builders, validators, routers, and runner/result
+    contracts for user-local ELF/MAGIC installations.
+
+    Args:
+        topic: "overview", "public_contract", "motor_api",
+            "backend_protocol", "deck_generation", "validation",
+            "mcp_routing", "vendor_proposal", or "roadmap".
+
+    Returns:
+        Markdown design note for a public Python facade and local backend
+        protocol. It does not execute ELF/MAGIC or load product binaries.
+    """
+    return format_python_interface_design(build_python_interface_design(topic))
+
+
+@mcp.tool()
+def elf_python_api_manual(topic: str = "quickstart") -> str:
+    """
+    Return the LLM-oriented manual for the public Python facade API.
+
+    This is the best first call when an agent needs to use the Python-facing
+    ELF/MAGIC workflow. It summarizes policy, objects, call order, deck lint,
+    `.meg` generation, local backend contracts, validation rules, and examples.
+
+    Args:
+        topic: "quickstart", "objects", "llm_call_order", "deck_lint",
+            "meg_generation", "local_backend", "validation", "examples",
+            or "all".
+
+    Returns:
+        Compact Markdown manual optimized for LLM clients.
+    """
+    return format_python_api_manual(build_python_api_manual(topic))
+
+
+def _parse_observables(text: str) -> list[str]:
+    """Parse comma/space separated observable names."""
+    return [part.strip().lower() for part in re.split(r"[\s,]+", text or "") if part.strip()]
+
+
+@mcp.tool()
+def elf_python_api_schema(motor_type: str = "spm") -> str:
+    """
+    Return the concrete public Python facade schema and a MotorSpec template.
+
+    The schema is independent of the product-side Python implementation. It
+    defines a richer MCP-friendly API vocabulary above a user-local backend:
+    MotorSpec, DeckBundle, RunRequest, and RunResult.
+
+    Args:
+        motor_type: Optional motor family for the example template, such as
+            "spm", "ipm", "induction", "srm", "synrm", or "hysteresis".
+
+    Returns:
+        Markdown schema plus a JSON MotorSpec template.
+    """
+    schema_text = format_python_api_schema(python_api_schema())
+    template = build_motor_spec_template(motor_type)
+    return (
+        schema_text
+        + "\n\n## MotorSpec Template\n"
+        + "```json\n"
+        + json.dumps(template, indent=2)
+        + "\n```"
+    )
+
+
+@mcp.tool()
+def elf_python_motor_spec_lint(spec_json: str = "", motor_type: str = "spm") -> str:
+    """
+    Lint a MotorSpec JSON object against the public Python facade schema.
+
+    If `spec_json` is omitted, this lints the built-in template for `motor_type`.
+    The lint is solver-free and does not require product Python or product DLLs.
+
+    Args:
+        spec_json: JSON object containing a MotorSpec-like dictionary.
+        motor_type: Template motor family used when spec_json is omitted.
+
+    Returns:
+        Markdown lint report with PASS/FAIL and recommended observables.
+    """
+    if spec_json.strip():
+        try:
+            spec = json.loads(spec_json)
+        except json.JSONDecodeError as exc:
+            return (
+                "# ELF Python MotorSpec Lint\n\n"
+                "- status: `FAIL`\n"
+                f"- issue: invalid JSON: {exc}"
+            )
+        if not isinstance(spec, dict):
+            return "# ELF Python MotorSpec Lint\n\n- status: `FAIL`\n- issue: JSON root must be an object"
+    else:
+        spec = build_motor_spec_template(motor_type)
+    return format_motor_spec_lint(validate_motor_spec_dict(spec))
+
+
+@mcp.tool()
+def elf_python_deck_lint(
+    mai_path: str = "",
+    mai_text: str = "",
+    requested_observables: str = "",
+) -> str:
+    """
+    Dry-run lint a public `.mai` deck or inline `.mai` text.
+
+    This checks whether a deck has the expected MAGIC/PRE/SOL/DMEG markers and
+    whether requested observables such as FLUM-based flux linkage or field
+    probes have matching output blocks. It does not execute ELF/MAGIC.
+
+    Args:
+        mai_path: Public sample `.mai` path, e.g.
+            `application/motor/pm_cosine_pickup_72/pm001/pm001.mai`.
+        mai_text: Inline .mai text. Used when `mai_path` is omitted.
+        requested_observables: Comma/space separated observable names such as
+            `flux_linkage,back_emf_constant,torque`.
+
+    Returns:
+        Markdown PASS/FAIL/WARN deck lint report.
+    """
+    source = "inline"
+    text = mai_text
+    if mai_path.strip():
+        path = mai_path.strip()
+        if path.lower().endswith(".meg"):
+            path = path[:-4] + ".mai"
+        deck = get_sample_deck(path)
+        if deck.get("error"):
+            return (
+                "# ELF Python Deck Lint\n\n"
+                "- status: `FAIL`\n"
+                f"- issue: {deck['error']}"
+            )
+        source = deck["path"]
+        text = deck["text"]
+    if not text.strip():
+        return "# ELF Python Deck Lint\n\n- status: `FAIL`\n- issue: provide mai_path or mai_text"
+    report = lint_mai_text(text, _parse_observables(requested_observables))
+    return f"- source: `{source}`\n\n" + format_deck_lint(report)
+
+
+@mcp.tool()
+def elf_python_run_contract(
+    goal: str,
+    motor_type: str = "spm",
+    source_public_deck_path: str = "",
+    requested_observables: str = "",
+) -> str:
+    """
+    Build a public RunRequest contract for a user-local ELF/MAGIC backend.
+
+    This is the contract that a local runner should accept after MCP routing
+    has chosen a deck family. It keeps raw product outputs local and does not
+    call product Python or product DLLs from the public server.
+
+    Args:
+        goal: Natural-language analysis goal.
+        motor_type: Motor family for the template.
+        source_public_deck_path: Optional public `.mai` seed deck.
+        requested_observables: Comma/space separated observables.
+
+    Returns:
+        Markdown RunRequest contract and backend requirements.
+    """
+    contract = build_run_request_contract(
+        goal=goal,
+        motor_type=motor_type,
+        source_public_deck_path=source_public_deck_path,
+        requested_observables=_parse_observables(requested_observables),
+    )
+    return format_run_request_contract(contract)
+
+
+@mcp.tool()
+def elf_python_run_result_parse(
+    payload: str,
+    case_id: str = "",
+    motor_type: str = "spm",
+    requested_observables: str = "",
+) -> str:
+    """
+    Normalize a user-local RunResult payload into public-safe observables.
+
+    The payload may be JSON with `parsed_observables`, a flat JSON object, or
+    key-value text such as `torque_nm=0.8`. This tool does not read local files
+    and does not publish raw product outputs; it only normalizes values pasted
+    into the MCP call.
+
+    Args:
+        payload: JSON or key-value text from a local/private runner.
+        case_id: Optional case id.
+        motor_type: Motor family.
+        requested_observables: Comma/space separated expected observables.
+
+    Returns:
+        Markdown parsed RunResult summary.
+    """
+    parsed = parse_run_result_payload(
+        payload=payload,
+        case_id=case_id,
+        motor_type=motor_type,
+        requested_observables=_parse_observables(requested_observables),
+    )
+    return format_run_result_parse(parsed)
+
+
+@mcp.tool()
+def elf_python_motor_design_plan(
+    goal: str,
+    motor_type: str = "",
+    objective: str = "",
+) -> str:
+    """
+    Plan motor design variables, studies, observables, and validation gates.
+
+    This is the motor-design layer above MotorSpec. It tells an agent which
+    variables to sweep, which observables to request, which studies are needed,
+    and which validation gates must pass before making design claims.
+
+    Args:
+        goal: Natural-language motor design goal.
+        motor_type: Optional motor family override.
+        objective: Optional objective such as "torque_density",
+            "back_emf_target", "efficiency_map", "ripple_reduction", or
+            "material_reduction".
+
+    Returns:
+        Markdown motor design plan.
+    """
+    return format_motor_design_plan(
+        build_motor_design_plan(goal=goal, motor_type=motor_type, objective=objective)
+    )
+
+
+@mcp.tool()
+def elf_python_motor_sweep_matrix(
+    motor_type: str = "spm",
+    objective: str = "torque_density",
+    budget: int = 9,
+) -> str:
+    """
+    Build a deterministic public sweep/DOE matrix for motor design.
+
+    The matrix is intentionally small and explicit so an LLM can create local
+    RunRequests, parse RunResults, and rank candidates without inventing hidden
+    parameters.
+
+    Args:
+        motor_type: Motor family such as "spm", "ipm", "induction", "srm",
+            "synrm", or "hysteresis".
+        objective: Design objective.
+        budget: Number of rows, capped at 27.
+
+    Returns:
+        Markdown sweep matrix with active variables, rows, observables, and
+        postprocess rules.
+    """
+    return format_motor_sweep_matrix(
+        build_motor_sweep_matrix(motor_type=motor_type, objective=objective, budget=budget)
+    )
+
+
+@mcp.tool()
+def elf_python_motor_dq_axis_map_plan(
+    motor_type: str = "ipm",
+    pole_pairs: int = 4,
+    current_limit_a_peak: float = 40.0,
+    id_points: int = 5,
+    iq_points: int = 5,
+    ld_h: float | None = None,
+    lq_h: float | None = None,
+    pm_flux_wb: float | None = None,
+) -> str:
+    """
+    Build an Id/Iq map with PM and reluctance torque decomposition.
+
+    This is the dq-axis design API. It creates explicit Id/Iq operating points,
+    current-limit labels, PM torque proxy, reluctance torque proxy, total torque
+    proxy, parser keys for flux_d/flux_q and Ld/Lq, and the quality gates
+    needed before MTPA or saliency claims.
+
+    Args:
+        motor_type: Motor family, e.g. "ipm", "spm", "synrm", or "srm".
+        pole_pairs: Pole-pair count.
+        current_limit_a_peak: Peak current limit.
+        id_points: Number of Id samples.
+        iq_points: Number of Iq samples.
+        ld_h: Optional Ld override in H.
+        lq_h: Optional Lq override in H.
+        pm_flux_wb: Optional PM flux override in Wb.
+
+    Returns:
+        Markdown Id/Iq map plan.
+    """
+    return format_motor_dq_axis_map_plan(
+        build_motor_dq_axis_map_plan(
+            motor_type=motor_type,
+            pole_pairs=pole_pairs,
+            current_limit_a_peak=current_limit_a_peak,
+            id_points=id_points,
+            iq_points=iq_points,
+            ld_h=ld_h,
+            lq_h=lq_h,
+            pm_flux_wb=pm_flux_wb,
+        )
+    )
+
+
+@mcp.tool()
+def elf_python_motor_mtpa_search_plan(
+    motor_type: str = "ipm",
+    pole_pairs: int = 4,
+    current_limit_a_peak: float = 40.0,
+    angle_min_deg: float = -80.0,
+    angle_max_deg: float = 80.0,
+    angle_points: int = 17,
+    ld_h: float | None = None,
+    lq_h: float | None = None,
+    pm_flux_wb: float | None = None,
+) -> str:
+    """
+    Build an MTPA current-angle search plan from dq-axis torque terms.
+
+    The plan scans current angle at fixed current magnitude and reports PM
+    torque, reluctance torque, total torque, and torque-per-amp proxy. Local
+    product runs still own the final confirmation.
+
+    Args:
+        motor_type: Motor family, e.g. "ipm", "spm", "synrm", or "srm".
+        pole_pairs: Pole-pair count.
+        current_limit_a_peak: Peak current magnitude.
+        angle_min_deg: Minimum current angle from q-axis.
+        angle_max_deg: Maximum current angle from q-axis.
+        angle_points: Number of angle samples.
+        ld_h: Optional Ld override in H.
+        lq_h: Optional Lq override in H.
+        pm_flux_wb: Optional PM flux override in Wb.
+
+    Returns:
+        Markdown MTPA search plan.
+    """
+    return format_motor_mtpa_search_plan(
+        build_motor_mtpa_search_plan(
+            motor_type=motor_type,
+            pole_pairs=pole_pairs,
+            current_limit_a_peak=current_limit_a_peak,
+            angle_min_deg=angle_min_deg,
+            angle_max_deg=angle_max_deg,
+            angle_points=angle_points,
+            ld_h=ld_h,
+            lq_h=lq_h,
+            pm_flux_wb=pm_flux_wb,
+        )
+    )
+
+
+@mcp.tool()
+def elf_python_reluctance_motor_design_plan(
+    motor_type: str = "synrm",
+    pole_pairs: int = 2,
+    stator_slots: int = 36,
+    rotor_topology: str = "flux_barrier",
+    current_limit_a_peak: float = 40.0,
+) -> str:
+    """
+    Build a reluctance-focused design plan for SynRM or SRM.
+
+    This makes saliency and reluctance torque explicit: design variables,
+    Ld/Lq extraction, Id/Iq map, MTPA-style current-angle scan, SynRM flux
+    barrier planning, and SRM aligned/unaligned inductance checks.
+
+    Args:
+        motor_type: "synrm", "srm", "reluctance", or "switched".
+        pole_pairs: Pole-pair count.
+        stator_slots: Stator slot count.
+        rotor_topology: Topology label such as "flux_barrier" or "salient_pole".
+        current_limit_a_peak: Peak current limit.
+
+    Returns:
+        Markdown reluctance motor design plan.
+    """
+    return format_reluctance_motor_design_plan(
+        build_reluctance_motor_design_plan(
+            motor_type=motor_type,
+            pole_pairs=pole_pairs,
+            stator_slots=stator_slots,
+            rotor_topology=rotor_topology,
+            current_limit_a_peak=current_limit_a_peak,
+        )
+    )
+
+
+@mcp.tool()
+def elf_python_motor_winding_layout_plan(
+    stator_slots: int = 48,
+    pole_pairs: int = 4,
+    phases: int = 3,
+    layers: int = 2,
+    coil_pitch_slots: int = 0,
+) -> str:
+    """
+    Build a phase-belt winding layout and winding-factor proxy.
+
+    This gives the design agent an explicit slot table, q value, slot
+    electrical angle, coil pitch, and fundamental winding-factor proxy before
+    it asks a local runner for back-EMF phase or torque-ripple claims.
+
+    Args:
+        stator_slots: Number of stator slots.
+        pole_pairs: Number of pole pairs.
+        phases: Number of phases, normally 3.
+        layers: Slot layer count.
+        coil_pitch_slots: Optional coil pitch. Use 0 for automatic pole pitch.
+
+    Returns:
+        Markdown winding layout plan.
+    """
+    pitch = None if coil_pitch_slots <= 0 else coil_pitch_slots
+    return format_motor_winding_layout_plan(
+        build_motor_winding_layout_plan(
+            stator_slots=stator_slots,
+            pole_pairs=pole_pairs,
+            phases=phases,
+            layers=layers,
+            coil_pitch_slots=pitch,
+        )
+    )
+
+
+@mcp.tool()
+def elf_python_motor_topology_parameter_plan(
+    motor_type: str = "spm",
+    pole_pairs: int = 4,
+    stator_slots: int = 48,
+    rotor_topology: str = "outer_rotor",
+    outer_diameter_mm: float = 80.0,
+    stack_length_mm: float = 20.0,
+) -> str:
+    """
+    Build topology-specific motor geometry variables and constraints.
+
+    The plan exposes common dimensions plus SPM, IPM, SynRM, SRM, or induction
+    variables with ranges and affected observables. It is a design contract,
+    not a mesh or solver run.
+
+    Args:
+        motor_type: Motor family.
+        pole_pairs: Number of pole pairs.
+        stator_slots: Number of stator slots.
+        rotor_topology: Rotor topology label such as "outer_rotor" or
+            "inner_rotor".
+        outer_diameter_mm: Motor outer diameter.
+        stack_length_mm: Stack length.
+
+    Returns:
+        Markdown topology parameter plan.
+    """
+    return format_motor_topology_parameter_plan(
+        build_motor_topology_parameter_plan(
+            motor_type=motor_type,
+            pole_pairs=pole_pairs,
+            stator_slots=stator_slots,
+            rotor_topology=rotor_topology,
+            outer_diameter_mm=outer_diameter_mm,
+            stack_length_mm=stack_length_mm,
+        )
+    )
+
+
+@mcp.tool()
+def elf_python_motor_demag_margin_plan(
+    motor_type: str = "spm",
+    temperature_c: float = 120.0,
+    br_20c_t: float = 1.2,
+    br_temp_coeff_pct_per_k: float = -0.11,
+    hcj_ka_m: float = 900.0,
+    id_min_a_peak: float = -40.0,
+) -> str:
+    """
+    Build a PM demagnetization margin screening contract.
+
+    This public plan records hot Br, Hcj, negative d-axis current, required
+    observables, sweep axes, and quality gates. It intentionally labels the
+    result as a margin proxy until a local validated field result exists.
+
+    Args:
+        motor_type: Motor family.
+        temperature_c: Magnet temperature for hot Br proxy.
+        br_20c_t: Room-temperature remanence.
+        br_temp_coeff_pct_per_k: Remanence temperature coefficient.
+        hcj_ka_m: Coercivity reference.
+        id_min_a_peak: Worst negative d-axis current candidate.
+
+    Returns:
+        Markdown demagnetization margin plan.
+    """
+    return format_motor_demag_margin_plan(
+        build_motor_demag_margin_plan(
+            motor_type=motor_type,
+            temperature_c=temperature_c,
+            br_20c_t=br_20c_t,
+            br_temp_coeff_pct_per_k=br_temp_coeff_pct_per_k,
+            hcj_ka_m=hcj_ka_m,
+            id_min_a_peak=id_min_a_peak,
+        )
+    )
+
+
+@mcp.tool()
+def elf_python_motor_drive_cycle_plan(
+    target_market: str = "robot_drone",
+    rated_torque_nm: float = 0.6,
+    peak_torque_nm: float = 1.2,
+    base_speed_rpm: float = 3500.0,
+    max_speed_rpm: float = 12000.0,
+) -> str:
+    """
+    Build weighted drive-cycle operating points for motor scoring.
+
+    The output connects user-facing duty points to efficiency-map and
+    multiphysics follow-up: cycle efficiency, weighted total loss, worst
+    voltage/current margin, and thermal/NVH/stress worst-case points.
+
+    Args:
+        target_market: "robot_drone" or "industrial_servo".
+        rated_torque_nm: Rated/continuous torque.
+        peak_torque_nm: Peak torque.
+        base_speed_rpm: Base speed.
+        max_speed_rpm: Maximum speed.
+
+    Returns:
+        Markdown drive-cycle plan.
+    """
+    return format_motor_drive_cycle_plan(
+        build_motor_drive_cycle_plan(
+            target_market=target_market,
+            rated_torque_nm=rated_torque_nm,
+            peak_torque_nm=peak_torque_nm,
+            base_speed_rpm=base_speed_rpm,
+            max_speed_rpm=max_speed_rpm,
+        )
+    )
+
+
+@mcp.tool()
+def elf_python_motor_optimization_study_plan(
+    motor_type: str = "spm",
+    objective: str = "cycle_efficiency",
+    budget: int = 48,
+    target_market: str = "robot_drone",
+) -> str:
+    """
+    Build a constrained motor optimization study plan.
+
+    The plan selects variables from the motor and topology contracts, attaches
+    constraints, defines ranking outputs, and requires validation promotion for
+    finalists. It is a public optimization contract, not a hidden optimizer run.
+
+    Args:
+        motor_type: Motor family.
+        objective: Objective such as "cycle_efficiency" or "torque_density".
+        budget: Candidate/run budget.
+        target_market: Target-market label for ranking context.
+
+    Returns:
+        Markdown optimization study plan.
+    """
+    return format_motor_optimization_study_plan(
+        build_motor_optimization_study_plan(
+            motor_type=motor_type,
+            objective=objective,
+            budget=budget,
+            target_market=target_market,
+        )
+    )
+
+
+@mcp.tool()
+def elf_python_motor_optimization_loop(
+    motor_type: str = "spm",
+    objective: str = "torque_density",
+    result_payloads_json: str = "",
+    budget: int = 9,
+    target_back_emf: float = 0.0,
+) -> str:
+    """
+    Rank parsed RunResults and propose the next optimization-loop actions.
+
+    Args:
+        motor_type: Motor family.
+        objective: Objective such as "torque_density", "cycle_efficiency",
+            or "back_emf_target".
+        result_payloads_json: JSON list of local RunResult payloads, a single
+            JSON object, or text chunks separated by `---`.
+        budget: Candidate/run budget.
+        target_back_emf: Optional target back-EMF constant for target matching.
+
+    Returns:
+        Markdown candidate ranking and next-run rows.
+    """
+    loop = build_motor_optimization_loop(
+        motor_type=motor_type,
+        objective=objective,
+        result_payloads=result_payloads_json,
+        budget=budget,
+        target_back_emf=target_back_emf,
+    )
+    return format_motor_optimization_loop(loop)
+
+
+@mcp.tool()
+def elf_python_motor_voltage_field_weakening_plan(
+    motor_type: str = "ipm",
+    pole_pairs: int = 4,
+    dc_bus_v: float = 48.0,
+    current_limit_a_peak: float = 40.0,
+    speed_min_rpm: float = 500.0,
+    speed_max_rpm: float = 12000.0,
+    speed_points: int = 7,
+    ld_h: float | None = None,
+    lq_h: float | None = None,
+    pm_flux_wb: float | None = None,
+) -> str:
+    """
+    Build a voltage-limit and field-weakening design plan.
+
+    This creates speed rows with back-EMF voltage proxy, q-axis reactance
+    proxy, voltage margin, and required negative-Id proxy. Final field
+    weakening decisions still require local electromagnetic results plus demag
+    and thermal validation.
+
+    Args:
+        motor_type: Motor family.
+        pole_pairs: Pole-pair count.
+        dc_bus_v: DC bus voltage.
+        current_limit_a_peak: Peak current limit.
+        speed_min_rpm: Minimum speed row.
+        speed_max_rpm: Maximum speed row.
+        speed_points: Number of speed rows.
+        ld_h: Optional Ld override.
+        lq_h: Optional Lq override.
+        pm_flux_wb: Optional PM flux override.
+
+    Returns:
+        Markdown voltage/field-weakening plan.
+    """
+    return format_motor_voltage_field_weakening_plan(
+        build_motor_voltage_field_weakening_plan(
+            motor_type=motor_type,
+            pole_pairs=pole_pairs,
+            dc_bus_v=dc_bus_v,
+            current_limit_a_peak=current_limit_a_peak,
+            speed_min_rpm=speed_min_rpm,
+            speed_max_rpm=speed_max_rpm,
+            speed_points=speed_points,
+            ld_h=ld_h,
+            lq_h=lq_h,
+            pm_flux_wb=pm_flux_wb,
+        )
+    )
+
+
+@mcp.tool()
+def elf_python_motor_cogging_ripple_plan(
+    motor_type: str = "spm",
+    stator_slots: int = 48,
+    pole_pairs: int = 4,
+    magnet_arc_fraction: float = 0.75,
+    skew_fraction: float = 0.0,
+) -> str:
+    """
+    Build a cogging torque and torque-ripple reduction plan.
+
+    Args:
+        motor_type: Motor family.
+        stator_slots: Stator slot count.
+        pole_pairs: Pole-pair count.
+        magnet_arc_fraction: Surface or effective PM arc fraction.
+        skew_fraction: Skew as slot-pitch fraction.
+
+    Returns:
+        Markdown cogging/ripple plan.
+    """
+    return format_motor_cogging_ripple_plan(
+        build_motor_cogging_ripple_plan(
+            motor_type=motor_type,
+            stator_slots=stator_slots,
+            pole_pairs=pole_pairs,
+            magnet_arc_fraction=magnet_arc_fraction,
+            skew_fraction=skew_fraction,
+        )
+    )
+
+
+@mcp.tool()
+def elf_python_motor_airgap_harmonics_nvh_plan(
+    motor_type: str = "spm",
+    stator_slots: int = 48,
+    pole_pairs: int = 4,
+    base_speed_rpm: float = 3500.0,
+    max_speed_rpm: float = 12000.0,
+) -> str:
+    """
+    Build air-gap harmonic force-order routing for NVH validation.
+
+    Args:
+        motor_type: Motor family.
+        stator_slots: Stator slot count.
+        pole_pairs: Pole-pair count.
+        base_speed_rpm: Base speed.
+        max_speed_rpm: Maximum speed.
+
+    Returns:
+        Markdown air-gap harmonic/NVH plan.
+    """
+    return format_motor_airgap_harmonics_nvh_plan(
+        build_motor_airgap_harmonics_nvh_plan(
+            motor_type=motor_type,
+            stator_slots=stator_slots,
+            pole_pairs=pole_pairs,
+            base_speed_rpm=base_speed_rpm,
+            max_speed_rpm=max_speed_rpm,
+        )
+    )
+
+
+@mcp.tool()
+def elf_python_motor_thermal_network_plan(
+    target_market: str = "robot_drone",
+    total_loss_w: float = 25.0,
+    ambient_c: float = 25.0,
+    cooling_h_w_m2k: float = 35.0,
+) -> str:
+    """
+    Build a reduced thermal network before open thermal validation.
+
+    Args:
+        target_market: Target-market label.
+        total_loss_w: Total loss estimate.
+        ambient_c: Ambient temperature.
+        cooling_h_w_m2k: Cooling coefficient proxy.
+
+    Returns:
+        Markdown thermal-network plan.
+    """
+    return format_motor_thermal_network_plan(
+        build_motor_thermal_network_plan(
+            target_market=target_market,
+            total_loss_w=total_loss_w,
+            ambient_c=ambient_c,
+            cooling_h_w_m2k=cooling_h_w_m2k,
+        )
+    )
+
+
+@mcp.tool()
+def elf_python_motor_manufacturing_tolerance_plan(
+    motor_type: str = "spm",
+    airgap_mm: float = 0.8,
+    production_intent: str = "prototype_small_lot",
+) -> str:
+    """
+    Build a manufacturing tolerance and robustness DOE plan.
+
+    Args:
+        motor_type: Motor family.
+        airgap_mm: Nominal air gap.
+        production_intent: "concept", "prototype_small_lot", or
+            "mass_production".
+
+    Returns:
+        Markdown tolerance plan.
+    """
+    return format_motor_manufacturing_tolerance_plan(
+        build_motor_manufacturing_tolerance_plan(
+            motor_type=motor_type,
+            airgap_mm=airgap_mm,
+            production_intent=production_intent,
+        )
+    )
+
+
+@mcp.tool()
+def elf_python_motor_material_variation_plan(
+    motor_type: str = "spm",
+    focus: str = "all",
+) -> str:
+    """
+    Build a motor material sensitivity plan.
+
+    Args:
+        motor_type: Motor family.
+        focus: "all", "magnet", "electrical_steel", or "conductor".
+
+    Returns:
+        Markdown material variation plan.
+    """
+    return format_motor_material_variation_plan(
+        build_motor_material_variation_plan(motor_type=motor_type, focus=focus)
+    )
+
+
+@mcp.tool()
+def elf_python_motor_feasibility_study(
+    goal: str,
+    target_market: str = "robot_drone",
+    motor_type: str = "spm",
+    production_intent: str = "prototype_small_lot",
+) -> str:
+    """
+    Build a feasibility gate for prototype or small-lot motor work.
+
+    Args:
+        goal: Motor design goal.
+        target_market: Target-market label.
+        motor_type: Motor family.
+        production_intent: "concept", "prototype_small_lot", or
+            "mass_production".
+
+    Returns:
+        Markdown feasibility study gate.
+    """
+    return format_motor_feasibility_study(
+        build_motor_feasibility_study(
+            goal=goal,
+            target_market=target_market,
+            motor_type=motor_type,
+            production_intent=production_intent,
+        )
+    )
+
+
+@mcp.tool()
+def elf_python_motor_efficiency_map_plan(
+    motor_type: str = "spm",
+    torque_min_nm: float = 0.05,
+    torque_max_nm: float = 1.0,
+    torque_points: int = 5,
+    speed_min_rpm: float = 500.0,
+    speed_max_rpm: float = 12000.0,
+    speed_points: int = 6,
+    base_speed_rpm: float = 3500.0,
+    dc_bus_v: float = 48.0,
+    phase_current_limit_a_peak: float = 40.0,
+) -> str:
+    """
+    Build a motor efficiency-map operating grid and postprocess contract.
+
+    This is the motor-design API entry point for efficiency maps. It defines
+    torque/speed axes, operating points, feasibility labels from a torque-speed
+    envelope, required local-run observables, loss-model terms, and output
+    grids such as eta, total loss, voltage margin, and current margin.
+
+    Args:
+        motor_type: Motor family, e.g. "spm", "ipm", "induction", "synrm".
+        torque_min_nm: Minimum torque axis value.
+        torque_max_nm: Maximum torque axis value.
+        torque_points: Number of torque samples.
+        speed_min_rpm: Minimum speed axis value.
+        speed_max_rpm: Maximum speed axis value.
+        speed_points: Number of speed samples.
+        base_speed_rpm: Base speed for field-weakening labels.
+        dc_bus_v: DC bus voltage.
+        phase_current_limit_a_peak: Phase current limit.
+
+    Returns:
+        Markdown efficiency-map plan with operating points and quality gates.
+    """
+    return format_motor_efficiency_map_plan(
+        build_motor_efficiency_map_plan(
+            motor_type=motor_type,
+            torque_min_nm=torque_min_nm,
+            torque_max_nm=torque_max_nm,
+            torque_points=torque_points,
+            speed_min_rpm=speed_min_rpm,
+            speed_max_rpm=speed_max_rpm,
+            speed_points=speed_points,
+            base_speed_rpm=base_speed_rpm,
+            dc_bus_v=dc_bus_v,
+            phase_current_limit_a_peak=phase_current_limit_a_peak,
+        )
+    )
+
+
+@mcp.tool()
+def elf_python_motor_operating_point_run_queue(
+    motor_type: str = "spm",
+    objective: str = "efficiency_map",
+    torque_min_nm: float = 0.05,
+    torque_max_nm: float = 1.0,
+    torque_points: int = 4,
+    speed_min_rpm: float = 500.0,
+    speed_max_rpm: float = 12000.0,
+    speed_points: int = 5,
+    max_rows: int = 20,
+) -> str:
+    """
+    Build concrete local-run operating rows from map axes.
+
+    Args:
+        motor_type: Motor family.
+        objective: Objective label attached to each run row.
+        torque_min_nm: Minimum torque axis value.
+        torque_max_nm: Maximum torque axis value.
+        torque_points: Number of torque samples.
+        speed_min_rpm: Minimum speed axis value.
+        speed_max_rpm: Maximum speed axis value.
+        speed_points: Number of speed samples.
+        max_rows: Maximum rows to emit.
+
+    Returns:
+        Markdown local-run queue contract.
+    """
+    return format_motor_operating_point_run_queue(
+        build_motor_operating_point_run_queue(
+            motor_type=motor_type,
+            objective=objective,
+            torque_min_nm=torque_min_nm,
+            torque_max_nm=torque_max_nm,
+            torque_points=torque_points,
+            speed_min_rpm=speed_min_rpm,
+            speed_max_rpm=speed_max_rpm,
+            speed_points=speed_points,
+            max_rows=max_rows,
+        )
+    )
+
+
+@mcp.tool()
+def elf_python_motor_inverter_pwm_harmonic_plan(
+    motor_type: str = "spm",
+    modulation: str = "svpwm",
+    switching_frequency_hz: float = 20000.0,
+    fundamental_frequency_hz: float = 400.0,
+    dc_bus_v: float = 48.0,
+    phase_current_a_rms: float = 10.0,
+    max_sideband_order: int = 3,
+) -> str:
+    """
+    Plan inverter/PWM harmonic rows for loss and ripple screening.
+
+    Args:
+        motor_type: Motor family.
+        modulation: Modulation label, such as "svpwm" or "sine_pwm".
+        switching_frequency_hz: PWM switching frequency.
+        fundamental_frequency_hz: Electrical fundamental frequency.
+        dc_bus_v: DC bus voltage.
+        phase_current_a_rms: Phase current RMS.
+        max_sideband_order: Number of switching sideband offsets to include.
+
+    Returns:
+        Markdown PWM harmonic plan.
+    """
+    return format_motor_inverter_pwm_harmonic_plan(
+        build_motor_inverter_pwm_harmonic_plan(
+            motor_type=motor_type,
+            modulation=modulation,
+            switching_frequency_hz=switching_frequency_hz,
+            fundamental_frequency_hz=fundamental_frequency_hz,
+            dc_bus_v=dc_bus_v,
+            phase_current_a_rms=phase_current_a_rms,
+            max_sideband_order=max_sideband_order,
+        )
+    )
+
+
+@mcp.tool()
+def elf_python_motor_saturation_inductance_map_plan(
+    motor_type: str = "ipm",
+    pole_pairs: int = 4,
+    current_limit_a_peak: float = 60.0,
+    current_points: int = 4,
+    angle_points: int = 7,
+    ld_unsat_h: float | None = None,
+    lq_unsat_h: float | None = None,
+    pm_flux_wb: float | None = None,
+) -> str:
+    """
+    Build a saturated Ld/Lq map plan over current magnitude and angle.
+
+    Args:
+        motor_type: Motor family.
+        pole_pairs: Pole-pair count.
+        current_limit_a_peak: Peak current limit.
+        current_points: Number of current-amplitude rows.
+        angle_points: Number of current-angle rows.
+        ld_unsat_h: Optional unsaturated Ld reference.
+        lq_unsat_h: Optional unsaturated Lq reference.
+        pm_flux_wb: Optional PM flux reference.
+
+    Returns:
+        Markdown saturation inductance map plan.
+    """
+    return format_motor_saturation_inductance_map_plan(
+        build_motor_saturation_inductance_map_plan(
+            motor_type=motor_type,
+            pole_pairs=pole_pairs,
+            current_limit_a_peak=current_limit_a_peak,
+            current_points=current_points,
+            angle_points=angle_points,
+            ld_unsat_h=ld_unsat_h,
+            lq_unsat_h=lq_unsat_h,
+            pm_flux_wb=pm_flux_wb,
+        )
+    )
+
+
+@mcp.tool()
+def elf_python_motor_loss_model_contract(
+    motor_type: str = "spm",
+    include_inverter: bool = True,
+) -> str:
+    """
+    Define loss terms and parser keys for motor efficiency-map postprocessing.
+
+    The contract separates field-solver loss proxies from copper, iron, magnet,
+    rotor, mechanical, and optional inverter losses so an agent does not hide
+    assumptions inside a single efficiency number.
+
+    Args:
+        motor_type: Motor family.
+        include_inverter: Include inverter loss terms in the contract.
+
+    Returns:
+        Markdown loss-model contract.
+    """
+    return format_motor_loss_model_contract(
+        build_motor_loss_model_contract(motor_type=motor_type, include_inverter=include_inverter)
+    )
+
+
+@mcp.tool()
+def elf_python_motor_torque_speed_envelope(
+    motor_type: str = "spm",
+    peak_torque_nm: float = 1.0,
+    base_speed_rpm: float = 3500.0,
+    max_speed_rpm: float = 12000.0,
+    dc_bus_v: float = 48.0,
+    phase_current_limit_a_peak: float = 40.0,
+    speed_points: int = 9,
+) -> str:
+    """
+    Build a torque-speed envelope for clipping efficiency-map points.
+
+    Args:
+        motor_type: Motor family.
+        peak_torque_nm: Peak torque at and below base speed.
+        base_speed_rpm: Base speed for constant-power transition.
+        max_speed_rpm: Maximum speed.
+        dc_bus_v: DC bus voltage.
+        phase_current_limit_a_peak: Phase current limit.
+        speed_points: Number of envelope rows.
+
+    Returns:
+        Markdown torque-speed envelope.
+    """
+    return format_motor_torque_speed_envelope(
+        build_motor_torque_speed_envelope(
+            motor_type=motor_type,
+            peak_torque_nm=peak_torque_nm,
+            base_speed_rpm=base_speed_rpm,
+            max_speed_rpm=max_speed_rpm,
+            dc_bus_v=dc_bus_v,
+            phase_current_limit_a_peak=phase_current_limit_a_peak,
+            speed_points=speed_points,
+        )
+    )
+
+
+@mcp.tool()
+def elf_python_induction_slip_sweep_plan(
+    pole_pairs: int = 2,
+    supply_frequency_hz: float = 50.0,
+    slip_min: float = 0.005,
+    slip_max: float = 0.20,
+    slip_points: int = 9,
+    phase_current_limit_a_peak: float = 40.0,
+    dc_bus_v: float = 200.0,
+) -> str:
+    """
+    Build an induction-motor slip sweep for torque/loss/efficiency studies.
+
+    This makes slip explicit instead of hiding it behind a generic speed axis:
+    synchronous speed, rotor speed, slip frequency, rotor copper loss relation,
+    and breakdown-region bracketing are all part of the contract.
+
+    Args:
+        pole_pairs: Motor pole-pair count.
+        supply_frequency_hz: Stator electrical supply frequency.
+        slip_min: Minimum motoring slip.
+        slip_max: Maximum motoring slip.
+        slip_points: Number of slip samples.
+        phase_current_limit_a_peak: Phase current limit.
+        dc_bus_v: DC bus voltage.
+
+    Returns:
+        Markdown induction-motor slip sweep plan.
+    """
+    return format_induction_motor_slip_sweep_plan(
+        build_induction_motor_slip_sweep_plan(
+            pole_pairs=pole_pairs,
+            supply_frequency_hz=supply_frequency_hz,
+            slip_min=slip_min,
+            slip_max=slip_max,
+            slip_points=slip_points,
+            phase_current_limit_a_peak=phase_current_limit_a_peak,
+            dc_bus_v=dc_bus_v,
+        )
+    )
+
+
+@mcp.tool()
+def elf_python_motor_observable_contract(
+    motor_type: str = "spm",
+    study: str = "static_flux_linkage",
+) -> str:
+    """
+    Map a motor study to ELF output markers, parser keys, and validation checks.
+
+    This tells a local backend/parser what to extract from a product run and
+    tells the LLM which physics checks to apply before interpreting a result.
+
+    Args:
+        motor_type: Motor family.
+        study: Study type such as "back_emf_speed_sweep",
+            "static_torque_angle", "dq_inductance", "induction_slip_loss", or
+            "ac_loss_frequency_sweep".
+
+    Returns:
+        Markdown observable contract.
+    """
+    return format_motor_observable_contract(
+        build_motor_observable_contract(motor_type=motor_type, study=study)
+    )
+
+
+@mcp.tool()
+def elf_python_motor_market_brief(
+    target_market: str = "robot_drone",
+    motor_type: str = "spm",
+    rotor_topology: str = "outer_rotor",
+) -> str:
+    """
+    Build a market/application brief for motor design agents.
+
+    This captures the robotics/drone style workflow where an end user provides
+    specifications, the agent produces designs and handoffs, and the user does
+    not need to operate analysis software directly.
+
+    Args:
+        target_market: "robot_drone" or "industrial_servo".
+        motor_type: Motor family, usually "spm" for robot/drone PMSM work.
+        rotor_topology: "outer_rotor" or "inner_rotor" for SPM/PMSM.
+
+    Returns:
+        Markdown market brief with spec fields, priorities, topology choices,
+        first calls, and GUI-free user experience policy.
+    """
+    return format_motor_market_brief(
+        build_motor_market_brief(
+            target_market=target_market,
+            motor_type=motor_type,
+            rotor_topology=rotor_topology,
+        )
+    )
+
+
+@mcp.tool()
+def elf_python_motor_design_agent_handoff(
+    goal: str,
+    target_market: str = "robot_drone",
+    motor_type: str = "spm",
+    rotor_topology: str = "outer_rotor",
+    continuous_torque_nm: float = 0.0,
+    base_speed_rpm: float = 0.0,
+    dc_bus_v: float = 0.0,
+    outer_diameter_mm: float = 0.0,
+    stack_length_mm: float = 0.0,
+    cooling_mode: str = "natural_air",
+) -> str:
+    """
+    Build a spec-to-design-agent handoff for motor workflows.
+
+    The handoff turns user specs into a design-agent contract: market brief,
+    design plan, `.meg` generation route, sweep matrix, observable contract,
+    analysis routing, required NGSolve NVH/thermal/stress validation planning,
+    and manufacturing/prototype deliverables. It does not run licensed software.
+
+    Args:
+        goal: User design goal, e.g. "outer-rotor drone SPM motor".
+        target_market: "robot_drone" or "industrial_servo".
+        motor_type: Motor family.
+        rotor_topology: "outer_rotor" or "inner_rotor".
+        continuous_torque_nm: Optional continuous torque target.
+        base_speed_rpm: Optional base speed target.
+        dc_bus_v: Optional DC bus voltage.
+        outer_diameter_mm: Optional outer diameter target.
+        stack_length_mm: Optional stack length target.
+        cooling_mode: Cooling mode text.
+
+    Returns:
+        Markdown handoff for a GUI-free design-agent workflow.
+    """
+    return format_motor_design_agent_handoff(
+        build_motor_design_agent_handoff(
+            goal=goal,
+            target_market=target_market,
+            motor_type=motor_type,
+            rotor_topology=rotor_topology,
+            continuous_torque_nm=continuous_torque_nm,
+            base_speed_rpm=base_speed_rpm,
+            dc_bus_v=dc_bus_v,
+            outer_diameter_mm=outer_diameter_mm,
+            stack_length_mm=stack_length_mm,
+            cooling_mode=cooling_mode,
+        )
+    )
+
+
+@mcp.tool()
+def elf_python_motor_ngsolve_result_crosscheck(
+    run_result_payload: str = "{}",
+    ngsolve_result_payload: str = "{}",
+    thermal_limit_c: float = 155.0,
+    min_nvh_separation: float = 0.15,
+    min_stress_margin: float = 1.5,
+) -> str:
+    """
+    Cross-check normalized RunResult observables against NGSolve runtime JSON.
+
+    Args:
+        run_result_payload: Local RunResult JSON/text payload.
+        ngsolve_result_payload: JSON printed by `elf_python_ngsolve_validation_script`.
+        thermal_limit_c: Thermal lane peak-temperature limit.
+        min_nvh_separation: Minimum relative order/modal separation.
+        min_stress_margin: Minimum stress yield-margin proxy.
+
+    Returns:
+        Markdown crosscheck summary with PASS/WARN/FAIL lane labels.
+    """
+    crosscheck = build_motor_ngsolve_result_crosscheck(
+        run_result_payload=run_result_payload,
+        ngsolve_result_payload=ngsolve_result_payload,
+        thermal_limit_c=thermal_limit_c,
+        min_nvh_separation=min_nvh_separation,
+        min_stress_margin=min_stress_margin,
+    )
+    return format_motor_ngsolve_result_crosscheck(crosscheck)
+
+
+@mcp.tool()
+def elf_python_motor_drawing_bom_handoff(
+    motor_type: str = "spm",
+    rotor_topology: str = "outer_rotor",
+    stator_slots: int = 48,
+    pole_pairs: int = 4,
+    outer_diameter_mm: float = 80.0,
+    stack_length_mm: float = 20.0,
+    validation_label: str = "needs_local_run",
+    run_result_payload: str = "",
+) -> str:
+    """
+    Build a public-safe drawing and BOM handoff for a motor prototype.
+
+    Args:
+        motor_type: Motor family.
+        rotor_topology: Rotor topology label.
+        stator_slots: Stator slot count.
+        pole_pairs: Pole-pair count.
+        outer_diameter_mm: Outer diameter.
+        stack_length_mm: Stack length.
+        validation_label: Current validation label.
+        run_result_payload: Optional local RunResult JSON/text payload to
+            summarize without exposing raw output files.
+
+    Returns:
+        Markdown drawing/BOM handoff.
+    """
+    handoff = build_motor_drawing_bom_handoff(
+        motor_type=motor_type,
+        rotor_topology=rotor_topology,
+        stator_slots=stator_slots,
+        pole_pairs=pole_pairs,
+        outer_diameter_mm=outer_diameter_mm,
+        stack_length_mm=stack_length_mm,
+        validation_label=validation_label,
+        run_result_payload=run_result_payload,
+    )
+    return format_motor_drawing_bom_handoff(handoff)
+
+
+@mcp.tool()
+def elf_python_motor_rotor_stress_retention_plan(
+    motor_type: str = "spm",
+    rotor_topology: str = "outer_rotor",
+    max_speed_rpm: float = 12000.0,
+    rotor_outer_radius_mm: float = 36.0,
+    bridge_thickness_mm: float = 1.0,
+    sleeve_thickness_mm: float = 0.0,
+    rotor_density_kg_m3: float = 7800.0,
+    yield_strength_mpa: float = 450.0,
+) -> str:
+    """
+    Build high-speed rotor stress and retention screening gates.
+
+    Args:
+        motor_type: Motor family.
+        rotor_topology: Rotor topology label.
+        max_speed_rpm: Maximum mechanical speed.
+        rotor_outer_radius_mm: Rotor outer radius.
+        bridge_thickness_mm: Minimum bridge or retention path thickness.
+        sleeve_thickness_mm: Sleeve thickness, if any.
+        rotor_density_kg_m3: Rotor density proxy.
+        yield_strength_mpa: Material yield strength reference.
+
+    Returns:
+        Markdown rotor stress / retention plan.
+    """
+    return format_motor_rotor_stress_retention_plan(
+        build_motor_rotor_stress_retention_plan(
+            motor_type=motor_type,
+            rotor_topology=rotor_topology,
+            max_speed_rpm=max_speed_rpm,
+            rotor_outer_radius_mm=rotor_outer_radius_mm,
+            bridge_thickness_mm=bridge_thickness_mm,
+            sleeve_thickness_mm=sleeve_thickness_mm,
+            rotor_density_kg_m3=rotor_density_kg_m3,
+            yield_strength_mpa=yield_strength_mpa,
+        )
+    )
+
+
+@mcp.tool()
+def elf_python_motor_validation_scorecard(
+    run_result_payload: str = "{}",
+    ngsolve_result_payload: str = "{}",
+    required_observables: str = "torque,loss_proxy,efficiency",
+    drawing_bom_payload: str = "",
+) -> str:
+    """
+    Build one promotion scorecard from RunResult, NGSolve lanes, and handoff labels.
+
+    Args:
+        run_result_payload: Local RunResult JSON/text payload.
+        ngsolve_result_payload: NGSolve runtime JSON payload.
+        required_observables: Comma-separated observables required for the claim.
+        drawing_bom_payload: Optional drawing/BOM handoff JSON-like payload.
+
+    Returns:
+        Markdown validation scorecard.
+    """
+    required = [
+        item.strip()
+        for item in required_observables.split(",")
+        if item.strip()
+    ]
+    return format_motor_validation_scorecard(
+        build_motor_validation_scorecard(
+            run_result_payload=run_result_payload,
+            ngsolve_result_payload=ngsolve_result_payload,
+            required_observables=required,
+            drawing_bom_payload=drawing_bom_payload,
+        )
+    )
+
+
+@mcp.tool()
+def elf_python_ngsolve_validation_plan(
+    goal: str,
+    lanes: str = "all",
+    motor_type: str = "spm",
+    rotor_topology: str = "outer_rotor",
+    total_loss_w: float = 25.0,
+    base_speed_rpm: float = 3500.0,
+    max_speed_rpm: float = 12000.0,
+    outer_diameter_mm: float = 80.0,
+    stack_length_mm: float = 20.0,
+    cooling_h_w_m2k: float = 35.0,
+    thermal_conductivity_w_mk: float = 12.0,
+    torque_ripple_percent: float = 5.0,
+    cogging_torque_nm: float = 0.02,
+    force_order: float = 12.0,
+    yield_strength_mpa: float = 450.0,
+) -> str:
+    """
+    Build required NGSolve multiphysics validation jobs for a motor design.
+
+    This is an implementation layer, not only a routing label. It validates
+    the numeric inputs needed for thermal, NVH, and mechanical stress checks
+    and returns concrete NGSolve lane jobs plus script-generation calls.
+
+    Args:
+        goal: Motor validation goal.
+        lanes: "all", "thermal", "nvh", "stress", or comma-separated lanes.
+        motor_type: Motor family.
+        rotor_topology: Rotor topology label.
+        total_loss_w: Loss input for thermal validation.
+        base_speed_rpm: Operating speed for NVH order frequency.
+        max_speed_rpm: Maximum speed for stress validation.
+        outer_diameter_mm: Motor outer diameter.
+        stack_length_mm: Stack length.
+        cooling_h_w_m2k: Convective cooling coefficient.
+        thermal_conductivity_w_mk: Effective thermal conductivity.
+        torque_ripple_percent: Torque ripple for NVH validation.
+        cogging_torque_nm: Cogging torque for NVH validation.
+        force_order: Electromagnetic force/torque order.
+        yield_strength_mpa: Stress margin reference.
+
+    Returns:
+        Markdown NGSolve validation plan with lint status and lane jobs.
+    """
+    spec = build_ngsolve_validation_spec(
+        goal=goal,
+        lanes=lanes,
+        motor_type=motor_type,
+        rotor_topology=rotor_topology,
+        total_loss_w=total_loss_w,
+        base_speed_rpm=base_speed_rpm,
+        max_speed_rpm=max_speed_rpm,
+        outer_diameter_mm=outer_diameter_mm,
+        stack_length_mm=stack_length_mm,
+        cooling_h_w_m2k=cooling_h_w_m2k,
+        thermal_conductivity_w_mk=thermal_conductivity_w_mk,
+        torque_ripple_percent=torque_ripple_percent,
+        cogging_torque_nm=cogging_torque_nm,
+        force_order=force_order,
+        yield_strength_mpa=yield_strength_mpa,
+    )
+    return format_ngsolve_validation_plan(build_ngsolve_validation_plan(spec))
+
+
+@mcp.tool()
+def elf_python_ngsolve_validation_script(
+    goal: str,
+    lane: str = "all",
+    motor_type: str = "spm",
+    rotor_topology: str = "outer_rotor",
+    total_loss_w: float = 25.0,
+    base_speed_rpm: float = 3500.0,
+    max_speed_rpm: float = 12000.0,
+    outer_diameter_mm: float = 80.0,
+    stack_length_mm: float = 20.0,
+    cooling_h_w_m2k: float = 35.0,
+    thermal_conductivity_w_mk: float = 12.0,
+    torque_ripple_percent: float = 5.0,
+    cogging_torque_nm: float = 0.02,
+    force_order: float = 12.0,
+    yield_strength_mpa: float = 450.0,
+) -> str:
+    """
+    Generate a runnable NGSolve Python script for motor multiphysics validation.
+
+    The generated script implements three open validation lanes:
+    scalar heat conduction with Robin cooling, structural/acoustic modal NVH
+    proxy, and linear-elastic rotor stress proxy. It uses NGSolve/Netgen only
+    and does not execute ELF/MAGIC or product DLLs.
+
+    Args:
+        goal: Motor validation goal.
+        lane: "all", "thermal", "nvh", or "stress".
+        motor_type: Motor family.
+        rotor_topology: Rotor topology label.
+        total_loss_w: Loss input for thermal validation.
+        base_speed_rpm: Operating speed for NVH order frequency.
+        max_speed_rpm: Maximum speed for stress validation.
+        outer_diameter_mm: Motor outer diameter.
+        stack_length_mm: Stack length.
+        cooling_h_w_m2k: Convective cooling coefficient.
+        thermal_conductivity_w_mk: Effective thermal conductivity.
+        torque_ripple_percent: Torque ripple for NVH validation.
+        cogging_torque_nm: Cogging torque for NVH validation.
+        force_order: Electromagnetic force/torque order.
+        yield_strength_mpa: Stress margin reference.
+
+    Returns:
+        Markdown containing a Python code fence with the runnable NGSolve script.
+    """
+    spec = build_ngsolve_validation_spec(
+        goal=goal,
+        lanes=lane,
+        motor_type=motor_type,
+        rotor_topology=rotor_topology,
+        total_loss_w=total_loss_w,
+        base_speed_rpm=base_speed_rpm,
+        max_speed_rpm=max_speed_rpm,
+        outer_diameter_mm=outer_diameter_mm,
+        stack_length_mm=stack_length_mm,
+        cooling_h_w_m2k=cooling_h_w_m2k,
+        thermal_conductivity_w_mk=thermal_conductivity_w_mk,
+        torque_ripple_percent=torque_ripple_percent,
+        cogging_torque_nm=cogging_torque_nm,
+        force_order=force_order,
+        yield_strength_mpa=yield_strength_mpa,
+    )
+    return format_ngsolve_validation_script(build_ngsolve_validation_script(spec, lane=lane))
+
+
+@mcp.tool()
+def elf_python_meg_generation_plan(
+    goal: str,
+    dimension: str = "auto",
+    geometry_complexity: str = "auto",
+) -> str:
+    """
+    Plan a public-safe `.meg` generation backend for a Python/MCP workflow.
+
+    Recommended paths include Cubit mesh export for 3D or CAD-like geometry,
+    Netgen for deterministic 2D motor cross-sections, and constrained LLM 2D
+    templates for simple educational/prototyping decks. This tool only plans;
+    it does not run a mesher or solver.
+
+    Args:
+        goal: Natural-language geometry/deck generation goal.
+        dimension: "auto", "2d", or "3d".
+        geometry_complexity: "auto", "simple", "template", "low", or "high".
+
+    Returns:
+        Markdown generation plan with backend strategy and validation gates.
+    """
+    return format_meg_generation_plan(
+        build_meg_generation_plan(
+            goal=goal,
+            dimension=dimension,
+            geometry_complexity=geometry_complexity,
+        )
+    )
+
+
+@mcp.tool()
+def elf_python_2d_motor_template(
+    motor_type: str = "spm",
+    pole_pairs: int = 4,
+    stator_slots: int = 48,
+) -> str:
+    """
+    Build a constrained 2D motor template for LLM-assisted MEG drafting.
+
+    This gives an agent a bounded 2D cross-section schema: radial layers,
+    angular features, material roles, requested observables, and hard validation
+    rules. The intended path is LLM draft -> deterministic Netgen 2D remesh ->
+    `.mai/.meg` lint -> physics validation. This tool does not generate a mesh
+    file or execute ELF/MAGIC.
+
+    Args:
+        motor_type: "spm", "ipm", "induction", "srm", "synrm",
+            "hysteresis", etc.
+        pole_pairs: Number of pole pairs.
+        stator_slots: Number of stator slots.
+
+    Returns:
+        Markdown plus JSON constrained 2D template.
+    """
+    return format_2d_motor_template(
+        build_2d_motor_template(
+            motor_type=motor_type,
+            pole_pairs=pole_pairs,
+            stator_slots=stator_slots,
+        )
+    )
+
+
+@mcp.tool()
 def elf_recipe_index(tag: str = "", solver: str = "") -> str:
     """
     List public-safe workflow recipe cards.
@@ -1417,6 +3364,353 @@ def main():
         assert "ELF motor 2D MMM/BEM-like quick check" in mmm_check
         assert "ngsolve_usage(\"back_emf\")" in mmm_check
         assert "not a production solver" in mmm_check
+        python_design = elf_python_interface_design()
+        assert "ELF/MAGIC Python Interface Design" in python_design
+        assert "product_python_is_reference_not_required" in python_design
+        assert "vendor_dll_is_immutable_boundary" in python_design
+        assert "public_api_may_expand_above_product_python" in python_design
+        assert "S:" + "\\" not in python_design
+        api_manual = elf_python_api_manual()
+        assert "ELF/MAGIC Python Facade API Manual" in api_manual
+        assert "LLM Call Order" in api_manual
+        assert "elf_python_deck_lint" in api_manual
+        assert "Cubit mesh export" in api_manual
+        assert "Netgen 2D" in api_manual
+        assert "Product-side Python is reference material" in api_manual
+        assert "S:" + "\\" not in api_manual
+        api_schema = elf_python_api_schema("spm")
+        assert "ELF Python Facade Schema" in api_schema
+        assert '"motor_type": "spm"' in api_schema
+        assert "`product_python_required`: `False`" in api_schema
+        spec_lint = elf_python_motor_spec_lint(motor_type="ipm")
+        assert "status: `PASS`" in spec_lint
+        assert "ld_lq" in spec_lint
+        deck_lint = elf_python_deck_lint(
+            mai_path="application/motor/pm_cosine_pickup_72/pm001/pm001.mai",
+            requested_observables="flux_linkage,back_emf_constant",
+        )
+        assert "status: `PASS`" in deck_lint
+        assert "FLUM: `True`" in deck_lint
+        run_contract = elf_python_run_contract(
+            goal="SPM motor back EMF sweep",
+            motor_type="spm",
+            source_public_deck_path="application/motor/pm_cosine_pickup_72/pm001/pm001.mai",
+        )
+        assert "keep_raw_outputs_user_local" in run_contract
+        assert "RunRequest Contract" in run_contract
+        parsed_run_result = elf_python_run_result_parse(
+            payload="torque_nm=0.82\nloss_w=12.5\nefficiency=0.91\nLd_h=0.001\nLq_h=0.0018",
+            case_id="cand_a",
+            motor_type="spm",
+            requested_observables="torque,loss_proxy",
+        )
+        assert "ELF Python RunResult Parser" in parsed_run_result
+        assert "torque_value" in parsed_run_result
+        assert "ld_lq_value" in parsed_run_result
+        design_plan = elf_python_motor_design_plan(
+            goal="IPM torque density and Ld Lq",
+            motor_type="ipm",
+        )
+        assert "ELF Python Motor Design Plan" in design_plan
+        assert "magnet_v_angle_deg" in design_plan
+        assert "dq_inductance" in design_plan
+        sweep = elf_python_motor_sweep_matrix(
+            motor_type="spm",
+            objective="back_emf_target",
+            budget=7,
+        )
+        assert "ELF Python Motor Sweep Matrix" in sweep
+        assert "magnet_arc_fraction" in sweep
+        assert "back_emf_constant" in sweep
+        dq_map = elf_python_motor_dq_axis_map_plan(
+            motor_type="ipm",
+            pole_pairs=4,
+            current_limit_a_peak=40,
+            id_points=3,
+            iq_points=3,
+        )
+        assert "ELF Python Motor DQ Axis Map Plan" in dq_map
+        assert "PM and reluctance torque" in dq_map
+        assert "flux_d_wb" in dq_map
+        mtpa_plan = elf_python_motor_mtpa_search_plan(
+            motor_type="ipm",
+            pole_pairs=4,
+            current_limit_a_peak=40,
+            angle_points=9,
+        )
+        assert "ELF Python Motor MTPA Search Plan" in mtpa_plan
+        assert "torque-per-amp" in mtpa_plan
+        reluctance_plan = elf_python_reluctance_motor_design_plan(
+            motor_type="synrm",
+            pole_pairs=2,
+            stator_slots=36,
+        )
+        assert "ELF Python Reluctance Motor Design Plan" in reluctance_plan
+        assert "Ld/Lq" in reluctance_plan
+        assert "dq_inductance" in reluctance_plan
+        winding_plan = elf_python_motor_winding_layout_plan(
+            stator_slots=48,
+            pole_pairs=4,
+        )
+        assert "ELF Python Motor Winding Layout Plan" in winding_plan
+        assert "q slots/pole/phase" in winding_plan
+        assert "winding factor proxy" in winding_plan
+        topology_plan = elf_python_motor_topology_parameter_plan(
+            motor_type="ipm",
+            rotor_topology="inner_rotor",
+        )
+        assert "ELF Python Motor Topology Parameter Plan" in topology_plan
+        assert "bridge_thickness_mm" in topology_plan
+        assert "magnet_v_angle_deg" in topology_plan
+        demag_plan = elf_python_motor_demag_margin_plan(
+            motor_type="spm",
+            temperature_c=120,
+        )
+        assert "ELF Python Motor Demag Margin Plan" in demag_plan
+        assert "risk label" in demag_plan
+        assert "field_probe" in demag_plan
+        drive_cycle = elf_python_motor_drive_cycle_plan(target_market="robot_drone")
+        assert "ELF Python Motor Drive Cycle Plan" in drive_cycle
+        assert "cycle_efficiency" in drive_cycle
+        assert "weighted_total_loss_w" in drive_cycle
+        optimization_plan = elf_python_motor_optimization_study_plan(
+            motor_type="spm",
+            objective="cycle_efficiency",
+        )
+        assert "ELF Python Motor Optimization Study Plan" in optimization_plan
+        assert "constraint_violation_count" in optimization_plan
+        assert "build winding layout plan" in optimization_plan
+        optimization_loop = elf_python_motor_optimization_loop(
+            motor_type="spm",
+            objective="cycle_efficiency",
+            result_payloads_json=(
+                '[{"case_id":"baseline","status":"PASS","parsed_observables":'
+                '{"torque_nm":0.7,"loss_w":15,"efficiency":0.88}},'
+                '{"case_id":"candidate_hi","status":"PASS","parsed_observables":'
+                '{"torque_nm":0.82,"loss_w":12,"efficiency":0.92}}]'
+            ),
+            budget=4,
+        )
+        assert "ELF Python Motor Optimization Loop" in optimization_loop
+        assert "candidate_hi" in optimization_loop
+        assert "Promotion Rules" in optimization_loop
+        voltage_fw = elf_python_motor_voltage_field_weakening_plan(
+            motor_type="ipm",
+            dc_bus_v=48,
+            speed_points=4,
+        )
+        assert "ELF Python Motor Voltage / Field-Weakening Plan" in voltage_fw
+        assert "field_weakening_required" in voltage_fw or "voltage_margin_ok" in voltage_fw
+        assert "required_negative_id_a_peak_proxy" in voltage_fw or "Idfw" in voltage_fw
+        cogging_plan = elf_python_motor_cogging_ripple_plan(
+            motor_type="spm",
+            stator_slots=48,
+            pole_pairs=4,
+        )
+        assert "ELF Python Motor Cogging / Ripple Plan" in cogging_plan
+        assert "cogging order mechanical" in cogging_plan
+        assert "torque_ripple_percent" in cogging_plan
+        nvh_harmonics = elf_python_motor_airgap_harmonics_nvh_plan(
+            motor_type="spm",
+            stator_slots=48,
+            pole_pairs=4,
+        )
+        assert "ELF Python Motor Airgap Harmonics / NVH Plan" in nvh_harmonics
+        assert "slot-pass" in nvh_harmonics
+        assert "NGSolve Follow-Up" in nvh_harmonics
+        thermal_network = elf_python_motor_thermal_network_plan(total_loss_w=25)
+        assert "ELF Python Motor Thermal Network Plan" in thermal_network
+        assert "winding" in thermal_network
+        assert "NGSolve Follow-Up" in thermal_network
+        tolerance_plan = elf_python_motor_manufacturing_tolerance_plan(
+            motor_type="spm",
+            airgap_mm=0.8,
+        )
+        assert "ELF Python Motor Manufacturing Tolerance Plan" in tolerance_plan
+        assert "eccentricity_mm" in tolerance_plan
+        assert "unbalanced-force" in tolerance_plan
+        material_plan = elf_python_motor_material_variation_plan(
+            motor_type="spm",
+            focus="magnet",
+        )
+        assert "ELF Python Motor Material Variation Plan" in material_plan
+        assert "magnet.br_t" in material_plan
+        feasibility_study = elf_python_motor_feasibility_study(
+            goal="outer-rotor drone motor",
+            target_market="robot_drone",
+        )
+        assert "ELF Python Motor Feasibility Study" in feasibility_study
+        assert "mechanical_stress_feasibility" in feasibility_study
+        assert "MCP Cannot Claim Alone" in feasibility_study
+        ngsolve_crosscheck = elf_python_motor_ngsolve_result_crosscheck(
+            run_result_payload='{"case_id":"cand_a","status":"PASS","parsed_observables":{"torque_nm":0.82,"loss_w":12.5}}',
+            ngsolve_result_payload=(
+                '{"schema_version":"elf-ngsolve-runtime-result/v1","results":['
+                '{"lane":"thermal","peak_temperature_c":92.0},'
+                '{"lane":"nvh","relative_order_separation":0.25},'
+                '{"lane":"stress","yield_margin_proxy":2.1}]}'
+            ),
+        )
+        assert "ELF Python Motor NGSolve Result Crosscheck" in ngsolve_crosscheck
+        assert "overall status: `PASS`" in ngsolve_crosscheck
+        drawing_bom = elf_python_motor_drawing_bom_handoff(
+            motor_type="spm",
+            rotor_topology="outer_rotor",
+            validation_label="crosscheck_pass",
+            run_result_payload='{"case_id":"cand_a","status":"PASS","parsed_observables":{"torque_nm":0.82}}',
+        )
+        assert "ELF Python Motor Drawing / BOM Handoff" in drawing_bom
+        assert "permanent_magnets" in drawing_bom
+        assert "Export Intent" in drawing_bom
+        rotor_stress = elf_python_motor_rotor_stress_retention_plan(
+            motor_type="spm",
+            max_speed_rpm=12000,
+        )
+        assert "ELF Python Motor Rotor Stress / Retention Plan" in rotor_stress
+        assert "retention margin proxy" in rotor_stress
+        assert "NGSolve Follow-Up" in rotor_stress
+        validation_scorecard = elf_python_motor_validation_scorecard(
+            run_result_payload=(
+                '{"case_id":"cand_a","status":"PASS","parsed_observables":'
+                '{"torque_nm":0.82,"loss_w":12.5,"efficiency":0.91,'
+                '"copper_loss_w":7.0,"iron_loss_w":3.0}}'
+            ),
+            ngsolve_result_payload=(
+                '{"schema_version":"elf-ngsolve-runtime-result/v1","results":['
+                '{"lane":"thermal","peak_temperature_c":92.0},'
+                '{"lane":"nvh","relative_order_separation":0.25},'
+                '{"lane":"stress","yield_margin_proxy":2.1}]}'
+            ),
+            drawing_bom_payload='{"validation_label":"crosscheck_pass"}',
+        )
+        assert "ELF Python Motor Validation Scorecard" in validation_scorecard
+        assert "promotion decision" in validation_scorecard
+        assert "loss_separation" in validation_scorecard
+        efficiency_map = elf_python_motor_efficiency_map_plan(
+            motor_type="spm",
+            torque_points=3,
+            speed_points=4,
+            base_speed_rpm=3000,
+            speed_max_rpm=9000,
+        )
+        assert "ELF Python Motor Efficiency Map Plan" in efficiency_map
+        assert "eta_grid" in efficiency_map
+        assert "feasible points by envelope" in efficiency_map
+        run_queue = elf_python_motor_operating_point_run_queue(
+            motor_type="spm",
+            torque_points=2,
+            speed_points=3,
+            max_rows=6,
+        )
+        assert "ELF Python Motor Operating-Point Run Queue" in run_queue
+        assert "op_001" in run_queue
+        assert "requested observables" in run_queue.lower()
+        pwm_plan = elf_python_motor_inverter_pwm_harmonic_plan(
+            motor_type="spm",
+            switching_frequency_hz=20000,
+            fundamental_frequency_hz=400,
+        )
+        assert "ELF Python Motor Inverter / PWM Harmonic Plan" in pwm_plan
+        assert "switching_sideband" in pwm_plan
+        assert "magnet_loss_w" in pwm_plan
+        saturation_map = elf_python_motor_saturation_inductance_map_plan(
+            motor_type="ipm",
+            current_points=2,
+            angle_points=3,
+        )
+        assert "ELF Python Motor Saturation Inductance Map Plan" in saturation_map
+        assert "sat_001" in saturation_map
+        assert "saliency" in saturation_map
+        loss_contract = elf_python_motor_loss_model_contract(motor_type="induction")
+        assert "ELF Python Motor Loss Model Contract" in loss_contract
+        assert "rotor_loss_w" in loss_contract
+        envelope = elf_python_motor_torque_speed_envelope(
+            motor_type="spm",
+            peak_torque_nm=1.2,
+            base_speed_rpm=3000,
+            max_speed_rpm=9000,
+            speed_points=4,
+        )
+        assert "ELF Python Motor Torque-Speed Envelope" in envelope
+        assert "field_weakening_constant_power" in envelope
+        slip_sweep = elf_python_induction_slip_sweep_plan(
+            pole_pairs=2,
+            supply_frequency_hz=50,
+            slip_min=0.01,
+            slip_max=0.05,
+            slip_points=3,
+        )
+        assert "ELF Python Induction Motor Slip Sweep Plan" in slip_sweep
+        assert "rotor_copper_loss_w = slip * airgap_power_w" in slip_sweep
+        observable_contract = elf_python_motor_observable_contract(
+            motor_type="ipm",
+            study="dq_inductance",
+        )
+        assert "ELF Python Motor Observable Contract" in observable_contract
+        assert "ld_lq_value" in observable_contract
+        assert "MTPA trend" in observable_contract
+        market_brief = elf_python_motor_market_brief(
+            target_market="robot_drone",
+            motor_type="spm",
+            rotor_topology="outer_rotor",
+        )
+        assert "ELF Python Motor Market Brief" in market_brief
+        assert "Robotics / drone" in market_brief
+        assert "outer_rotor" in market_brief
+        assert "End users provide specifications" in market_brief
+        design_agent = elf_python_motor_design_agent_handoff(
+            goal="outer-rotor drone SPM motor",
+            target_market="robot_drone",
+            motor_type="spm",
+            rotor_topology="outer_rotor",
+            continuous_torque_nm=0.8,
+            base_speed_rpm=3500,
+            dc_bus_v=48,
+            outer_diameter_mm=80,
+            stack_length_mm=20,
+        )
+        assert "ELF Python Motor Design Agent Handoff" in design_agent
+        assert "ngsolve_multiphysics" in design_agent
+        assert "nvh" in design_agent
+        assert "thermal" in design_agent
+        assert "stress" in design_agent
+        assert "required NGSolve" in design_agent
+        assert "drawing_intent" in design_agent
+        assert "prototype_gate" in design_agent
+        assert "does not execute licensed software" in design_agent
+        ngsolve_plan = elf_python_ngsolve_validation_plan(
+            goal="outer-rotor drone SPM motor",
+            lanes="all",
+        )
+        assert "ELF Python NGSolve Multiphysics Validation Plan" in ngsolve_plan
+        assert "H1 scalar heat equation" in ngsolve_plan
+        assert "VectorH1 linear elasticity" in ngsolve_plan
+        assert "script-generation calls" in ngsolve_plan or "script call" in ngsolve_plan
+        ngsolve_script = elf_python_ngsolve_validation_script(
+            goal="outer-rotor drone SPM motor",
+            lane="all",
+        )
+        assert "ELF Python NGSolve Validation Script" in ngsolve_script
+        assert "from ngsolve import *" in ngsolve_script
+        assert "def run_thermal" in ngsolve_script
+        assert "def run_nvh" in ngsolve_script
+        assert "def run_stress" in ngsolve_script
+        assert "elf-ngsolve-runtime-result/v1" in ngsolve_script
+        meg_plan = elf_python_meg_generation_plan(
+            goal="2D SPM motor cross-section",
+            dimension="2d",
+        )
+        assert "MEG Generation Plan" in meg_plan
+        assert "netgen_2d" in meg_plan
+        assert "llm_2d_template" in meg_plan
+        template_2d = elf_python_2d_motor_template(
+            motor_type="spm",
+            pole_pairs=4,
+            stator_slots=48,
+        )
+        assert "ELF Python 2D Motor Template" in template_2d
+        assert "llm_2d_template_then_netgen_2d_remesh" in template_2d
+        assert "template is a draft" in template_2d
         topics = [
             "overview", "mai_format", "mei_format", "meg_format",
             "magic", "elfin", "beam", "element_types", "bh_curves",

@@ -77,11 +77,55 @@ def test_tool_surface_and_no_work_family():
     assert "elf_local_simulation_handoff" in names
     assert "elf_public_promotion" in names
     assert "elf_python_team28" in names
+    assert "elf_python_interface_design" in names
+    assert "elf_python_api_manual" in names
+    assert "elf_python_api_schema" in names
+    assert "elf_python_motor_spec_lint" in names
+    assert "elf_python_deck_lint" in names
+    assert "elf_python_run_contract" in names
+    assert "elf_python_motor_design_plan" in names
+    assert "elf_python_motor_sweep_matrix" in names
+    assert "elf_python_motor_dq_axis_map_plan" in names
+    assert "elf_python_motor_mtpa_search_plan" in names
+    assert "elf_python_reluctance_motor_design_plan" in names
+    assert "elf_python_motor_winding_layout_plan" in names
+    assert "elf_python_motor_topology_parameter_plan" in names
+    assert "elf_python_motor_demag_margin_plan" in names
+    assert "elf_python_motor_drive_cycle_plan" in names
+    assert "elf_python_motor_optimization_study_plan" in names
+    assert "elf_python_motor_voltage_field_weakening_plan" in names
+    assert "elf_python_motor_cogging_ripple_plan" in names
+    assert "elf_python_motor_airgap_harmonics_nvh_plan" in names
+    assert "elf_python_motor_thermal_network_plan" in names
+    assert "elf_python_motor_manufacturing_tolerance_plan" in names
+    assert "elf_python_motor_material_variation_plan" in names
+    assert "elf_python_motor_feasibility_study" in names
+    assert "elf_python_run_result_parse" in names
+    assert "elf_python_motor_optimization_loop" in names
+    assert "elf_python_motor_ngsolve_result_crosscheck" in names
+    assert "elf_python_motor_drawing_bom_handoff" in names
+    assert "elf_python_motor_operating_point_run_queue" in names
+    assert "elf_python_motor_inverter_pwm_harmonic_plan" in names
+    assert "elf_python_motor_saturation_inductance_map_plan" in names
+    assert "elf_python_motor_rotor_stress_retention_plan" in names
+    assert "elf_python_motor_validation_scorecard" in names
+    assert "elf_python_motor_efficiency_map_plan" in names
+    assert "elf_python_motor_loss_model_contract" in names
+    assert "elf_python_motor_torque_speed_envelope" in names
+    assert "elf_python_induction_slip_sweep_plan" in names
+    assert "elf_python_motor_observable_contract" in names
+    assert "elf_python_motor_market_brief" in names
+    assert "elf_python_motor_design_agent_handoff" in names
+    assert "elf_python_ngsolve_validation_plan" in names
+    assert "elf_python_ngsolve_validation_script" in names
+    assert "elf_python_meg_generation_plan" in names
+    assert "elf_python_2d_motor_template" in names
     overview = elf_overview()
     overview_text = str(overview)
-    assert overview["n_tools"] == 40
+    assert overview["n_tools"] == 82
     assert "public_boundary" in overview
     assert "recommended_calls" in overview
+    assert "elf_python_interface_design" in overview_text
     assert "COMSOL" not in overview_text
     assert "internal:" not in overview_text
     assert "S:" + "\\" not in overview_text
@@ -90,6 +134,527 @@ def test_tool_surface_and_no_work_family():
     # allowed; private work-example corpus tools are not.
     forbidden = ("elf_work", "work_examples", "work_examples_", "elf_examples_work")
     assert not any(any(token in n for token in forbidden) for n in names), names
+
+
+def test_python_interface_design_public_policy():
+    from elf_mcp_server.python_interface_design import (
+        build_python_interface_design,
+        format_python_interface_design,
+    )
+
+    design = build_python_interface_design()
+    text = format_python_interface_design(design)
+    assert design["schema_version"] == "elf-python-interface-design/v1"
+    assert "product_python_is_reference_not_required" in text
+    assert "vendor_dll_is_immutable_boundary" in text
+    assert "public_api_may_expand_above_product_python" in text
+    assert "MotorSpec" in text
+    assert "RunRequest / RunResult" in text
+    assert "S:" + "\\" not in text
+    assert "_cross" + "val" not in text
+
+
+def test_python_facade_schema_lint_and_generation_plan():
+    from elf_mcp_server.python_api_manual import build_python_api_manual, format_python_api_manual
+    from elf_mcp_server.python_facade import (
+        build_meg_generation_plan,
+        build_induction_motor_slip_sweep_plan,
+        build_motor_design_agent_handoff,
+        build_motor_design_plan,
+        build_motor_demag_margin_plan,
+        build_motor_drive_cycle_plan,
+        build_motor_dq_axis_map_plan,
+        build_motor_efficiency_map_plan,
+        build_motor_airgap_harmonics_nvh_plan,
+        build_motor_cogging_ripple_plan,
+        build_motor_feasibility_study,
+        build_motor_loss_model_contract,
+        build_motor_manufacturing_tolerance_plan,
+        build_motor_market_brief,
+        build_motor_material_variation_plan,
+        build_motor_mtpa_search_plan,
+        build_motor_ngsolve_result_crosscheck,
+        build_motor_observable_contract,
+        build_motor_operating_point_run_queue,
+        build_motor_optimization_study_plan,
+        build_motor_optimization_loop,
+        build_motor_inverter_pwm_harmonic_plan,
+        build_motor_saturation_inductance_map_plan,
+        build_motor_rotor_stress_retention_plan,
+        build_motor_spec_template,
+        build_2d_motor_template,
+        build_motor_sweep_matrix,
+        build_motor_topology_parameter_plan,
+        build_motor_torque_speed_envelope,
+        build_motor_thermal_network_plan,
+        build_motor_validation_scorecard,
+        build_motor_voltage_field_weakening_plan,
+        build_motor_winding_layout_plan,
+        build_motor_drawing_bom_handoff,
+        build_reluctance_motor_design_plan,
+        build_run_request_contract,
+        parse_run_result_payload,
+        format_motor_drawing_bom_handoff,
+        format_motor_demag_margin_plan,
+        format_motor_drive_cycle_plan,
+        format_induction_motor_slip_sweep_plan,
+        format_motor_efficiency_map_plan,
+        format_motor_airgap_harmonics_nvh_plan,
+        format_motor_cogging_ripple_plan,
+        format_motor_feasibility_study,
+        format_motor_loss_model_contract,
+        format_motor_manufacturing_tolerance_plan,
+        format_motor_torque_speed_envelope,
+        format_motor_dq_axis_map_plan,
+        format_motor_mtpa_search_plan,
+        format_motor_material_variation_plan,
+        format_motor_optimization_study_plan,
+        format_motor_optimization_loop,
+        format_motor_ngsolve_result_crosscheck,
+        format_motor_topology_parameter_plan,
+        format_motor_thermal_network_plan,
+        format_motor_operating_point_run_queue,
+        format_motor_inverter_pwm_harmonic_plan,
+        format_motor_saturation_inductance_map_plan,
+        format_motor_rotor_stress_retention_plan,
+        format_motor_validation_scorecard,
+        format_motor_voltage_field_weakening_plan,
+        format_motor_winding_layout_plan,
+        format_run_result_parse,
+        format_reluctance_motor_design_plan,
+        lint_mai_text,
+        python_api_schema,
+        validate_motor_spec_dict,
+    )
+    from elf_mcp_server.ngsolve_multiphysics import (
+        build_ngsolve_validation_plan,
+        build_ngsolve_validation_script,
+        build_ngsolve_validation_spec,
+        format_ngsolve_validation_plan,
+        format_ngsolve_validation_script,
+        validate_ngsolve_validation_spec,
+    )
+    from elf_mcp_server.sample_decks import get_sample_deck
+
+    schema = python_api_schema()
+    assert schema["policy"]["product_python_required"] is False
+    assert schema["policy"]["product_python_role"] == "reference"
+    assert schema["policy"]["vendor_dll_mutable_by_public_package"] is False
+    assert schema["policy"]["public_facade_can_extend_api"] is True
+
+    template = build_motor_spec_template("ipm")
+    lint = validate_motor_spec_dict(template)
+    assert lint["status"] == "PASS"
+    assert "ld_lq" in lint["recommended_observables"]
+
+    deck = get_sample_deck("application/motor/pm_cosine_pickup_72/pm001/pm001.mai")
+    deck_lint = lint_mai_text(deck["text"], ["flux_linkage", "back_emf_constant"])
+    assert deck_lint["status"] == "PASS"
+    assert deck_lint["detected"]["has_flum"] is True
+
+    contract = build_run_request_contract(
+        goal="SPM motor back EMF sweep",
+        motor_type="spm",
+        source_public_deck_path=deck["path"],
+    )
+    assert contract["run_request"]["privacy_policy"] == "keep_raw_outputs_user_local"
+    assert contract["run_request"]["source_public_deck_paths"] == [deck["path"]]
+
+    parsed_result = parse_run_result_payload(
+        "torque_nm=0.82\nloss_w=12.5\nefficiency=0.91\nLd_h=0.001\nLq_h=0.0018",
+        case_id="cand_a",
+        motor_type="spm",
+        requested_observables=["torque", "loss_proxy"],
+    )
+    assert parsed_result["schema_version"] == "elf-python-run-result-parse/v1"
+    assert parsed_result["parsed_observables"]["torque_value"] == 0.82
+    assert parsed_result["parsed_observables"]["loss_proxy_value"] == 12.5
+    assert abs(parsed_result["parsed_observables"]["ld_lq_value"]["saliency_ratio"] - 1.8) < 1e-12
+    parsed_text = format_run_result_parse(parsed_result)
+    assert "RunResult Parser" in parsed_text
+    assert "torque_value" in parsed_text
+
+    design_plan = build_motor_design_plan("IPM torque density and Ld Lq", motor_type="ipm")
+    assert design_plan["motor_type"] == "ipm"
+    assert design_plan["objective"] == "torque_density"
+    assert any(var["name"] == "magnet_v_angle_deg" for var in design_plan["design_variables"])
+    assert "dq_inductance" in design_plan["recommended_studies"]
+
+    sweep = build_motor_sweep_matrix("spm", objective="back_emf_target", budget=7)
+    assert sweep["motor_type"] == "spm"
+    assert sweep["objective"] == "back_emf_target"
+    assert len(sweep["rows"]) == 7
+    assert any(var["name"] == "magnet_arc_fraction" for var in sweep["active_variables"])
+    assert "back_emf_constant" in sweep["observables"]
+
+    dq_map = build_motor_dq_axis_map_plan("ipm", pole_pairs=4, current_limit_a_peak=40, id_points=3, iq_points=3)
+    assert dq_map["schema_version"] == "elf-python-motor-dq-axis-map-plan/v1"
+    assert dq_map["dq_parameters"]["torque_formula"] == "T = 1.5*p*(psi_pm*Iq + (Ld-Lq)*Id*Iq)"
+    assert len(dq_map["operating_points"]) == 9
+    assert any(point["reluctance_torque_nm_proxy"] > 0 for point in dq_map["operating_points"])
+    dq_text = format_motor_dq_axis_map_plan(dq_map)
+    assert "PM and reluctance torque" in dq_text
+    assert "flux_d_wb" in dq_text
+
+    mtpa = build_motor_mtpa_search_plan("ipm", pole_pairs=4, current_limit_a_peak=40, angle_points=9)
+    assert mtpa["schema_version"] == "elf-python-motor-mtpa-search-plan/v1"
+    assert "best_proxy_point" in mtpa
+    assert "reluctance_torque_nm_proxy" in mtpa["rows"][0]
+    mtpa_text = format_motor_mtpa_search_plan(mtpa)
+    assert "MTPA" in mtpa_text
+    assert "torque-per-amp" in mtpa_text
+
+    reluctance = build_reluctance_motor_design_plan("synrm", pole_pairs=2, stator_slots=36)
+    assert reluctance["schema_version"] == "elf-python-reluctance-motor-design-plan/v1"
+    assert reluctance["motor_type"] == "synrm"
+    assert "dq_inductance" in reluctance["recommended_studies"]
+    assert reluctance["dq_axis_map_plan"]["dq_parameters"]["pm_flux_wb"] == 0.0
+    assert "aligned_unaligned_inductance_checks" in reluctance
+    rel_text = format_reluctance_motor_design_plan(reluctance)
+    assert "Reluctance Motor Design Plan" in rel_text
+    assert "Ld/Lq" in rel_text
+    assert "Aligned / Unaligned" in rel_text
+
+    winding = build_motor_winding_layout_plan(stator_slots=48, pole_pairs=4)
+    assert winding["schema_version"] == "elf-python-motor-winding-layout-plan/v1"
+    assert winding["slots_per_pole_per_phase"] == 2.0
+    assert "fundamental_winding_factor_proxy" in winding["winding_factors"]
+    assert len(winding["slot_table"]) == 48
+    winding_text = format_motor_winding_layout_plan(winding)
+    assert "Motor Winding Layout Plan" in winding_text
+    assert "winding factor proxy" in winding_text
+
+    topology = build_motor_topology_parameter_plan("ipm", rotor_topology="inner_rotor")
+    assert topology["schema_version"] == "elf-python-motor-topology-parameter-plan/v1"
+    assert topology["motor_type"] == "ipm"
+    assert any(var["name"] == "bridge_thickness_mm" for var in topology["parameters"])
+    assert any(var["name"] == "magnet_v_angle_deg" for var in topology["parameters"])
+    topology_text = format_motor_topology_parameter_plan(topology)
+    assert "Topology Parameter Plan" in topology_text
+    assert "Geometry Regions" in topology_text
+
+    demag = build_motor_demag_margin_plan("spm", temperature_c=120)
+    assert demag["schema_version"] == "elf-python-motor-demag-margin-plan/v1"
+    assert demag["risk_label"] in {"green", "amber", "red"}
+    assert "br_hot_t_proxy" in demag
+    demag_text = format_motor_demag_margin_plan(demag)
+    assert "Demag Margin Plan" in demag_text
+    assert "field_probe" in demag_text
+
+    cycle = build_motor_drive_cycle_plan("robot_drone")
+    assert cycle["schema_version"] == "elf-python-motor-drive-cycle-plan/v1"
+    assert len(cycle["operating_points"]) == 4
+    assert abs(sum(point["weight"] for point in cycle["operating_points"]) - 1.0) < 1.0e-12
+    assert "cycle_efficiency" in cycle["weighted_outputs"]
+    cycle_text = format_motor_drive_cycle_plan(cycle)
+    assert "Drive Cycle" in cycle_text
+    assert "weighted_total_loss_w" in cycle_text
+
+    optimization = build_motor_optimization_study_plan("spm", budget=24)
+    assert optimization["schema_version"] == "elf-python-motor-optimization-study-plan/v1"
+    assert optimization["budget"] == 24
+    assert optimization["constraints"]
+    assert "constraint_violation_count" in optimization["ranking_outputs"]
+    optimization_text = format_motor_optimization_study_plan(optimization)
+    assert "Optimization Study Plan" in optimization_text
+    assert "build winding layout plan" in optimization_text
+
+    loop = build_motor_optimization_loop(
+        "spm",
+        objective="cycle_efficiency",
+        result_payloads=[
+            {"case_id": "baseline", "status": "PASS", "parsed_observables": {"torque_nm": 0.7, "loss_w": 15, "efficiency": 0.88}},
+            {"case_id": "candidate_hi", "status": "PASS", "parsed_observables": {"torque_nm": 0.82, "loss_w": 12, "efficiency": 0.92}},
+        ],
+        budget=4,
+    )
+    assert loop["schema_version"] == "elf-python-motor-optimization-loop/v1"
+    assert loop["best_candidate"]["case_id"] == "candidate_hi"
+    assert loop["loop_status"] in {"needs_more_runs", "ready_for_validation"}
+    loop_text = format_motor_optimization_loop(loop)
+    assert "Motor Optimization Loop" in loop_text
+    assert "candidate_hi" in loop_text
+
+    voltage_fw = build_motor_voltage_field_weakening_plan("ipm", dc_bus_v=48, speed_points=4)
+    assert voltage_fw["schema_version"] == "elf-python-motor-voltage-field-weakening-plan/v1"
+    assert len(voltage_fw["rows"]) == 4
+    assert "required_negative_id_a_peak_proxy" in voltage_fw["rows"][-1]
+    voltage_text = format_motor_voltage_field_weakening_plan(voltage_fw)
+    assert "Voltage / Field-Weakening Plan" in voltage_text
+    assert "voltage_margin" in str(voltage_fw)
+
+    cogging = build_motor_cogging_ripple_plan("spm", stator_slots=48, pole_pairs=4)
+    assert cogging["schema_version"] == "elf-python-motor-cogging-ripple-plan/v1"
+    assert cogging["cogging_order_mechanical"] == 48
+    assert "torque_ripple_percent" in cogging["parser_keys"]
+    cogging_text = format_motor_cogging_ripple_plan(cogging)
+    assert "Cogging / Ripple Plan" in cogging_text
+    assert "harmonic orders" in cogging_text
+
+    harmonics = build_motor_airgap_harmonics_nvh_plan("spm", stator_slots=48, pole_pairs=4)
+    assert harmonics["schema_version"] == "elf-python-motor-airgap-harmonics-nvh-plan/v1"
+    assert 48 in harmonics["mechanical_force_orders"]
+    assert harmonics["speed_rows"][0]["slot_pass_frequency_hz"] > 0
+    harmonics_text = format_motor_airgap_harmonics_nvh_plan(harmonics)
+    assert "Airgap Harmonics / NVH Plan" in harmonics_text
+    assert "NGSolve Follow-Up" in harmonics_text
+
+    thermal = build_motor_thermal_network_plan(total_loss_w=25)
+    assert thermal["schema_version"] == "elf-python-motor-thermal-network-plan/v1"
+    assert sum(node["loss_w"] for node in thermal["nodes"]) == 25.0
+    thermal_text = format_motor_thermal_network_plan(thermal)
+    assert "Thermal Network Plan" in thermal_text
+    assert "temperature" in thermal_text
+
+    tolerance = build_motor_manufacturing_tolerance_plan("spm", airgap_mm=0.8)
+    assert tolerance["schema_version"] == "elf-python-motor-manufacturing-tolerance-plan/v1"
+    assert any(var["name"] == "eccentricity_mm" for var in tolerance["tolerance_variables"])
+    assert len(tolerance["doe_rows"]) == 11
+    tolerance_text = format_motor_manufacturing_tolerance_plan(tolerance)
+    assert "Manufacturing Tolerance Plan" in tolerance_text
+    assert "eccentricity_mm" in tolerance_text
+
+    material = build_motor_material_variation_plan("spm", focus="magnet")
+    assert material["schema_version"] == "elf-python-motor-material-variation/v1"
+    assert material["focus"] == "magnet"
+    assert any(var["name"] == "br_t" for var in material["variables"])
+    material_text = format_motor_material_variation_plan(material)
+    assert "Material Variation Plan" in material_text
+    assert "magnet.br_t" in material_text
+
+    feasibility = build_motor_feasibility_study("outer-rotor drone motor")
+    assert feasibility["schema_version"] == "elf-python-motor-feasibility-study/v1"
+    assert any(lane["lane"] == "thermal_feasibility" for lane in feasibility["lanes"])
+    feasibility_text = format_motor_feasibility_study(feasibility)
+    assert "Motor Feasibility Study" in feasibility_text
+    assert "MCP Cannot Claim Alone" in feasibility_text
+
+    ngsolve_runtime = {
+        "schema_version": "elf-ngsolve-runtime-result/v1",
+        "results": [
+            {"lane": "thermal", "peak_temperature_c": 92.0, "temperature_rise_c": 67.0},
+            {"lane": "nvh", "relative_order_separation": 0.25, "order_frequency_hz": 800.0},
+            {"lane": "stress", "yield_margin_proxy": 2.1},
+        ],
+    }
+    crosscheck = build_motor_ngsolve_result_crosscheck(parsed_result, ngsolve_runtime)
+    assert crosscheck["schema_version"] == "elf-python-motor-ngsolve-crosscheck/v1"
+    assert crosscheck["overall_status"] == "PASS"
+    assert [lane["lane"] for lane in crosscheck["lane_checks"]] == ["thermal", "nvh", "stress"]
+    crosscheck_text = format_motor_ngsolve_result_crosscheck(crosscheck)
+    assert "NGSolve Result Crosscheck" in crosscheck_text
+    assert "thermal" in crosscheck_text
+
+    drawing_bom = build_motor_drawing_bom_handoff(
+        "spm",
+        rotor_topology="outer_rotor",
+        stator_slots=48,
+        pole_pairs=4,
+        run_result_payload=parsed_result,
+        validation_label="crosscheck_pass",
+    )
+    assert drawing_bom["schema_version"] == "elf-python-motor-drawing-bom-handoff/v1"
+    assert any(item["item"] == "permanent_magnets" for item in drawing_bom["bom"])
+    assert drawing_bom["attached_result_summary"]["status"] == "PASS"
+    drawing_text = format_motor_drawing_bom_handoff(drawing_bom)
+    assert "Drawing / BOM Handoff" in drawing_text
+    assert "permanent_magnets" in drawing_text
+
+    rotor_stress = build_motor_rotor_stress_retention_plan("spm", max_speed_rpm=12000)
+    assert rotor_stress["schema_version"] == "elf-python-motor-rotor-stress-retention-plan/v1"
+    assert rotor_stress["tip_speed_m_s"] > 0.0
+    assert rotor_stress["risk_label"] in {"green", "amber", "red"}
+    rotor_text = format_motor_rotor_stress_retention_plan(rotor_stress)
+    assert "Rotor Stress / Retention Plan" in rotor_text
+    assert "retention margin proxy" in rotor_text
+
+    loss_contract = build_motor_loss_model_contract("induction")
+    assert loss_contract["motor_type"] == "induction"
+    assert any(term["name"] == "rotor_loss_w" for term in loss_contract["loss_terms"])
+    assert "efficiency formula" in format_motor_loss_model_contract(loss_contract)
+
+    envelope = build_motor_torque_speed_envelope(
+        "spm",
+        peak_torque_nm=1.2,
+        base_speed_rpm=3000,
+        max_speed_rpm=9000,
+        speed_points=4,
+    )
+    assert envelope["rows"][0]["region"] == "constant_torque"
+    assert envelope["rows"][-1]["region"] == "field_weakening_constant_power"
+    assert "field_weakening" in format_motor_torque_speed_envelope(envelope)
+
+    eff_map = build_motor_efficiency_map_plan(
+        "spm",
+        torque_min_nm=0.1,
+        torque_max_nm=1.0,
+        torque_points=3,
+        speed_min_rpm=1000,
+        speed_max_rpm=9000,
+        speed_points=4,
+        base_speed_rpm=3000,
+    )
+    assert eff_map["schema_version"] == "elf-python-motor-efficiency-map-plan/v1"
+    assert len(eff_map["operating_points"]) == 12
+    assert "eta_grid" in eff_map["postprocess_outputs"]
+    assert any(not point["feasible_by_envelope"] for point in eff_map["operating_points"])
+    eff_text = format_motor_efficiency_map_plan(eff_map)
+    assert "ELF Python Motor Efficiency Map Plan" in eff_text
+    assert "feasible points by envelope" in eff_text
+
+    run_queue = build_motor_operating_point_run_queue(
+        "spm",
+        torque_points=2,
+        speed_points=3,
+        max_rows=6,
+    )
+    assert run_queue["schema_version"] == "elf-python-motor-operating-point-run-queue/v1"
+    assert len(run_queue["run_rows"]) == 6
+    assert run_queue["run_rows"][0]["case_id"] == "op_001"
+    assert "torque_value" in run_queue["parser_keys"]
+    run_queue_text = format_motor_operating_point_run_queue(run_queue)
+    assert "Operating-Point Run Queue" in run_queue_text
+    assert "op_001" in run_queue_text
+
+    pwm_plan = build_motor_inverter_pwm_harmonic_plan(
+        "spm",
+        switching_frequency_hz=20000,
+        fundamental_frequency_hz=400,
+        max_sideband_order=2,
+    )
+    assert pwm_plan["schema_version"] == "elf-python-motor-inverter-pwm-harmonic-plan/v1"
+    assert any(row["kind"] == "switching_sideband" for row in pwm_plan["harmonic_rows"])
+    assert "magnet_loss_w" in pwm_plan["parser_keys"]
+    pwm_text = format_motor_inverter_pwm_harmonic_plan(pwm_plan)
+    assert "PWM Harmonic Plan" in pwm_text
+    assert "magnet_loss_w" in pwm_text
+
+    saturation_map = build_motor_saturation_inductance_map_plan(
+        "ipm",
+        current_points=2,
+        angle_points=3,
+    )
+    assert saturation_map["schema_version"] == "elf-python-motor-saturation-inductance-map-plan/v1"
+    assert len(saturation_map["map_rows"]) == 6
+    assert saturation_map["map_rows"][0]["case_id"] == "sat_001"
+    saturation_text = format_motor_saturation_inductance_map_plan(saturation_map)
+    assert "Saturation Inductance Map Plan" in saturation_text
+    assert "saliency" in saturation_text
+
+    slip_plan = build_induction_motor_slip_sweep_plan(
+        pole_pairs=2,
+        supply_frequency_hz=50,
+        slip_min=0.01,
+        slip_max=0.05,
+        slip_points=3,
+    )
+    assert slip_plan["motor_type"] == "induction"
+    assert slip_plan["synchronous_speed_rpm"] == 1500.0
+    assert slip_plan["operating_points"][0]["slip_frequency_hz"] == 0.5
+    slip_text = format_induction_motor_slip_sweep_plan(slip_plan)
+    assert "Induction Motor Slip Sweep" in slip_text
+    assert "rotor_copper_loss_w = slip * airgap_power_w" in slip_text
+
+    scorecard = build_motor_validation_scorecard(
+        {
+            "case_id": "cand_a",
+            "status": "PASS",
+            "parsed_observables": {
+                "torque_nm": 0.82,
+                "loss_w": 12.5,
+                "efficiency": 0.91,
+                "copper_loss_w": 7.0,
+                "iron_loss_w": 3.0,
+            },
+        },
+        ngsolve_runtime,
+        drawing_bom_payload={"validation_label": "crosscheck_pass"},
+    )
+    assert scorecard["schema_version"] == "elf-python-motor-validation-scorecard/v1"
+    assert scorecard["overall_status"] == "PASS"
+    assert scorecard["promotion_decision"] == "promote_to_release_candidate"
+    scorecard_text = format_motor_validation_scorecard(scorecard)
+    assert "Validation Scorecard" in scorecard_text
+    assert "loss_separation" in scorecard_text
+
+    observable_contract = build_motor_observable_contract("ipm", "dq_inductance")
+    assert observable_contract["study"] == "dq_inductance"
+    assert "ld_lq" in observable_contract["observables"]
+    assert "ld_lq_value" in observable_contract["parser_observable_keys"]
+    assert "mtpa" in observable_contract["age_targets"]
+
+    market = build_motor_market_brief("robot_drone", "spm", "outer_rotor")
+    assert market["target_market"] == "robot_drone"
+    assert market["motor_type"] == "spm"
+    assert market["rotor_topology"] == "outer_rotor"
+    assert "continuous_torque_nm" in market["spec_intake_fields"]
+    assert any("End users provide specifications" in item for item in market["user_experience_policy"])
+
+    handoff = build_motor_design_agent_handoff(
+        "outer-rotor drone SPM motor",
+        target_market="robot_drone",
+        motor_type="spm",
+        rotor_topology="outer_rotor",
+        continuous_torque_nm=0.8,
+        base_speed_rpm=3500,
+        dc_bus_v=48,
+        outer_diameter_mm=80,
+        stack_length_mm=20,
+    )
+    assert handoff["schema_version"] == "elf-python-motor-design-agent-handoff/v1"
+    assert handoff["brief"]["target_market"] == "robot_drone"
+    assert handoff["missing_spec_fields"] == []
+    assert "ngsolve_multiphysics" in handoff["analysis_routing"]
+    multiphysics = handoff["analysis_routing"]["ngsolve_multiphysics"]
+    assert "required NGSolve" in multiphysics["nvh"]
+    assert "required NGSolve" in multiphysics["thermal"]
+    assert "required NGSolve" in multiphysics["stress"]
+    assert "drawing_intent" in handoff["manufacturing_handoff"]
+
+    ngsolve_spec = build_ngsolve_validation_spec(
+        "outer-rotor drone SPM motor",
+        lanes="all",
+        motor_type="spm",
+    )
+    ngsolve_lint = validate_ngsolve_validation_spec(ngsolve_spec)
+    assert ngsolve_lint["status"] == "PASS"
+    assert ngsolve_lint["lanes"] == ["thermal", "nvh", "stress"]
+    ngsolve_plan = build_ngsolve_validation_plan(ngsolve_spec)
+    assert ngsolve_plan["status"] == "PASS"
+    assert [job["lane"] for job in ngsolve_plan["jobs"]] == ["thermal", "nvh", "stress"]
+    plan_text = format_ngsolve_validation_plan(ngsolve_plan)
+    assert "H1 scalar heat equation" in plan_text
+    assert "VectorH1 linear elasticity" in plan_text
+    script_bundle = build_ngsolve_validation_script(ngsolve_spec, lane="all")
+    assert script_bundle["lanes"] == ["thermal", "nvh", "stress"]
+    assert "from ngsolve import *" in script_bundle["script"]
+    assert "def run_thermal" in script_bundle["script"]
+    assert "def run_nvh" in script_bundle["script"]
+    assert "def run_stress" in script_bundle["script"]
+    script_text = format_ngsolve_validation_script(script_bundle)
+    assert "elf-ngsolve-runtime-result/v1" in script_text
+    assert "S:" + "\\" not in script_text
+
+    plan_2d = build_meg_generation_plan("2D SPM motor cross-section", dimension="2d")
+    assert plan_2d["primary_strategy"] == "netgen_2d"
+    assert "llm_2d_template" in plan_2d["alternative_strategies"]
+    plan_3d = build_meg_generation_plan("3D WPT shielded coils", dimension="3d")
+    assert plan_3d["primary_strategy"] == "cubit_mesh_export"
+
+    template_2d = build_2d_motor_template("spm", pole_pairs=4, stator_slots=48)
+    assert template_2d["schema_version"] == "elf-python-2d-motor-template/v1"
+    assert template_2d["meg_generation_path"] == "llm_2d_template_then_netgen_2d_remesh"
+    assert any(feature["name"] == "surface_pm_pole" for feature in template_2d["angular_features"])
+    assert any("template is a draft" in rule for rule in template_2d["hard_validation_rules"])
+
+    manual = format_python_api_manual(build_python_api_manual("quickstart"))
+    assert "ELF/MAGIC Python Facade API Manual" in manual
+    assert "LLM Call Order" in manual
+    assert "elf_python_deck_lint" in manual
+    assert "Cubit mesh export" in manual
+    assert "Netgen 2D" in manual
+    assert "Product-side Python is reference material" in manual
+    assert "S:" + "\\" not in manual
 
 
 def test_public_sample_decks_are_runnable_inputs_only():
