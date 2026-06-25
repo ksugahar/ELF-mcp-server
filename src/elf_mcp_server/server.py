@@ -86,6 +86,7 @@ from .python_facade import (
     build_motor_drive_cycle_plan,
     build_motor_dq_axis_map_plan,
     build_motor_efficiency_map_plan,
+    build_motor_efficiency_map_from_results,
     build_motor_airgap_harmonics_nvh_plan,
     build_motor_cogging_ripple_plan,
     build_motor_feasibility_study,
@@ -114,6 +115,7 @@ from .python_facade import (
     build_reluctance_motor_design_plan,
     build_run_request_contract,
     parse_run_result_payload,
+    parse_run_result_path,
     format_deck_lint,
     format_2d_motor_template,
     format_induction_motor_slip_sweep_plan,
@@ -125,6 +127,7 @@ from .python_facade import (
     format_motor_drive_cycle_plan,
     format_motor_dq_axis_map_plan,
     format_motor_efficiency_map_plan,
+    format_motor_efficiency_map_result,
     format_motor_airgap_harmonics_nvh_plan,
     format_motor_cogging_ripple_plan,
     format_motor_feasibility_study,
@@ -153,6 +156,7 @@ from .python_facade import (
     format_python_api_schema,
     format_run_request_contract,
     format_run_result_parse,
+    format_run_result_path_parse,
     lint_mai_text,
     python_api_schema,
     validate_motor_spec_dict,
@@ -226,9 +230,11 @@ _TOOL_CATALOG = [
                             "Motor-design API layer: design variables, "
                             "objectives, sweep/DOE rows, ELF observable "
                             "markers, parser keys, and validation targets"),
-    ("elf_python_motor_efficiency_map_plan / loss_model_contract / "
+    ("elf_python_motor_efficiency_map_plan / motor_efficiency_map_from_results / "
+     "loss_model_contract / "
      "torque_speed_envelope / induction_slip_sweep_plan",
                             "Motor-design API layer for efficiency maps, "
+                            "numeric eta grids from parsed RunResults, "
                             "loss-term accounting, torque-speed envelopes, "
                             "and IM slip sweeps"),
     ("elf_python_motor_operating_point_run_queue / "
@@ -259,11 +265,13 @@ _TOOL_CATALOG = [
                             "ripple, air-gap harmonic NVH orders, reduced "
                             "thermal networks, manufacturing robustness, "
                             "material sensitivity, and feasibility gates"),
-    ("elf_python_run_result_parse / motor_optimization_loop / "
+    ("elf_python_run_result_parse / run_result_parse_path / "
+     "motor_optimization_loop / "
      "motor_ngsolve_result_crosscheck / motor_drawing_bom_handoff / "
      "motor_rotor_stress_retention_plan / motor_validation_scorecard",
                             "Closed-loop motor design API layer: normalize "
-                            "local RunResult payloads, rank candidates, "
+                            "local RunResult payloads or user-local result "
+                            "files, rank candidates, "
                             "cross-check NGSolve runtime JSON, and prepare "
                             "rotor-stress, drawing/BOM, and validation "
                             "scorecard handoffs without exposing raw private "
@@ -300,16 +308,16 @@ _RELATED_PUBLIC_PACKAGES = [
 
 @mcp.tool()
 def elf_overview() -> dict:
-    """RECOMMENDED FIRST CALL. Catalog of ELF MCP's 82 tools + 1
+    """RECOMMENDED FIRST CALL. Catalog of ELF MCP's 84 tools + 1
     prompt, with public-safe routing hints for MCP clients.
 
     Returns:
-        dict with `tool_families` (curated 82-tool grouping), `n_tools`,
+        dict with `tool_families` (curated 84-tool grouping), `n_tools`,
         public boundary notes, recommended calls, and public companion package
         hints.
     """
     return {
-        "n_tools": 82,
+        "n_tools": 84,
         "n_prompts": 1,
         "tool_families": [
             {"signature": sig, "description": desc}
@@ -347,6 +355,14 @@ def elf_overview() -> dict:
             {
                 "goal": "Prepare a public-safe handoff to a user-local ELF/MAGIC runner",
                 "call": "elf_local_simulation_handoff('SPM motor flux linkage sweep')",
+            },
+            {
+                "goal": "Parse completed local run-result files without exposing raw outputs",
+                "call": "elf_python_run_result_parse_path(run_path='<local run directory>')",
+            },
+            {
+                "goal": "Build a numeric efficiency map from parsed RunResults",
+                "call": "elf_python_motor_efficiency_map_from_results(result_payloads_json='<JSON list>')",
             },
             {
                 "goal": "Learn from the 1600 public input-deck cases",
@@ -1660,6 +1676,38 @@ def elf_python_run_result_parse(
 
 
 @mcp.tool()
+def elf_python_run_result_parse_path(
+    run_path: str,
+    motor_type: str = "spm",
+    requested_observables: str = "",
+    max_files: int = 20,
+) -> str:
+    """
+    Parse completed user-local RunResult files or a run directory.
+
+    This scans JSON/CSV/text-like result files, normalizes known observable
+    names, and returns only parsed values plus file basenames. It intentionally
+    does not return raw local paths or raw product output text.
+
+    Args:
+        run_path: User-local result file or directory path.
+        motor_type: Motor family.
+        requested_observables: Comma/space separated expected observables.
+        max_files: Maximum result files to scan.
+
+    Returns:
+        Markdown parse summary with normalized observables and warnings.
+    """
+    parsed = parse_run_result_path(
+        run_path=run_path,
+        motor_type=motor_type,
+        requested_observables=_parse_observables(requested_observables),
+        max_files=max_files,
+    )
+    return format_run_result_path_parse(parsed)
+
+
+@mcp.tool()
 def elf_python_motor_design_plan(
     goal: str,
     motor_type: str = "",
@@ -2299,6 +2347,8 @@ def elf_python_motor_efficiency_map_plan(
     base_speed_rpm: float = 3500.0,
     dc_bus_v: float = 48.0,
     phase_current_limit_a_peak: float = 40.0,
+    min_filled_fraction: float = 1.0,
+    max_abs_torque_error_nm: float = 0.05,
 ) -> str:
     """
     Build a motor efficiency-map operating grid and postprocess contract.
@@ -2335,6 +2385,67 @@ def elf_python_motor_efficiency_map_plan(
             base_speed_rpm=base_speed_rpm,
             dc_bus_v=dc_bus_v,
             phase_current_limit_a_peak=phase_current_limit_a_peak,
+        )
+    )
+
+
+@mcp.tool()
+def elf_python_motor_efficiency_map_from_results(
+    motor_type: str = "spm",
+    result_payloads_json: str = "",
+    torque_min_nm: float = 0.05,
+    torque_max_nm: float = 1.0,
+    torque_points: int = 5,
+    speed_min_rpm: float = 500.0,
+    speed_max_rpm: float = 12000.0,
+    speed_points: int = 6,
+    base_speed_rpm: float = 3500.0,
+    dc_bus_v: float = 48.0,
+    phase_current_limit_a_peak: float = 40.0,
+    min_filled_fraction: float = 1.0,
+    max_abs_torque_error_nm: float = 0.05,
+) -> str:
+    """
+    Build a numeric efficiency-map grid from parsed local RunResults.
+
+    The input may be a JSON list of RunResult payloads, a single RunResult
+    object, or the JSON returned by `elf_python_run_result_parse_path`. The
+    tool computes eta, total loss, torque error, best point, and coverage
+    labels without exposing raw local output text.
+
+    Args:
+        motor_type: Motor family.
+        result_payloads_json: JSON list/object of local RunResult payloads.
+        torque_min_nm: Minimum torque axis value.
+        torque_max_nm: Maximum torque axis value.
+        torque_points: Number of torque samples.
+        speed_min_rpm: Minimum speed axis value.
+        speed_max_rpm: Maximum speed axis value.
+        speed_points: Number of speed samples.
+        base_speed_rpm: Base speed for field-weakening labels.
+        dc_bus_v: DC bus voltage.
+        phase_current_limit_a_peak: Phase current limit.
+        min_filled_fraction: Minimum filled-cell fraction for PASS coverage.
+        max_abs_torque_error_nm: Maximum absolute torque error for PASS.
+
+    Returns:
+        Markdown numeric efficiency map with eta grid and best point.
+    """
+    return format_motor_efficiency_map_result(
+        build_motor_efficiency_map_from_results(
+            motor_type=motor_type,
+            result_payloads=result_payloads_json,
+            torque_min_nm=torque_min_nm,
+            torque_max_nm=torque_max_nm,
+            torque_points=torque_points,
+            speed_min_rpm=speed_min_rpm,
+            speed_max_rpm=speed_max_rpm,
+            speed_points=speed_points,
+            base_speed_rpm=base_speed_rpm,
+            dc_bus_v=dc_bus_v,
+            phase_current_limit_a_peak=phase_current_limit_a_peak,
+            min_filled_fraction=min_filled_fraction,
+            max_abs_torque_error_nm=max_abs_torque_error_nm,
         )
     )
 
@@ -3413,6 +3524,26 @@ def main():
         assert "ELF Python RunResult Parser" in parsed_run_result
         assert "torque_value" in parsed_run_result
         assert "ld_lq_value" in parsed_run_result
+        efficiency_map_result = elf_python_motor_efficiency_map_from_results(
+            motor_type="spm",
+            result_payloads_json=(
+                '[{"case_id":"s00_t00","status":"PASS","parsed_observables":'
+                '{"point_id":"s00_t00","speed_rpm":1000,"requested_torque_nm":0.1,'
+                '"torque_nm":0.1,"loss_w":1.0}},'
+                '{"case_id":"s00_t01","status":"PASS","parsed_observables":'
+                '{"point_id":"s00_t01","speed_rpm":1000,"requested_torque_nm":0.2,'
+                '"torque_nm":0.2,"loss_w":2.0}}]'
+            ),
+            torque_min_nm=0.1,
+            torque_max_nm=0.2,
+            torque_points=2,
+            speed_min_rpm=1000,
+            speed_max_rpm=1000,
+            speed_points=1,
+            base_speed_rpm=1000,
+        )
+        assert "ELF Python Motor Efficiency Map Result" in efficiency_map_result
+        assert "Eta Grid" in efficiency_map_result
         design_plan = elf_python_motor_design_plan(
             goal="IPM torque density and Ld Lq",
             motor_type="ipm",

@@ -11,9 +11,9 @@
 
 ## Layered Architecture
 - `elfmagic-python public facade`: A small, typed Python package that turns user intent into stable data models and public input-deck text. It can be published without product binaries and without requiring the product-side Python implementation, because the backend is discovered at runtime on the user's machine.
-  artifacts: `MotorSpec / MaterialSpec / WindingSpec / StudySpec dataclasses`, `DeckBundle containing .mai text, .meg text or reference, and metadata`, `ObservableRequest for flux linkage, torque, force, field, loss, and status`, `DQAxisMapPlan, MTPASearchPlan, ReluctanceMotorDesignPlan, EfficiencyMapPlan, LossModelContract, TorqueSpeedEnvelope, InductionSlipSweepPlan, WindingLayoutPlan, TopologyParameterPlan, DemagMarginPlan, DriveCyclePlan, OptimizationStudyPlan, VoltageFieldWeakeningPlan, CoggingRipplePlan, AirgapHarmonicsNVHPlan, ThermalNetworkPlan, ManufacturingTolerancePlan, MaterialVariationPlan, FeasibilityStudy, OperatingPointRunQueue, InverterPWMHarmonicPlan, SaturationInductanceMapPlan, RotorStressRetentionPlan, RunResultParser, OptimizationLoop, NGSolveResultCrosscheck, DrawingBOMHandoff, and MotorValidationScorecard`, `RunRequest / RunResult JSON-compatible contracts`
+  artifacts: `MotorSpec / MaterialSpec / WindingSpec / StudySpec dataclasses`, `DeckBundle containing .mai text, .meg text or reference, and metadata`, `ObservableRequest for flux linkage, torque, force, field, loss, and status`, `DQAxisMapPlan, MTPASearchPlan, ReluctanceMotorDesignPlan, EfficiencyMapPlan, LossModelContract, TorqueSpeedEnvelope, InductionSlipSweepPlan, WindingLayoutPlan, TopologyParameterPlan, DemagMarginPlan, DriveCyclePlan, OptimizationStudyPlan, VoltageFieldWeakeningPlan, CoggingRipplePlan, AirgapHarmonicsNVHPlan, ThermalNetworkPlan, ManufacturingTolerancePlan, MaterialVariationPlan, FeasibilityStudy, OperatingPointRunQueue, InverterPWMHarmonicPlan, SaturationInductanceMapPlan, RotorStressRetentionPlan, RunResultParser, RunResultPathParser, EfficiencyMapResult, OptimizationLoop, NGSolveResultCrosscheck, DrawingBOMHandoff, and MotorValidationScorecard`, `RunRequest / RunResult JSON-compatible contracts`
 - `backend adapter protocol`: A pluggable interface for a user-local product installation. The public package defines the protocol; local/private adapters may call a vendor DLL, command-line runner, or dry-run validator.
-  artifacts: `discover() returns version/capability metadata without hard-coded paths`, `validate_inputs(bundle) checks .mai/.meg pairing and requested observables`, `run(request) executes only in a user-local environment`, `parse_result(run_directory) returns RunResult with normalized observables`
+  artifacts: `discover() returns version/capability metadata without hard-coded paths`, `validate_inputs(bundle) checks .mai/.meg pairing and requested observables`, `run(request) executes only in a user-local environment`, `parse_result(run_directory) returns RunResult with normalized observables`, `parse_result_files(run_directory) scans JSON/CSV/text result files and returns normalized observables only`
 - `MCP orchestration`: The MCP server routes natural-language goals to sample-deck families, Python schemas, validation expectations, and a local runner contract. It remains product-solver-free while generating open validation scripts where appropriate.
   artifacts: `elf_python_interface_design(topic)`, `elf_python_ngsolve_validation_plan(goal)`, `elf_python_ngsolve_validation_script(goal)`, `elf_motor_hybrid_router(goal)`, `elf_local_simulation_handoff(goal)`, `elf_sample_decks_validation_matrix(quantity)`
 - `independent validation bridge`: Use public-safe validation labels and independent open validation targets to decide whether a result is plausible before iterating design changes.
@@ -35,6 +35,8 @@
   required: `motor_type`, `saliency_targets`, `dq_axis_map_plan`, `mtpa_search_plan`, `aligned_unaligned_inductance_checks`
 - `EfficiencyMapPlan`
   required: `torque_axis_nm`, `speed_axis_rpm`, `operating_points`, `loss_model_contract`, `postprocess_outputs`
+- `EfficiencyMapResult`
+  required: `map_axes`, `eta_grid`, `total_loss_w_grid`, `torque_error_nm_grid`, `best_efficiency_point`, `coverage`, `quality_gate_results`
 - `InductionSlipSweepPlan`
   required: `pole_pairs`, `supply_frequency_hz`, `slip_axis`, `synchronous_speed_rpm`, `operating_points`
 - `WindingLayoutPlan`
@@ -71,6 +73,8 @@
   required: `max_speed_rpm`, `tip_speed_m_s`, `hoop_stress_mpa_proxy`, `retention_margin_proxy`, `ngsolve_follow_up`
 - `RunResultParser`
   required: `case_id`, `status`, `parsed_observables`, `warnings`, `validation_labels`
+- `RunResultPathParser`
+  required: `source_label`, `files_scanned`, `parsed_results`, `combined_observables`, `warnings`
 - `OptimizationLoop`
   required: `ranked_candidates`, `best_candidate`, `next_run_rows`, `promotion_rules`
 - `NGSolveResultCrosscheck`
@@ -85,7 +89,7 @@
 
 ## Backend Protocol
 - purpose: A pluggable interface for a user-local product installation. The public package defines the protocol; local/private adapters may call a vendor DLL, command-line runner, or dry-run validator.
-- calls: `discover() returns version/capability metadata without hard-coded paths`, `validate_inputs(bundle) checks .mai/.meg pairing and requested observables`, `run(request) executes only in a user-local environment`, `parse_result(run_directory) returns RunResult with normalized observables`
+- calls: `discover() returns version/capability metadata without hard-coded paths`, `validate_inputs(bundle) checks .mai/.meg pairing and requested observables`, `run(request) executes only in a user-local environment`, `parse_result(run_directory) returns RunResult with normalized observables`, `parse_result_files(run_directory) scans JSON/CSV/text result files and returns normalized observables only`
 
 ## Deck Generation Contract
 - inputs: `MotorSpec or ApplicationSpec`, `StudySpec`, `ObservableRequest list`, `source public sample deck path`, `parameter overrides`

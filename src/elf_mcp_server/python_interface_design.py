@@ -82,7 +82,8 @@ LAYERED_ARCHITECTURE: list[dict[str, Any]] = [
             "ManufacturingTolerancePlan, MaterialVariationPlan, "
             "FeasibilityStudy, OperatingPointRunQueue, "
             "InverterPWMHarmonicPlan, SaturationInductanceMapPlan, "
-            "RotorStressRetentionPlan, RunResultParser, OptimizationLoop, "
+            "RotorStressRetentionPlan, RunResultParser, RunResultPathParser, "
+            "EfficiencyMapResult, OptimizationLoop, "
             "NGSolveResultCrosscheck, DrawingBOMHandoff, and "
             "MotorValidationScorecard",
             "RunRequest / RunResult JSON-compatible contracts",
@@ -100,6 +101,7 @@ LAYERED_ARCHITECTURE: list[dict[str, Any]] = [
             "validate_inputs(bundle) checks .mai/.meg pairing and requested observables",
             "run(request) executes only in a user-local environment",
             "parse_result(run_directory) returns RunResult with normalized observables",
+            "parse_result_files(run_directory) scans JSON/CSV/text result files and returns normalized observables only",
         ],
     },
     {
@@ -233,6 +235,17 @@ MOTOR_SCHEMA: dict[str, Any] = {
             "operating_points",
             "loss_model_contract",
             "postprocess_outputs",
+        ],
+    },
+    "EfficiencyMapResult": {
+        "required": [
+            "map_axes",
+            "eta_grid",
+            "total_loss_w_grid",
+            "torque_error_nm_grid",
+            "best_efficiency_point",
+            "coverage",
+            "quality_gate_results",
         ],
     },
     "InductionSlipSweepPlan": {
@@ -396,6 +409,15 @@ MOTOR_SCHEMA: dict[str, Any] = {
             "parsed_observables",
             "warnings",
             "validation_labels",
+        ],
+    },
+    "RunResultPathParser": {
+        "required": [
+            "source_label",
+            "files_scanned",
+            "parsed_results",
+            "combined_observables",
+            "warnings",
         ],
     },
     "OptimizationLoop": {

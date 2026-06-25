@@ -7,8 +7,10 @@ before a user-local backend receives a run request.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
+from pathlib import Path
 from math import atan2, cos, degrees, gcd, hypot, pi, radians, sin
 from typing import Any, Mapping, Sequence
+import csv
 import json
 import re
 
@@ -685,6 +687,22 @@ def python_api_schema() -> dict[str, Any]:
                 "warnings",
                 "missing_requested_observables",
             ],
+            "RunResultPathParser": [
+                "source_label",
+                "files_scanned",
+                "parsed_results",
+                "combined_observables",
+                "warnings",
+            ],
+            "EfficiencyMapResult": [
+                "map_axes",
+                "eta_grid",
+                "total_loss_w_grid",
+                "torque_error_nm_grid",
+                "best_efficiency_point",
+                "coverage",
+                "quality_gate_results",
+            ],
             "OptimizationLoop": [
                 "ranked_candidates",
                 "best_candidate",
@@ -922,6 +940,11 @@ def _normalize_observable_key(key: str) -> str:
     aliases = {
         "torque": "torque_value",
         "torque_nm": "torque_value",
+        "torque_z_nm": "torque_value",
+        "moment_nm": "torque_value",
+        "moment_z_nm": "torque_value",
+        "mome_nm": "torque_value",
+        "mome_z_nm": "torque_value",
         "average_torque_nm": "torque_value",
         "avg_torque_nm": "torque_value",
         "torque_ripple": "torque_ripple_value",
@@ -944,6 +967,8 @@ def _normalize_observable_key(key: str) -> str:
         "l_q_h": "lq_value_h",
         "loss": "loss_proxy_value",
         "loss_w": "loss_proxy_value",
+        "loss_total_w": "loss_proxy_value",
+        "total_loss": "loss_proxy_value",
         "total_loss_w": "loss_proxy_value",
         "loss_proxy": "loss_proxy_value",
         "copper_loss_w": "copper_loss_w",
@@ -952,11 +977,36 @@ def _normalize_observable_key(key: str) -> str:
         "rotor_loss_w": "rotor_loss_w",
         "inverter_loss_w": "inverter_loss_w",
         "mechanical_loss_w": "mechanical_loss_w",
+        "mech_loss_w": "mechanical_loss_w",
         "efficiency": "efficiency_value",
+        "efficiency_percent": "efficiency_value",
         "eta": "efficiency_value",
+        "eta_percent": "efficiency_value",
         "cycle_efficiency": "cycle_efficiency_value",
+        "case": "case_id",
+        "case_id": "case_id",
+        "id": "case_id",
+        "point": "point_id",
+        "point_id": "point_id",
+        "operating_point": "point_id",
         "speed_rpm": "speed_rpm",
         "rotor_speed_rpm": "speed_rpm",
+        "target_speed_rpm": "requested_speed_rpm",
+        "requested_speed_rpm": "requested_speed_rpm",
+        "command_speed_rpm": "requested_speed_rpm",
+        "target_torque_nm": "requested_torque_nm",
+        "requested_torque_nm": "requested_torque_nm",
+        "command_torque_nm": "requested_torque_nm",
+        "mechanical_power_w": "mechanical_power_w",
+        "output_power_w": "mechanical_power_w",
+        "shaft_power_w": "mechanical_power_w",
+        "input_power_w": "input_power_w",
+        "power_in_w": "input_power_w",
+        "pin_w": "input_power_w",
+        "electrical_input_power_w": "input_power_w",
+        "force_x_n": "force_x_n",
+        "force_y_n": "force_y_n",
+        "force_z_n": "force_z_n",
         "phase_current_a_peak": "phase_current_a_peak",
         "phase_current_a_rms": "phase_current_a_rms",
         "voltage_margin": "voltage_margin_value",
@@ -1044,6 +1094,21 @@ def parse_run_result_payload(
             expected_key = "ld_lq_value"
         if observable == "loss_proxy":
             expected_key = "loss_proxy_value"
+            if not any(
+                key in parsed
+                for key in (
+                    "loss_proxy_value",
+                    "copper_loss_w",
+                    "iron_loss_w",
+                    "magnet_loss_w",
+                    "rotor_loss_w",
+                    "inverter_loss_w",
+                    "mechanical_loss_w",
+                    "input_power_w",
+                )
+            ):
+                missing.append(observable)
+            continue
         if expected_key not in parsed:
             missing.append(observable)
     if missing:
@@ -1071,8 +1136,205 @@ def parse_run_result_payload(
     }
 
 
+RESULT_FILE_SUFFIXES = {".json", ".csv", ".txt", ".log", ".out", ".mah", ".maf"}
+RESULT_TEXT_MAX_BYTES = 2_000_000
+
+
+def _is_number_like(value: Any) -> bool:
+    try:
+        float(str(value).strip())
+        return True
+    except (TypeError, ValueError):
+        return False
+
+
+def _coerce_result_scalar(value: Any) -> Any:
+    if not isinstance(value, str):
+        return value
+    stripped = value.strip()
+    if not stripped:
+        return ""
+    if _is_number_like(stripped):
+        return _safe_float(stripped)
+    return stripped
+
+
+def _split_result_table_lines(text: str, source_name: str) -> list[dict[str, Any]]:
+    """Extract row dictionaries from simple CSV or whitespace result tables."""
+    lines = [
+        line.strip()
+        for line in text.splitlines()
+        if line.strip() and not line.lstrip().startswith(("#", "*", "//"))
+    ]
+    if not lines:
+        return []
+
+    if any("," in line for line in lines[:5]):
+        rows = [row for row in csv.reader(lines) if row]
+    else:
+        rows = [re.split(r"\s+", line) for line in lines]
+    rows = [[cell.strip() for cell in row] for row in rows if any(cell.strip() for cell in row)]
+    if not rows:
+        return []
+
+    key_value_rows = []
+    key_value_candidate = all(
+        len(row) == 2 and re.search(r"[A-Za-z]", row[0]) and not _is_number_like(row[0])
+        for row in rows
+    )
+    if key_value_candidate and rows[0][0].lower() in {"key", "name", "observable"}:
+        rows_for_key_values = rows[1:]
+    else:
+        rows_for_key_values = rows
+    if key_value_candidate:
+        for row in rows_for_key_values:
+            key_value_rows.append((row[0], row[1]))
+    if key_value_rows:
+        return [{key: _coerce_result_scalar(value) for key, value in key_value_rows}]
+
+    header_index = -1
+    for index, row in enumerate(rows[:10]):
+        if len(row) >= 2 and any(re.search(r"[A-Za-z]", cell) for cell in row):
+            header_index = index
+            break
+    if header_index < 0:
+        return []
+
+    headers = [cell or f"col_{index}" for index, cell in enumerate(rows[header_index])]
+    parsed_rows = []
+    for row_index, row in enumerate(rows[header_index + 1 :], start=1):
+        if len(row) < 2:
+            continue
+        values = {}
+        for col_index, header in enumerate(headers):
+            if col_index >= len(row):
+                continue
+            value = row[col_index].strip()
+            if not value:
+                continue
+            values[header] = _coerce_result_scalar(value)
+        if values:
+            values.setdefault("case_id", f"{Path(source_name).stem}_row_{row_index:03d}")
+            parsed_rows.append(values)
+    return parsed_rows
+
+
+def _parse_run_result_text_records(text: str, source_name: str) -> list[Any]:
+    data = _try_json_loads(text)
+    if isinstance(data, Mapping):
+        for key in ("results", "run_results", "cases", "rows"):
+            nested = data.get(key)
+            if isinstance(nested, Sequence) and not isinstance(nested, str):
+                return list(nested)
+        return [data]
+    if isinstance(data, Sequence) and not isinstance(data, str):
+        return list(data)
+    table_rows = _split_result_table_lines(text, source_name)
+    if table_rows:
+        return table_rows
+    return [text]
+
+
+def _read_result_text(path: Path) -> tuple[str, str]:
+    size = path.stat().st_size
+    if size > RESULT_TEXT_MAX_BYTES:
+        return "", f"{path.name}: skipped because file is larger than {RESULT_TEXT_MAX_BYTES} bytes"
+    return path.read_text(encoding="utf-8", errors="replace"), ""
+
+
+def parse_run_result_path(
+    run_path: str,
+    motor_type: str = "spm",
+    requested_observables: Sequence[str] = (),
+    max_files: int = 20,
+) -> dict[str, Any]:
+    """Parse user-local run-result files without returning raw text or paths."""
+    family = _infer_motor_type(motor_type, "spm")
+    path = Path(run_path).expanduser()
+    warnings: list[str] = []
+    if not path.exists():
+        return {
+            "schema_version": "elf-python-run-result-path-parse/v1",
+            "source_label": path.name or "run_path",
+            "motor_type": family,
+            "status": "FAIL",
+            "files_scanned": [],
+            "parsed_results": [],
+            "combined_observables": {},
+            "warnings": ["run_path does not exist"],
+            "validation_labels": ["local_result_path_parse_failed"],
+            "public_boundary": "No raw local path or product output text is returned.",
+        }
+
+    if path.is_file():
+        candidates = [path]
+    else:
+        candidates = [
+            item
+            for item in sorted(path.rglob("*"))
+            if item.is_file() and item.suffix.lower() in RESULT_FILE_SUFFIXES
+        ]
+    candidates = candidates[: max(int(max_files), 1)]
+
+    parsed_results: list[dict[str, Any]] = []
+    files_scanned: list[str] = []
+    for candidate in candidates:
+        files_scanned.append(candidate.name)
+        text, warning = _read_result_text(candidate)
+        if warning:
+            warnings.append(warning)
+            continue
+        for index, record in enumerate(_parse_run_result_text_records(text, candidate.name), start=1):
+            parsed = parse_run_result_payload(
+                record,
+                case_id=f"{candidate.stem}_{index:03d}",
+                motor_type=family,
+                requested_observables=requested_observables,
+            )
+            parsed["source_file"] = candidate.name
+            parsed_results.append(parsed)
+
+    combined_observables: dict[str, Any] = {}
+    for parsed in parsed_results:
+        for key, value in parsed.get("parsed_observables", {}).items():
+            combined_observables.setdefault(key, value)
+
+    if any(result["status"] == "FAIL" for result in parsed_results):
+        status = "FAIL"
+    elif warnings or any(result["status"] == "WARN" for result in parsed_results):
+        status = "WARN"
+    elif parsed_results:
+        status = "PASS"
+    else:
+        status = "WARN"
+        warnings.append("no parseable result records found")
+
+    return {
+        "schema_version": "elf-python-run-result-path-parse/v1",
+        "source_label": path.name or "run_path",
+        "motor_type": family,
+        "status": status,
+        "files_scanned": files_scanned,
+        "parsed_results": parsed_results,
+        "combined_observables": combined_observables,
+        "warnings": warnings,
+        "validation_labels": [
+            "local_result_files_scanned",
+            "raw_output_text_withheld",
+            "public_observable_contract_parser",
+        ],
+        "public_boundary": (
+            "The parser reads user-local files but returns only normalized "
+            "observables, file basenames, and warnings. Raw paths and raw "
+            "product output text stay local."
+        ),
+    }
+
+
 def _coerce_run_result_payloads(payloads: str | Sequence[Any] | Mapping[str, Any]) -> list[Any]:
     data = _try_json_loads(payloads)
+    if isinstance(data, Mapping) and isinstance(data.get("parsed_results"), Sequence):
+        return list(data["parsed_results"])
     if isinstance(data, Mapping):
         return [data]
     if isinstance(data, Sequence) and not isinstance(data, str):
@@ -2225,6 +2487,367 @@ def build_motor_efficiency_map_plan(
             "efficiency never hides raw mechanical_power_w or total_loss_w",
             "map resolution is recorded with axes and units",
         ],
+    }
+
+
+LOSS_OBSERVABLE_KEYS = (
+    "loss_proxy_value",
+    "copper_loss_w",
+    "iron_loss_w",
+    "magnet_loss_w",
+    "rotor_loss_w",
+    "inverter_loss_w",
+    "mechanical_loss_w",
+)
+
+
+def _nearest_axis_index(axis: Sequence[float], value: float) -> int:
+    if not axis:
+        return 0
+    return min(range(len(axis)), key=lambda index: abs(float(axis[index]) - value))
+
+
+def _total_loss_from_observables(observables: Mapping[str, Any]) -> tuple[float, str]:
+    explicit = _safe_float(observables.get("loss_proxy_value"), -1.0)
+    if explicit >= 0.0:
+        return explicit, "loss_proxy_value"
+    terms = [
+        _safe_float(observables.get(key), 0.0)
+        for key in LOSS_OBSERVABLE_KEYS
+        if key != "loss_proxy_value" and key in observables
+    ]
+    if terms:
+        return sum(max(value, 0.0) for value in terms), "summed_loss_terms"
+    input_power = _safe_float(observables.get("input_power_w"), -1.0)
+    mechanical_power = _safe_float(observables.get("mechanical_power_w"), -1.0)
+    if input_power >= 0.0 and mechanical_power >= 0.0:
+        return max(input_power - mechanical_power, 0.0), "input_minus_output_power"
+    return 0.0, "missing_loss"
+
+
+def _efficiency_from_observables(
+    observables: Mapping[str, Any],
+    planned_speed_rpm: float,
+    planned_torque_nm: float,
+) -> dict[str, Any]:
+    speed = _safe_float(
+        observables.get("speed_rpm"),
+        _safe_float(observables.get("requested_speed_rpm"), planned_speed_rpm),
+    )
+    measured_torque = _safe_float(
+        observables.get("torque_value"),
+        _safe_float(observables.get("requested_torque_nm"), planned_torque_nm),
+    )
+    requested_torque = _safe_float(observables.get("requested_torque_nm"), planned_torque_nm)
+    omega = 2.0 * pi * max(speed, 0.0) / 60.0
+    mechanical_power = _safe_float(observables.get("mechanical_power_w"), measured_torque * omega)
+    total_loss, loss_source = _total_loss_from_observables(observables)
+    eta = _safe_float(observables.get("efficiency_value"), -1.0)
+    if eta < 0.0:
+        input_power = _safe_float(observables.get("input_power_w"), -1.0)
+        if input_power > 0.0:
+            eta = mechanical_power / input_power
+        elif mechanical_power > 0.0 and total_loss >= 0.0 and loss_source != "missing_loss":
+            eta = mechanical_power / max(mechanical_power + total_loss, 1.0e-18)
+    if eta > 1.0:
+        eta /= 100.0
+    eta = max(min(eta, 1.0), 0.0) if eta >= 0.0 else None
+    torque_error = measured_torque - requested_torque
+    return {
+        "speed_rpm": round(speed, 6),
+        "torque_nm": round(requested_torque, 6),
+        "measured_torque_nm": round(measured_torque, 6),
+        "mechanical_power_w": round(mechanical_power, 6),
+        "total_loss_w": round(total_loss, 6) if loss_source != "missing_loss" else None,
+        "efficiency": round(eta, 8) if eta is not None else None,
+        "loss_source": loss_source,
+        "torque_error_nm": round(torque_error, 8),
+        "voltage_margin_v": (
+            round(_safe_float(observables["voltage_margin_value"]), 6)
+            if "voltage_margin_value" in observables
+            else None
+        ),
+        "current_margin_a": (
+            round(_safe_float(observables["current_margin_value"]), 6)
+            if "current_margin_value" in observables
+            else None
+        ),
+    }
+
+
+def _gate_status(condition: bool, warn_condition: bool = False) -> str:
+    if condition:
+        return "PASS"
+    return "WARN" if warn_condition else "FAIL"
+
+
+def _efficiency_map_quality_gate_results(
+    ok_points: Sequence[Mapping[str, Any]],
+    warnings: Sequence[str],
+    filled_points: int,
+    total_points: int,
+    feasible_filled: int,
+    feasible_total: int,
+    min_filled_fraction: float,
+    max_abs_torque_error_nm: float,
+) -> list[dict[str, Any]]:
+    filled_fraction = filled_points / max(total_points, 1)
+    feasible_fraction = feasible_filled / max(feasible_total, 1)
+    eta_values = [point.get("efficiency") for point in ok_points if point.get("efficiency") is not None]
+    loss_values = [point.get("total_loss_w") for point in ok_points if point.get("total_loss_w") is not None]
+    torque_errors = [
+        abs(_safe_float(point.get("torque_error_nm")))
+        for point in ok_points
+        if point.get("torque_error_nm") is not None
+    ]
+    loss_fraction = len(loss_values) / max(len(ok_points), 1)
+    max_torque_error = max(torque_errors, default=None)
+    source_failures = sum(1 for point in ok_points if point.get("source_status") == "FAIL")
+    gates = [
+        {
+            "gate": "coverage_fraction",
+            "status": _gate_status(filled_fraction >= min_filled_fraction, filled_fraction >= 0.5 * min_filled_fraction),
+            "metric": round(filled_fraction, 8),
+            "threshold": min_filled_fraction,
+            "reason": f"{filled_points}/{total_points} map cells have usable efficiency values",
+        },
+        {
+            "gate": "feasible_region_coverage",
+            "status": _gate_status(feasible_fraction >= min_filled_fraction, feasible_fraction >= 0.5 * min_filled_fraction),
+            "metric": round(feasible_fraction, 8),
+            "threshold": min_filled_fraction,
+            "reason": f"{feasible_filled}/{feasible_total} feasible-envelope cells are filled",
+        },
+        {
+            "gate": "efficiency_range_0_to_1",
+            "status": _gate_status(bool(eta_values) and all(0.0 <= float(value) <= 1.0 for value in eta_values)),
+            "metric": {
+                "min_eta": round(min(eta_values), 8) if eta_values else None,
+                "max_eta": round(max(eta_values), 8) if eta_values else None,
+            },
+            "threshold": "0 <= eta <= 1",
+            "reason": "all filled efficiency values are bounded physical fractions",
+        },
+        {
+            "gate": "loss_nonnegative",
+            "status": _gate_status(bool(loss_values) and all(float(value) >= 0.0 for value in loss_values)),
+            "metric": {
+                "loss_filled_fraction": round(loss_fraction, 8),
+                "min_loss_w": round(min(loss_values), 8) if loss_values else None,
+            },
+            "threshold": "all filled loss values >= 0 W and present for filled eta cells",
+            "reason": "loss grid is present and no filled loss term is negative",
+        },
+        {
+            "gate": "torque_error_within_limit",
+            "status": _gate_status(
+                max_torque_error is not None and max_torque_error <= max_abs_torque_error_nm,
+                max_torque_error is not None and max_torque_error <= 2.0 * max_abs_torque_error_nm,
+            ),
+            "metric": round(max_torque_error, 8) if max_torque_error is not None else None,
+            "threshold": max_abs_torque_error_nm,
+            "reason": "measured torque matches requested map torque before efficiency is trusted",
+        },
+        {
+            "gate": "source_status",
+            "status": _gate_status(source_failures == 0),
+            "metric": source_failures,
+            "threshold": 0,
+            "reason": "no filled map cell came from a failed RunResult",
+        },
+        {
+            "gate": "parser_warnings",
+            "status": "PASS" if not warnings else "WARN",
+            "metric": len(warnings),
+            "threshold": 0,
+            "reason": "warnings are surfaced and prevent silent promotion",
+        },
+    ]
+    return gates
+
+
+def build_motor_efficiency_map_from_results(
+    motor_type: str = "spm",
+    result_payloads: str | Sequence[Any] | Mapping[str, Any] = (),
+    torque_min_nm: float = 0.05,
+    torque_max_nm: float = 1.0,
+    torque_points: int = 5,
+    speed_min_rpm: float = 500.0,
+    speed_max_rpm: float = 12000.0,
+    speed_points: int = 6,
+    base_speed_rpm: float = 3500.0,
+    dc_bus_v: float = 48.0,
+    phase_current_limit_a_peak: float = 40.0,
+    min_filled_fraction: float = 1.0,
+    max_abs_torque_error_nm: float = 0.05,
+) -> dict[str, Any]:
+    """Build a numeric efficiency map from normalized local RunResults."""
+    family = _infer_motor_type(motor_type, "spm")
+    plan = build_motor_efficiency_map_plan(
+        motor_type=family,
+        torque_min_nm=torque_min_nm,
+        torque_max_nm=torque_max_nm,
+        torque_points=torque_points,
+        speed_min_rpm=speed_min_rpm,
+        speed_max_rpm=speed_max_rpm,
+        speed_points=speed_points,
+        base_speed_rpm=base_speed_rpm,
+        dc_bus_v=dc_bus_v,
+        phase_current_limit_a_peak=phase_current_limit_a_peak,
+    )
+    torque_axis = [float(value) for value in plan["map_axes"]["torque_nm"]]
+    speed_axis = [float(value) for value in plan["map_axes"]["speed_rpm"]]
+    point_by_id = {point["point_id"]: point for point in plan["operating_points"]}
+    cells: dict[tuple[int, int], dict[str, Any]] = {}
+    result_points = []
+    warnings = []
+
+    parsed_results = []
+    for index, payload in enumerate(_coerce_run_result_payloads(result_payloads), start=1):
+        if isinstance(payload, Mapping) and payload.get("schema_version") == "elf-python-run-result-parse/v1":
+            parsed = dict(payload)
+        else:
+            parsed = parse_run_result_payload(payload, case_id=f"map_result_{index:03d}", motor_type=family)
+        parsed_results.append(parsed)
+        observables = parsed.get("parsed_observables", {})
+        if not isinstance(observables, Mapping):
+            warnings.append(f"{parsed.get('case_id', index)}: parsed_observables is not a mapping")
+            continue
+
+        point_id = str(observables.get("point_id") or parsed.get("case_id") or "")
+        if point_id in point_by_id:
+            planned = point_by_id[point_id]
+            speed_index = speed_axis.index(float(planned["speed_rpm"]))
+            torque_index = torque_axis.index(float(planned["torque_nm"]))
+        else:
+            speed_value = _safe_float(
+                observables.get("requested_speed_rpm"),
+                _safe_float(observables.get("speed_rpm"), speed_axis[0] if speed_axis else 0.0),
+            )
+            torque_value = _safe_float(
+                observables.get("requested_torque_nm"),
+                _safe_float(observables.get("torque_value"), torque_axis[0] if torque_axis else 0.0),
+            )
+            speed_index = _nearest_axis_index(speed_axis, speed_value)
+            torque_index = _nearest_axis_index(torque_axis, torque_value)
+            planned = point_by_id.get(
+                f"s{speed_index:02d}_t{torque_index:02d}",
+                {"point_id": f"s{speed_index:02d}_t{torque_index:02d}", "speed_rpm": speed_axis[speed_index], "torque_nm": torque_axis[torque_index], "feasible_by_envelope": True},
+            )
+            point_id = str(planned["point_id"])
+
+        numeric = _efficiency_from_observables(
+            observables,
+            planned_speed_rpm=float(planned["speed_rpm"]),
+            planned_torque_nm=float(planned["torque_nm"]),
+        )
+        cell = {
+            "point_id": point_id,
+            "case_id": parsed.get("case_id", f"map_result_{len(result_points) + 1:03d}"),
+            "source_status": parsed.get("status", "PASS"),
+            "feasible_by_envelope": bool(planned.get("feasible_by_envelope", True)),
+            **numeric,
+        }
+        cell["map_status"] = (
+            "ok"
+            if cell["source_status"] != "FAIL" and cell["efficiency"] is not None
+            else "missing_efficiency"
+        )
+        if cell["loss_source"] == "missing_loss" and cell["efficiency"] is None:
+            warnings.append(f"{cell['case_id']}: no efficiency, input power, or loss terms were available")
+        key = (speed_index, torque_index)
+        previous = cells.get(key)
+        if previous is None or (
+            cell["map_status"] == "ok"
+            and (previous.get("map_status") != "ok" or (cell["efficiency"] or 0.0) > (previous.get("efficiency") or 0.0))
+        ):
+            cells[key] = cell
+        result_points.append(cell)
+
+    eta_grid: list[list[float | None]] = []
+    total_loss_w_grid: list[list[float | None]] = []
+    torque_error_nm_grid: list[list[float | None]] = []
+    status_grid: list[list[str]] = []
+    for speed_index, _speed in enumerate(speed_axis):
+        eta_row = []
+        loss_row = []
+        error_row = []
+        status_row = []
+        for torque_index, _torque in enumerate(torque_axis):
+            cell = cells.get((speed_index, torque_index))
+            eta_row.append(cell.get("efficiency") if cell else None)
+            loss_row.append(cell.get("total_loss_w") if cell else None)
+            error_row.append(cell.get("torque_error_nm") if cell else None)
+            status_row.append(cell.get("map_status") if cell else "missing")
+        eta_grid.append(eta_row)
+        total_loss_w_grid.append(loss_row)
+        torque_error_nm_grid.append(error_row)
+        status_grid.append(status_row)
+
+    ok_points = [cell for cell in cells.values() if cell.get("map_status") == "ok"]
+    feasible_total = sum(1 for point in plan["operating_points"] if point["feasible_by_envelope"])
+    feasible_filled = sum(1 for cell in ok_points if cell["feasible_by_envelope"])
+    best = max(ok_points, key=lambda cell: cell.get("efficiency") or -1.0, default={})
+    total_points = len(plan["operating_points"])
+    filled_points = len(ok_points)
+    missing_point_ids = [
+        point["point_id"]
+        for point in plan["operating_points"]
+        if point["point_id"] not in {cell["point_id"] for cell in ok_points}
+    ]
+    min_fraction = max(min(float(min_filled_fraction), 1.0), 0.0)
+    torque_error_limit = max(float(max_abs_torque_error_nm), 0.0)
+    quality_gate_results = _efficiency_map_quality_gate_results(
+        ok_points=ok_points,
+        warnings=warnings,
+        filled_points=filled_points,
+        total_points=total_points,
+        feasible_filled=feasible_filled,
+        feasible_total=feasible_total,
+        min_filled_fraction=min_fraction,
+        max_abs_torque_error_nm=torque_error_limit,
+    )
+    if any(gate["status"] == "FAIL" for gate in quality_gate_results):
+        overall_status = "FAIL"
+    elif any(gate["status"] == "WARN" for gate in quality_gate_results):
+        overall_status = "WARN"
+    else:
+        overall_status = "PASS"
+
+    return {
+        "schema_version": "elf-python-motor-efficiency-map-result/v1",
+        "motor_type": family,
+        "status": overall_status,
+        "map_axes": plan["map_axes"],
+        "eta_grid": eta_grid,
+        "total_loss_w_grid": total_loss_w_grid,
+        "torque_error_nm_grid": torque_error_nm_grid,
+        "status_grid": status_grid,
+        "result_points": result_points,
+        "best_efficiency_point": best,
+        "coverage": {
+            "parsed_results": len(parsed_results),
+            "filled_points": filled_points,
+            "total_points": total_points,
+            "filled_fraction": round(filled_points / max(total_points, 1), 8),
+            "feasible_filled_points": feasible_filled,
+            "feasible_total_points": feasible_total,
+            "missing_point_ids": missing_point_ids[:50],
+            "missing_point_count": len(missing_point_ids),
+            "min_filled_fraction": min_fraction,
+            "max_abs_torque_error_nm": torque_error_limit,
+        },
+        "warnings": warnings,
+        "quality_gate_results": quality_gate_results,
+        "quality_gates": [
+            "every filled cell is derived from a normalized RunResult",
+            "efficiency is computed from parsed efficiency, input/output power, or mechanical power plus loss",
+            "missing loss/efficiency cells remain explicitly missing",
+            "coverage, feasible-region coverage, eta range, loss nonnegativity, and torque error are machine-checked",
+            "best point is a map result only and still needs validation promotion before design claims",
+            "raw local output text and local paths are not returned",
+        ],
+        "public_boundary": "Numeric grid is computed from normalized local RunResult values only.",
     }
 
 
@@ -3823,6 +4446,53 @@ def format_run_result_parse(parsed: Mapping[str, Any]) -> str:
     return "\n".join(lines).rstrip()
 
 
+def format_run_result_path_parse(parsed: Mapping[str, Any]) -> str:
+    """Format a user-local run-result path parse summary."""
+    lines = [
+        "# ELF Python RunResult Path Parser",
+        "",
+        f"- schema: `{parsed['schema_version']}`",
+        f"- source label: `{parsed['source_label']}`",
+        f"- motor type: `{parsed['motor_type']}`",
+        f"- status: `{parsed['status']}`",
+        f"- parsed results: `{len(parsed['parsed_results'])}`",
+        f"- boundary: {parsed['public_boundary']}",
+        "",
+        "## Files Scanned",
+    ]
+    if parsed["files_scanned"]:
+        lines.extend(f"- `{item}`" for item in parsed["files_scanned"])
+    else:
+        lines.append("- none")
+    lines.extend(["", "## Combined Observables"])
+    if parsed["combined_observables"]:
+        for key, value in parsed["combined_observables"].items():
+            lines.append(f"- `{key}`: `{value}`")
+    else:
+        lines.append("- none")
+    lines.extend(["", "## Parsed Cases"])
+    if parsed["parsed_results"]:
+        for result in parsed["parsed_results"][:30]:
+            source = result.get("source_file", "inline")
+            keys = ", ".join(f"`{key}`" for key in result.get("parsed_observables", {}).keys())
+            lines.append(
+                f"- `{result['case_id']}` from `{source}` status `{result['status']}`: "
+                + (keys or "no observables")
+            )
+    else:
+        lines.append("- none")
+    if len(parsed["parsed_results"]) > 30:
+        lines.append(f"- ... {len(parsed['parsed_results']) - 30} more cases omitted")
+    lines.extend(["", "## Warnings"])
+    if parsed["warnings"]:
+        lines.extend(f"- {item}" for item in parsed["warnings"])
+    else:
+        lines.append("- none")
+    lines.extend(["", "## Validation Labels"])
+    lines.extend(f"- `{item}`" for item in parsed["validation_labels"])
+    return "\n".join(lines).rstrip()
+
+
 def format_motor_optimization_loop(loop: Mapping[str, Any]) -> str:
     """Format an optimization loop state."""
     lines = [
@@ -4210,6 +4880,77 @@ def format_motor_efficiency_map_plan(plan: Mapping[str, Any]) -> str:
     lines.extend(f"- `{item}`" for item in plan["postprocess_outputs"])
     lines.extend(["", "## Quality Gates"])
     lines.extend(f"- {item}" for item in plan["quality_gates"])
+    return "\n".join(lines).rstrip()
+
+
+def format_motor_efficiency_map_result(result: Mapping[str, Any]) -> str:
+    """Format a numeric efficiency map generated from RunResults."""
+    axes = result["map_axes"]
+    coverage = result["coverage"]
+    best = result.get("best_efficiency_point") or {}
+    lines = [
+        "# ELF Python Motor Efficiency Map Result",
+        "",
+        f"- schema: `{result['schema_version']}`",
+        f"- motor type: `{result['motor_type']}`",
+        f"- status: `{result['status']}`",
+        "- torque axis [Nm]: " + ", ".join(f"`{value}`" for value in axes["torque_nm"]),
+        "- speed axis [rpm]: " + ", ".join(f"`{value}`" for value in axes["speed_rpm"]),
+        f"- filled points: `{coverage['filled_points']}/{coverage['total_points']}`",
+        f"- feasible filled points: `{coverage['feasible_filled_points']}/{coverage['feasible_total_points']}`",
+        f"- boundary: {result['public_boundary']}",
+        "",
+        "## Best Efficiency Point",
+    ]
+    if best:
+        lines.extend(
+            [
+                f"- point: `{best['point_id']}`",
+                f"- case: `{best['case_id']}`",
+                f"- speed: `{best['speed_rpm']}` rpm",
+                f"- torque: `{best['torque_nm']}` Nm",
+                f"- eta: `{best['efficiency']}`",
+                f"- total loss: `{best['total_loss_w']}` W",
+                f"- loss source: `{best['loss_source']}`",
+            ]
+        )
+    else:
+        lines.append("- none")
+    lines.extend(["", "## Eta Grid"])
+    header = "speed_rpm \\ torque_nm | " + " | ".join(str(value) for value in axes["torque_nm"])
+    lines.append(header)
+    lines.append(" | ".join(["---"] * (len(axes["torque_nm"]) + 1)))
+    for speed, row in zip(axes["speed_rpm"], result["eta_grid"]):
+        rendered = ["missing" if value is None else str(value) for value in row]
+        lines.append(f"{speed} | " + " | ".join(rendered))
+    lines.extend(["", "## Result Points"])
+    if result["result_points"]:
+        for point in result["result_points"][:60]:
+            lines.append(
+                f"- `{point['point_id']}` case `{point['case_id']}`: "
+                f"eta `{point['efficiency']}`, loss `{point['total_loss_w']}`, "
+                f"status `{point['map_status']}`"
+            )
+    else:
+        lines.append("- none")
+    if len(result["result_points"]) > 60:
+        lines.append(f"- ... {len(result['result_points']) - 60} more points omitted")
+    lines.extend(["", "## Quality Gate Results"])
+    if result.get("quality_gate_results"):
+        for gate in result["quality_gate_results"]:
+            lines.append(
+                f"- `{gate['gate']}`: `{gate['status']}` "
+                f"(metric `{gate['metric']}`, threshold `{gate['threshold']}`) - {gate['reason']}"
+            )
+    else:
+        lines.append("- none")
+    lines.extend(["", "## Warnings"])
+    if result["warnings"]:
+        lines.extend(f"- {item}" for item in result["warnings"])
+    else:
+        lines.append("- none")
+    lines.extend(["", "## Quality Gates"])
+    lines.extend(f"- {item}" for item in result["quality_gates"])
     return "\n".join(lines).rstrip()
 
 

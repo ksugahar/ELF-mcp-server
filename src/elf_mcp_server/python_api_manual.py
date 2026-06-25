@@ -288,6 +288,32 @@ OBJECTS: list[dict[str, Any]] = [
         "llm_rule": "Never rank or validate raw text directly; normalize it first.",
     },
     {
+        "name": "RunResultPathParser",
+        "purpose": "Scan user-local result files or directories and normalize observables without returning raw output text.",
+        "fields": [
+            "source_label",
+            "files_scanned",
+            "parsed_results",
+            "combined_observables",
+            "warnings",
+        ],
+        "llm_rule": "Use for completed local runs; only file basenames and normalized values may leave the parser.",
+    },
+    {
+        "name": "EfficiencyMapResult",
+        "purpose": "Convert parsed RunResults into numeric eta/loss/torque-error grids.",
+        "fields": [
+            "map_axes",
+            "eta_grid",
+            "total_loss_w_grid",
+            "torque_error_nm_grid",
+            "best_efficiency_point",
+            "coverage",
+            "quality_gate_results",
+        ],
+        "llm_rule": "Missing cells stay missing; do not interpolate or claim a full map unless coverage says so.",
+    },
+    {
         "name": "OptimizationLoop",
         "purpose": "Rank parsed candidates and propose next DOE rows or validation promotion.",
         "fields": [
@@ -503,9 +529,19 @@ LLM_CALL_ORDER = [
         "reason": "Normalize local/private results into public-safe parsed observables.",
     },
     {
+        "step": "30a",
+        "call": 'elf_python_run_result_parse_path(run_path="<local run directory>", requested_observables="torque,loss_proxy")',
+        "reason": "Normalize completed local result files while withholding raw paths and raw output text.",
+    },
+    {
         "step": 31,
         "call": 'elf_python_motor_optimization_loop(motor_type="<motor_type>", objective="cycle_efficiency", result_payloads_json="<JSON list>")',
         "reason": "Rank parsed candidates and choose next run rows or validation promotion.",
+    },
+    {
+        "step": "31a",
+        "call": 'elf_python_motor_efficiency_map_from_results(motor_type="<motor_type>", result_payloads_json="<JSON list or path-parse JSON>")',
+        "reason": "Compute eta/loss grids and best efficiency point from parsed local RunResults.",
     },
     {
         "step": 32,
@@ -587,6 +623,8 @@ EXAMPLES = [
             'elf_python_motor_optimization_study_plan(motor_type="spm", objective="cycle_efficiency", budget=48)',
             'elf_python_run_contract("SPM motor back EMF sweep", motor_type="spm", source_public_deck_path="application/motor/pm_cosine_pickup_72/pm001/pm001.mai")',
             'elf_python_run_result_parse(payload="torque_nm=0.82\\nloss_w=12.5\\nefficiency=0.91", case_id="cand_a")',
+            'elf_python_run_result_parse_path(run_path="<local run directory>", requested_observables="torque,loss_proxy")',
+            'elf_python_motor_efficiency_map_from_results(motor_type="spm", result_payloads_json="[...parsed local results...]")',
             'elf_python_motor_optimization_loop(motor_type="spm", objective="cycle_efficiency", result_payloads_json="[...local parsed results...]")',
             'elf_python_motor_observable_contract(motor_type="spm", study="back_emf_speed_sweep")',
             'elf_python_motor_design_agent_handoff("outer-rotor drone SPM motor", target_market="robot_drone", motor_type="spm", rotor_topology="outer_rotor")',

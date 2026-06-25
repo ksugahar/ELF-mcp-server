@@ -5,7 +5,7 @@ electromagnetic analysis suite (MAGIC magnetostatic / ELFIN electrostatic /
 BEAM particle tracking solvers, with eddy current support in MAGIC via
 MAB/MAT/MBB elements).
 
-This server exposes 82 MCP tools plus one prompt: curated documentation,
+This server exposes 84 MCP tools plus one prompt: curated documentation,
 workflow recipes, public PM/BLDC/SPM/IPM/IM/SynRM/SRM/AFPM/linear/
 stepper/wound-field/reluctance/hysteresis motor and WPT/MRI/IH/transformer/
 accelerator-electromagnet/actuator/maglev/brake/NDT/magnetic-gear/voice-coil/
@@ -17,8 +17,9 @@ quality audits, cross-validation audits, duplicate/reuse audits,
 motor-readiness audits, ELF/radia/MMM hybrid motor routing,
 2D MMM/BEM-like motor quick checks,
 local simulation handoff contracts,
+RunResult file parsing, numeric efficiency-map grids,
 bundled help/example/wiki/Python API search, and compact planning aids for
 authoring ELF input files, plus release-readiness gates for MCP maintainers.
 """
 
-__version__ = "1.58.0"
+__version__ = "1.59.0"

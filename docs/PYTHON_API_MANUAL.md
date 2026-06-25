@@ -73,6 +73,12 @@
 - `RunResultParser`: Normalize local RunResult JSON or key-value text into parsed observables.
   fields: `case_id`, `status`, `parsed_observables`, `warnings`, `validation_labels`
   LLM rule: Never rank or validate raw text directly; normalize it first.
+- `RunResultPathParser`: Scan user-local result files or directories and normalize observables without returning raw output text.
+  fields: `source_label`, `files_scanned`, `parsed_results`, `combined_observables`, `warnings`
+  LLM rule: Use for completed local runs; only file basenames and normalized values may leave the parser.
+- `EfficiencyMapResult`: Convert parsed RunResults into numeric eta/loss/torque-error grids.
+  fields: `map_axes`, `eta_grid`, `total_loss_w_grid`, `torque_error_nm_grid`, `best_efficiency_point`, `coverage`, `quality_gate_results`
+  LLM rule: Missing cells stay missing; do not interpolate or claim a full map unless coverage says so.
 - `OptimizationLoop`: Rank parsed candidates and propose next DOE rows or validation promotion.
   fields: `ranked_candidates`, `best_candidate`, `next_run_rows`, `promotion_rules`
   LLM rule: Only rank normalized observables; keep execution user-local.
@@ -153,8 +159,12 @@
    reason: Tell the parser and LLM which output markers, keys, and validation checks apply.
 30. `elf_python_run_result_parse(payload="<local RunResult JSON or key-value text>", requested_observables="torque,loss_proxy")`
    reason: Normalize local/private results into public-safe parsed observables.
+30a. `elf_python_run_result_parse_path(run_path="<local run directory>", requested_observables="torque,loss_proxy")`
+   reason: Normalize completed local result files while withholding raw paths and raw output text.
 31. `elf_python_motor_optimization_loop(motor_type="<motor_type>", objective="cycle_efficiency", result_payloads_json="<JSON list>")`
    reason: Rank parsed candidates and choose next run rows or validation promotion.
+31a. `elf_python_motor_efficiency_map_from_results(motor_type="<motor_type>", result_payloads_json="<JSON list or path-parse JSON>")`
+   reason: Compute eta/loss grids and best efficiency point from parsed local RunResults.
 32. `elf_python_motor_design_agent_handoff("<goal>", target_market="robot_drone")`
    reason: Bundle specs, design plan, routing, deliverables, required NGSolve NVH/thermal/stress, and prototype handoff.
 33. `elf_python_motor_feasibility_study("<goal>", production_intent="prototype_small_lot")`
@@ -231,6 +241,8 @@
 - `elf_python_motor_optimization_study_plan(motor_type="spm", objective="cycle_efficiency", budget=48)`
 - `elf_python_run_contract("SPM motor back EMF sweep", motor_type="spm", source_public_deck_path="application/motor/pm_cosine_pickup_72/pm001/pm001.mai")`
 - `elf_python_run_result_parse(payload="torque_nm=0.82\nloss_w=12.5\nefficiency=0.91", case_id="cand_a")`
+- `elf_python_run_result_parse_path(run_path="<local run directory>", requested_observables="torque,loss_proxy")`
+- `elf_python_motor_efficiency_map_from_results(motor_type="spm", result_payloads_json="[...parsed local results...]")`
 - `elf_python_motor_optimization_loop(motor_type="spm", objective="cycle_efficiency", result_payloads_json="[...local parsed results...]")`
 - `elf_python_motor_observable_contract(motor_type="spm", study="back_emf_speed_sweep")`
 - `elf_python_motor_design_agent_handoff("outer-rotor drone SPM motor", target_market="robot_drone", motor_type="spm", rotor_topology="outer_rotor")`

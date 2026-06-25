@@ -101,6 +101,7 @@ def test_tool_surface_and_no_work_family():
     assert "elf_python_motor_material_variation_plan" in names
     assert "elf_python_motor_feasibility_study" in names
     assert "elf_python_run_result_parse" in names
+    assert "elf_python_run_result_parse_path" in names
     assert "elf_python_motor_optimization_loop" in names
     assert "elf_python_motor_ngsolve_result_crosscheck" in names
     assert "elf_python_motor_drawing_bom_handoff" in names
@@ -110,6 +111,7 @@ def test_tool_surface_and_no_work_family():
     assert "elf_python_motor_rotor_stress_retention_plan" in names
     assert "elf_python_motor_validation_scorecard" in names
     assert "elf_python_motor_efficiency_map_plan" in names
+    assert "elf_python_motor_efficiency_map_from_results" in names
     assert "elf_python_motor_loss_model_contract" in names
     assert "elf_python_motor_torque_speed_envelope" in names
     assert "elf_python_induction_slip_sweep_plan" in names
@@ -122,7 +124,7 @@ def test_tool_surface_and_no_work_family():
     assert "elf_python_2d_motor_template" in names
     overview = elf_overview()
     overview_text = str(overview)
-    assert overview["n_tools"] == 82
+    assert overview["n_tools"] == 84
     assert "public_boundary" in overview
     assert "recommended_calls" in overview
     assert "elf_python_interface_design" in overview_text
@@ -154,7 +156,7 @@ def test_python_interface_design_public_policy():
     assert "_cross" + "val" not in text
 
 
-def test_python_facade_schema_lint_and_generation_plan():
+def test_python_facade_schema_lint_and_generation_plan(tmp_path):
     from elf_mcp_server.python_api_manual import build_python_api_manual, format_python_api_manual
     from elf_mcp_server.python_facade import (
         build_meg_generation_plan,
@@ -164,7 +166,8 @@ def test_python_facade_schema_lint_and_generation_plan():
         build_motor_demag_margin_plan,
         build_motor_drive_cycle_plan,
         build_motor_dq_axis_map_plan,
-        build_motor_efficiency_map_plan,
+            build_motor_efficiency_map_plan,
+            build_motor_efficiency_map_from_results,
         build_motor_airgap_harmonics_nvh_plan,
         build_motor_cogging_ripple_plan,
         build_motor_feasibility_study,
@@ -193,12 +196,14 @@ def test_python_facade_schema_lint_and_generation_plan():
         build_motor_drawing_bom_handoff,
         build_reluctance_motor_design_plan,
         build_run_request_contract,
-        parse_run_result_payload,
+            parse_run_result_payload,
+            parse_run_result_path,
         format_motor_drawing_bom_handoff,
         format_motor_demag_margin_plan,
         format_motor_drive_cycle_plan,
         format_induction_motor_slip_sweep_plan,
-        format_motor_efficiency_map_plan,
+            format_motor_efficiency_map_plan,
+            format_motor_efficiency_map_result,
         format_motor_airgap_harmonics_nvh_plan,
         format_motor_cogging_ripple_plan,
         format_motor_feasibility_study,
@@ -220,7 +225,8 @@ def test_python_facade_schema_lint_and_generation_plan():
         format_motor_validation_scorecard,
         format_motor_voltage_field_weakening_plan,
         format_motor_winding_layout_plan,
-        format_run_result_parse,
+            format_run_result_parse,
+            format_run_result_path_parse,
         format_reluctance_motor_design_plan,
         lint_mai_text,
         MOTOR_TYPES,
@@ -305,6 +311,125 @@ def test_python_facade_schema_lint_and_generation_plan():
     parsed_text = format_run_result_parse(parsed_result)
     assert "RunResult Parser" in parsed_text
     assert "torque_value" in parsed_text
+
+    run_dir = tmp_path / "completed_run"
+    run_dir.mkdir()
+    result_csv = run_dir / "map_results.csv"
+    result_csv.write_text(
+        "\n".join(
+            [
+                "point_id,speed_rpm,requested_torque_nm,torque_nm,loss_w,voltage_margin_v,current_margin_a",
+                "s00_t00,1000,0.1,0.1,1.0,12.0,5.0",
+                "s00_t01,1000,0.2,0.2,2.0,10.0,4.0",
+                "s01_t00,2000,0.1,0.1,1.5,9.0,3.5",
+                "s01_t01,2000,0.2,0.2,4.0,8.0,2.5",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    result_mah = run_dir / "case_summary.mah"
+    result_mah.write_text(
+        "\n".join(
+            [
+                "case_id mah_summary",
+                "point_id s01_t00",
+                "speed_rpm 2000",
+                "requested_torque_nm 0.1",
+                "torque_nm 0.1",
+                "copper_loss_w 1.0",
+                "iron_loss_w 0.5",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    result_maf = run_dir / "force_table.maf"
+    result_maf.write_text(
+        "\n".join(
+            [
+                "case_id point_id speed_rpm requested_torque_nm torque_z_nm loss_total_w force_x_n",
+                "maf_summary s00_t01 1000 0.2 0.2 2.0 0.0",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    parsed_path = parse_run_result_path(
+        str(run_dir),
+        motor_type="spm",
+        requested_observables=["torque", "loss_proxy"],
+    )
+    assert parsed_path["schema_version"] == "elf-python-run-result-path-parse/v1"
+    assert parsed_path["status"] == "PASS"
+    assert set(parsed_path["files_scanned"]) == {"case_summary.mah", "force_table.maf", "map_results.csv"}
+    assert len(parsed_path["parsed_results"]) == 6
+    assert "torque_value" in parsed_path["combined_observables"]
+    assert any(result["case_id"] == "mah_summary" for result in parsed_path["parsed_results"])
+    assert any(result["case_id"] == "maf_summary" for result in parsed_path["parsed_results"])
+    parsed_path_text = format_run_result_path_parse(parsed_path)
+    assert "RunResult Path Parser" in parsed_path_text
+    assert "map_results.csv" in parsed_path_text
+    assert "case_summary.mah" in parsed_path_text
+    assert "force_table.maf" in parsed_path_text
+    assert str(run_dir) not in parsed_path_text
+
+    numeric_map = build_motor_efficiency_map_from_results(
+        "spm",
+        result_payloads=parsed_path,
+        torque_min_nm=0.1,
+        torque_max_nm=0.2,
+        torque_points=2,
+        speed_min_rpm=1000,
+        speed_max_rpm=2000,
+        speed_points=2,
+        base_speed_rpm=2000,
+    )
+    assert numeric_map["schema_version"] == "elf-python-motor-efficiency-map-result/v1"
+    assert numeric_map["status"] == "PASS"
+    assert numeric_map["coverage"]["filled_points"] == 4
+    assert numeric_map["eta_grid"][0][0] is not None
+    assert numeric_map["total_loss_w_grid"][1][1] == 4.0
+    assert numeric_map["best_efficiency_point"]["efficiency"] is not None
+    assert all(gate["status"] == "PASS" for gate in numeric_map["quality_gate_results"])
+    assert {gate["gate"] for gate in numeric_map["quality_gate_results"]} >= {
+        "coverage_fraction",
+        "feasible_region_coverage",
+        "efficiency_range_0_to_1",
+        "loss_nonnegative",
+        "torque_error_within_limit",
+    }
+    numeric_map_text = format_motor_efficiency_map_result(numeric_map)
+    assert "Motor Efficiency Map Result" in numeric_map_text
+    assert "Eta Grid" in numeric_map_text
+    assert "Quality Gate Results" in numeric_map_text
+
+    bad_map = build_motor_efficiency_map_from_results(
+        "spm",
+        result_payloads=[
+            {
+                "case_id": "bad_torque",
+                "status": "PASS",
+                "parsed_observables": {
+                    "point_id": "s00_t00",
+                    "speed_rpm": 1000,
+                    "requested_torque_nm": 0.1,
+                    "torque_nm": 0.4,
+                    "efficiency": 0.9,
+                },
+            }
+        ],
+        torque_min_nm=0.1,
+        torque_max_nm=0.2,
+        torque_points=2,
+        speed_min_rpm=1000,
+        speed_max_rpm=2000,
+        speed_points=2,
+        base_speed_rpm=2000,
+        max_abs_torque_error_nm=0.01,
+    )
+    assert bad_map["status"] == "FAIL"
+    gate_status = {gate["gate"]: gate["status"] for gate in bad_map["quality_gate_results"]}
+    assert gate_status["coverage_fraction"] == "FAIL"
+    assert gate_status["loss_nonnegative"] == "FAIL"
+    assert gate_status["torque_error_within_limit"] == "FAIL"
 
     design_plan = build_motor_design_plan("IPM torque density and Ld Lq", motor_type="ipm")
     assert design_plan["motor_type"] == "ipm"
