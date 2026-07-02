@@ -73,6 +73,7 @@ STUDY_TYPES = (
     "static_torque_angle",
     "back_emf_speed_sweep",
     "dq_inductance",
+    "force_gap_sweep",
     "cogging_torque",
     "induction_slip_loss",
     "ac_loss_frequency_sweep",
@@ -874,7 +875,98 @@ def lint_mai_text(mai_text: str, requested_observables: Sequence[str] = ()) -> d
             "has_field_output": "SOL FIEL" in upper_text,
             "has_force_output": any(token in upper_text for token in ("SOL FORC", "SOL FORT", "SOL FIXB")),
             "has_ac_markers": any(token in upper_text for token in ("FREQ", "OHM2", "SOL MOMC")),
+            "has_hbrm": "HBRM" in upper_text,
+            "has_hbcn": "HBCN" in upper_text,
         },
+        "issues": issues,
+    }
+
+
+def lint_pm_demag_step_contract(mai_text: str) -> dict[str, Any]:
+    """Lint the ELF/MAGIC PM demagnetization 3-step HBRM/HBCN contract.
+
+    This is a public, solver-free preflight.  It checks whether active `.mai`
+    lines declare recoil data with `HBRM` and whether at least one material id
+    has `HBCN` assignments for steps 0, 1, and 2.
+    """
+
+    upper_lines = _active_upper_lines(mai_text)
+    hbrm_rows: list[dict[str, Any]] = []
+    hbcn_rows: list[dict[str, Any]] = []
+    issues: list[dict[str, str]] = []
+    for line in upper_lines:
+        parts = line.split()
+        if not parts:
+            continue
+        if parts[0] == "HBRM" and len(parts) >= 4:
+            try:
+                hbrm_rows.append({
+                    "curve_id": int(float(parts[1])),
+                    "recoil_mu": float(parts[2]),
+                    "bmax_t": float(parts[3]),
+                })
+            except ValueError:
+                issues.append(_issue("ERROR", "HBRM", f"could not parse HBRM line: {line}"))
+        elif parts[0] == "HBRM":
+            issues.append(_issue("ERROR", "HBRM", f"HBRM requires curve_id recoil_mu Bmax: {line}"))
+        if parts[0] == "HBCN" and len(parts) >= 4:
+            try:
+                hbcn_rows.append({
+                    "mid": int(float(parts[1])),
+                    "step": int(float(parts[2])),
+                    "curve_id": int(float(parts[3])),
+                })
+            except ValueError:
+                issues.append(_issue("ERROR", "HBCN", f"could not parse HBCN line: {line}"))
+        elif parts[0] == "HBCN":
+            issues.append(_issue("ERROR", "HBCN", f"HBCN requires MID STEP curve_id: {line}"))
+
+    steps_by_mid: dict[int, set[int]] = {}
+    curves_by_mid_step: dict[str, int] = {}
+    for row in hbcn_rows:
+        steps_by_mid.setdefault(row["mid"], set()).add(row["step"])
+        curves_by_mid_step[f"{row['mid']}:{row['step']}"] = row["curve_id"]
+    complete_mids = [
+        mid for mid, steps in sorted(steps_by_mid.items())
+        if {0, 1, 2}.issubset(steps)
+    ]
+    hbrm_curves = {row["curve_id"] for row in hbrm_rows}
+    hbcn_curves = {row["curve_id"] for row in hbcn_rows}
+    missing_recoil_curves = sorted(curve for curve in hbcn_curves if curve not in hbrm_curves)
+    if not hbrm_rows:
+        issues.append(_issue("ERROR", "HBRM", "missing HBRM recoil definition for PM demagnetization"))
+    if not hbcn_rows:
+        issues.append(_issue("ERROR", "HBCN", "missing HBCN per-step B-H curve assignment"))
+    if not complete_mids:
+        issues.append(_issue("ERROR", "HBCN", "no material id has all steps 0, 1, and 2 assigned"))
+    if missing_recoil_curves:
+        issues.append(
+            _issue(
+                "WARN",
+                "HBRM/HBCN",
+                "HBCN references curves without HBRM recoil rows: "
+                + ", ".join(str(curve) for curve in missing_recoil_curves),
+            )
+        )
+
+    return {
+        "schema_version": "elf-python-pm-demag-step-lint/v1",
+        "status": "FAIL" if any(i["severity"] == "ERROR" for i in issues) else "PASS",
+        "detected": {
+            "hbrm_rows": hbrm_rows,
+            "hbcn_rows": hbcn_rows,
+            "complete_three_step_mids": complete_mids,
+            "missing_recoil_curves": missing_recoil_curves,
+            "curves_by_mid_step": curves_by_mid_step,
+        },
+        "contract": [
+            "step 0: nominal/no opposing field",
+            "step 1: opposing field or shifted temperature curve applied",
+            "step 2: field/temperature removed and recoil remanence ratio inherited",
+            "HBRM supplies recoil_mu and Bmax for the B-H curve",
+            "HBCN maps material id and step to the B-H curve used by that step",
+            "map steps 0/1/2 to radia-ngsolve pm_recoil_demag_step_summary before claiming recovery",
+        ],
         "issues": issues,
     }
 
@@ -1007,6 +1099,13 @@ def _normalize_observable_key(key: str) -> str:
         "force_x_n": "force_x_n",
         "force_y_n": "force_y_n",
         "force_z_n": "force_z_n",
+        "force_x_n_per_m": "force_x_n_per_m",
+        "force_y_n_per_m": "force_y_n_per_m",
+        "force_z_n_per_m": "force_z_n_per_m",
+        "radial_force_n_per_m": "radial_force_n_per_m",
+        "force_unit": "force_unit",
+        "force_units": "force_unit",
+        "quantity_dimension": "quantity_dimension",
         "phase_current_a_peak": "phase_current_a_peak",
         "phase_current_a_rms": "phase_current_a_rms",
         "voltage_margin": "voltage_margin_value",
@@ -1021,6 +1120,70 @@ def _normalize_observable_key(key: str) -> str:
         "relative_order_separation": "relative_order_separation",
     }
     return aliases.get(cleaned, cleaned)
+
+
+FORCE_PER_LENGTH_KEYS = (
+    "force_x_n_per_m",
+    "force_y_n_per_m",
+    "force_z_n_per_m",
+    "radial_force_n_per_m",
+)
+FORCE_TOTAL_KEYS = (
+    "force_x_n",
+    "force_y_n",
+    "force_z_n",
+)
+
+
+def _normalize_force_unit(value: Any) -> str:
+    unit = str(value or "").strip().lower()
+    unit = unit.replace(" ", "").replace("-", "_")
+    unit = unit.replace("newtons", "n").replace("newton", "n")
+    unit = unit.replace("per_meter", "per_m")
+    return unit
+
+
+def _force_metadata_checks(parsed: Mapping[str, Any], require_explicit: bool = False) -> dict[str, Any]:
+    """Check whether normalized force rows keep dimensional meaning explicit."""
+
+    per_length_keys = [key for key in FORCE_PER_LENGTH_KEYS if key in parsed]
+    total_keys = [key for key in FORCE_TOTAL_KEYS if key in parsed]
+    has_force_keys = bool(per_length_keys or total_keys)
+    quantity_dimension = str(parsed.get("quantity_dimension") or "").strip().lower()
+    force_unit = _normalize_force_unit(parsed.get("force_unit"))
+    allowed_units = {
+        "2d_per_length": {"n/m", "n_per_m"},
+        "3d_total": {"n"},
+    }
+    issues = []
+    if (require_explicit and has_force_keys) or quantity_dimension or force_unit:
+        if not quantity_dimension:
+            issues.append("missing quantity_dimension for force observable")
+        elif quantity_dimension not in allowed_units:
+            issues.append(f"unsupported quantity_dimension: {quantity_dimension}")
+        if not force_unit:
+            issues.append("missing force_unit for force observable")
+        if quantity_dimension in allowed_units and force_unit and force_unit not in allowed_units[quantity_dimension]:
+            issues.append(
+                f"force_unit {force_unit} does not match quantity_dimension {quantity_dimension}"
+            )
+        if per_length_keys and quantity_dimension == "3d_total":
+            issues.append("per-length force keys cannot be marked as 3d_total")
+        if total_keys and quantity_dimension == "2d_per_length":
+            issues.append("total-force keys cannot be marked as 2d_per_length")
+        if per_length_keys and total_keys:
+            issues.append("do not mix per-length and total-force keys in one observable row")
+
+    return {
+        "schema_version": "elf-python-force-unit-dimension-check/v1",
+        "per_length_keys": per_length_keys,
+        "total_force_keys": total_keys,
+        "quantity_dimension": quantity_dimension or None,
+        "force_unit": force_unit or None,
+        "unit_dimension_consistent": not issues,
+        "issues": issues,
+        "allowed_quantity_dimensions": sorted(allowed_units),
+    }
 
 
 def parse_run_result_payload(
@@ -1092,6 +1255,10 @@ def parse_run_result_payload(
         expected_key = f"{observable}_value"
         if observable == "ld_lq":
             expected_key = "ld_lq_value"
+        if observable == "force":
+            if not any(key in parsed for key in FORCE_PER_LENGTH_KEYS + FORCE_TOTAL_KEYS):
+                missing.append(observable)
+            continue
         if observable == "loss_proxy":
             expected_key = "loss_proxy_value"
             if not any(
@@ -1115,6 +1282,11 @@ def parse_run_result_payload(
         warnings.append("missing requested observables: " + ", ".join(missing))
         if status == "PASS":
             status = "WARN"
+    force_metadata = _force_metadata_checks(parsed, require_explicit="force" in requested)
+    if force_metadata["issues"]:
+        warnings.extend(force_metadata["issues"])
+        if status == "PASS":
+            status = "WARN"
 
     return {
         "schema_version": "elf-python-run-result-parse/v1",
@@ -1129,6 +1301,7 @@ def parse_run_result_payload(
             "public_observable_contract_parser",
         ],
         "missing_requested_observables": missing,
+        "force_metadata_checks": force_metadata,
         "public_boundary": (
             "Parsed normalized observables only. Raw product output text and "
             "private run directories remain user-local."
@@ -2507,15 +2680,20 @@ def _nearest_axis_index(axis: Sequence[float], value: float) -> int:
     return min(range(len(axis)), key=lambda index: abs(float(axis[index]) - value))
 
 
+def _loss_terms_from_observables(observables: Mapping[str, Any]) -> dict[str, float]:
+    """Return non-proxy separated loss terms from normalized observables."""
+    return {
+        key: _safe_float(observables.get(key), 0.0)
+        for key in LOSS_OBSERVABLE_KEYS
+        if key != "loss_proxy_value" and key in observables
+    }
+
+
 def _total_loss_from_observables(observables: Mapping[str, Any]) -> tuple[float, str]:
     explicit = _safe_float(observables.get("loss_proxy_value"), -1.0)
     if explicit >= 0.0:
         return explicit, "loss_proxy_value"
-    terms = [
-        _safe_float(observables.get(key), 0.0)
-        for key in LOSS_OBSERVABLE_KEYS
-        if key != "loss_proxy_value" and key in observables
-    ]
+    terms = list(_loss_terms_from_observables(observables).values())
     if terms:
         return sum(max(value, 0.0) for value in terms), "summed_loss_terms"
     input_power = _safe_float(observables.get("input_power_w"), -1.0)
@@ -2541,10 +2719,12 @@ def _efficiency_from_observables(
     requested_torque = _safe_float(observables.get("requested_torque_nm"), planned_torque_nm)
     omega = 2.0 * pi * max(speed, 0.0) / 60.0
     mechanical_power = _safe_float(observables.get("mechanical_power_w"), measured_torque * omega)
+    loss_terms = _loss_terms_from_observables(observables)
+    loss_terms_total = sum(max(value, 0.0) for value in loss_terms.values())
     total_loss, loss_source = _total_loss_from_observables(observables)
+    input_power = _safe_float(observables.get("input_power_w"), -1.0)
     eta = _safe_float(observables.get("efficiency_value"), -1.0)
     if eta < 0.0:
-        input_power = _safe_float(observables.get("input_power_w"), -1.0)
         if input_power > 0.0:
             eta = mechanical_power / input_power
         elif mechanical_power > 0.0 and total_loss >= 0.0 and loss_source != "missing_loss":
@@ -2553,12 +2733,32 @@ def _efficiency_from_observables(
         eta /= 100.0
     eta = max(min(eta, 1.0), 0.0) if eta >= 0.0 else None
     torque_error = measured_torque - requested_torque
+    dominant_loss_term = max(loss_terms, key=lambda key: loss_terms[key]) if loss_terms else None
+    loss_bucket_balance_rel_error = None
+    if loss_terms and loss_source != "missing_loss":
+        loss_bucket_balance_rel_error = abs(total_loss - loss_terms_total) / max(abs(total_loss), abs(loss_terms_total), 1.0)
+    input_power_balance_rel_error = None
+    if input_power > 0.0 and loss_source != "missing_loss":
+        input_power_balance_rel_error = abs(input_power - mechanical_power - total_loss) / max(abs(input_power), abs(mechanical_power), abs(total_loss), 1.0)
     return {
         "speed_rpm": round(speed, 6),
         "torque_nm": round(requested_torque, 6),
         "measured_torque_nm": round(measured_torque, 6),
         "mechanical_power_w": round(mechanical_power, 6),
+        "input_power_w": round(input_power, 6) if input_power >= 0.0 else None,
         "total_loss_w": round(total_loss, 6) if loss_source != "missing_loss" else None,
+        "loss_terms_w": {key: round(value, 6) for key, value in loss_terms.items()},
+        "dominant_loss_term": dominant_loss_term,
+        "loss_bucket_balance_rel_error": (
+            round(loss_bucket_balance_rel_error, 12)
+            if loss_bucket_balance_rel_error is not None
+            else None
+        ),
+        "input_power_balance_rel_error": (
+            round(input_power_balance_rel_error, 12)
+            if input_power_balance_rel_error is not None
+            else None
+        ),
         "efficiency": round(eta, 8) if eta is not None else None,
         "loss_source": loss_source,
         "torque_error_nm": round(torque_error, 8),
@@ -2600,8 +2800,15 @@ def _efficiency_map_quality_gate_results(
         for point in ok_points
         if point.get("torque_error_nm") is not None
     ]
+    voltage_margins = [
+        _safe_float(point.get("voltage_margin_v"))
+        for point in ok_points
+        if point.get("voltage_margin_v") is not None
+    ]
     loss_fraction = len(loss_values) / max(len(ok_points), 1)
+    voltage_margin_fraction = len(voltage_margins) / max(len(ok_points), 1)
     max_torque_error = max(torque_errors, default=None)
+    min_voltage_margin = min(voltage_margins, default=None)
     source_failures = sum(1 for point in ok_points if point.get("source_status") == "FAIL")
     gates = [
         {
@@ -2647,6 +2854,19 @@ def _efficiency_map_quality_gate_results(
             "metric": round(max_torque_error, 8) if max_torque_error is not None else None,
             "threshold": max_abs_torque_error_nm,
             "reason": "measured torque matches requested map torque before efficiency is trusted",
+        },
+        {
+            "gate": "voltage_margin_nonnegative_when_present",
+            "status": _gate_status(
+                min_voltage_margin is None or min_voltage_margin >= 0.0,
+                min_voltage_margin is not None,
+            ),
+            "metric": {
+                "present_fraction": round(voltage_margin_fraction, 8),
+                "min_voltage_margin_v": round(min_voltage_margin, 8) if min_voltage_margin is not None else None,
+            },
+            "threshold": "if present, min voltage_margin_v >= 0 V",
+            "reason": "drive voltage-limit handoff stays explicit when RunResults include voltage margin",
         },
         {
             "gate": "source_status",
@@ -2844,6 +3064,7 @@ def build_motor_efficiency_map_from_results(
             "efficiency is computed from parsed efficiency, input/output power, or mechanical power plus loss",
             "missing loss/efficiency cells remain explicitly missing",
             "coverage, feasible-region coverage, eta range, loss nonnegativity, and torque error are machine-checked",
+            "voltage margin is preserved and checked when local RunResults provide it",
             "best point is a map result only and still needs validation promotion before design claims",
             "raw local output text and local paths are not returned",
         ],
@@ -3373,36 +3594,568 @@ def build_motor_topology_parameter_plan(
     }
 
 
+def _pm_loadline_row(
+    br_t: float,
+    h_knee_a_per_m: float,
+    magnet_len_m: float,
+    gap_m: float,
+    iron_path_m: float,
+    iron_mu_r: float,
+    mu_rec: float,
+) -> dict[str, Any]:
+    mu0 = 4.0e-7 * pi
+    reluctance_length = gap_m + iron_path_m / (mu_rec * iron_mu_r)
+    pc = float("inf") if reluctance_length == 0.0 else magnet_len_m / reluctance_length
+    b_gap = br_t if pc == float("inf") else br_t * pc / (pc + mu_rec)
+    h_m = (b_gap - br_t) / (mu0 * mu_rec)
+    margin = h_m - h_knee_a_per_m
+    return {
+        "gap_m": gap_m,
+        "B_gap_T": b_gap,
+        "H_m_A_per_m": h_m,
+        "permeance_coefficient": pc,
+        "demag_margin_A_per_m": margin,
+        "safe_against_knee": margin >= 0.0,
+    }
+
+
+def _summarize_pm_loadline_risk(
+    rows: Sequence[Mapping[str, Any]],
+    axis_key: str = "gap_m",
+    amber_margin_a_per_m: float = 1.0e5,
+) -> dict[str, Any]:
+    """Summarize load-line rows without exposing product-run provenance."""
+    rows = list(rows)
+    if not rows:
+        return {
+            "schema_version": "elf-python-pm-loadline-risk-summary/v1",
+            "axis_key": axis_key,
+            "row_count": 0,
+            "safe_prefix_count": 0,
+            "first_unsafe_index": None,
+            "first_unsafe_axis_value": None,
+            "minimum_demag_margin_A_per_m": None,
+            "first_unsafe_gap_m": None,
+            "largest_safe_gap_m": None,
+            "risk_label": "unknown",
+            "checks": {
+                "safe_region_is_prefix": True,
+                "margin_monotone_decreasing": True,
+                "margin_monotone_nonincreasing": True,
+            },
+        }
+    margins = [float(row["demag_margin_A_per_m"]) for row in rows]
+    safe = [bool(row.get("safe_against_knee", margin >= 0.0)) for row, margin in zip(rows, margins)]
+    first_unsafe = next((idx for idx, flag in enumerate(safe) if not flag), None)
+    minimum_index = min(range(len(margins)), key=margins.__getitem__)
+    safe_prefix_count = first_unsafe if first_unsafe is not None else len(rows)
+    min_margin = margins[minimum_index]
+    risk_label = "red" if min_margin < 0.0 else ("amber" if min_margin <= amber_margin_a_per_m else "green")
+    summary = {
+        "schema_version": "elf-python-pm-loadline-risk-summary/v1",
+        "axis_key": axis_key,
+        "row_count": len(rows),
+        "safe_prefix_count": safe_prefix_count,
+        "all_safe_against_knee": all(safe),
+        "first_unsafe_index": first_unsafe,
+        "first_unsafe_axis_value": rows[first_unsafe].get(axis_key) if first_unsafe is not None else None,
+        "minimum_margin_index": minimum_index,
+        "minimum_margin_axis_value": rows[minimum_index].get(axis_key),
+        "minimum_demag_margin_A_per_m": min_margin,
+        "risk_label": risk_label,
+        "checks": {
+            "safe_region_is_prefix": all(not safe[i] or safe[i - 1] for i in range(1, len(safe))),
+            "margin_monotone_decreasing": all(a > b for a, b in zip(margins, margins[1:])),
+            "margin_monotone_nonincreasing": all(a >= b for a, b in zip(margins, margins[1:])),
+        },
+    }
+    if axis_key == "gap_m":
+        summary["first_unsafe_gap_m"] = summary["first_unsafe_axis_value"]
+        summary["largest_safe_gap_m"] = rows[safe_prefix_count - 1].get(axis_key) if safe_prefix_count > 0 else None
+    return summary
+
+
 def build_motor_demag_margin_plan(
     motor_type: str = "spm",
     temperature_c: float = 120.0,
     br_20c_t: float = 1.2,
     br_temp_coeff_pct_per_k: float = -0.11,
     hcj_ka_m: float = 900.0,
+    hcj_temp_coeff_pct_per_k: float = -0.45,
     id_min_a_peak: float = -40.0,
+    magnet_len_m: float = 0.004,
+    gaps_m: Sequence[float] = (0.0005, 0.001, 0.002, 0.004, 0.008),
+    iron_path_m: float = 0.08,
+    iron_mu_r: float = 1000.0,
+    mu_rec: float = 1.05,
 ) -> dict[str, Any]:
     """Build a PM demagnetization margin contract."""
     family = _infer_motor_type(motor_type, "spm")
     temp = float(temperature_c)
     br_hot = float(br_20c_t) * (1.0 + float(br_temp_coeff_pct_per_k) * (temp - 20.0) / 100.0)
+    hcj_hot_ka_m = float(hcj_ka_m) * (1.0 + float(hcj_temp_coeff_pct_per_k) * (temp - 20.0) / 100.0)
+    h_knee_hot_a_per_m = -1000.0 * hcj_hot_ka_m
     demag_field_proxy_ka_m = abs(float(id_min_a_peak)) * 2.0
-    margin = float(hcj_ka_m) / max(demag_field_proxy_ka_m, 1.0e-9)
+    margin = hcj_hot_ka_m / max(demag_field_proxy_ka_m, 1.0e-9)
+    loadline_rows = [
+        _pm_loadline_row(
+            br_t=br_hot,
+            h_knee_a_per_m=h_knee_hot_a_per_m,
+            magnet_len_m=float(magnet_len_m),
+            gap_m=float(gap),
+            iron_path_m=float(iron_path_m),
+            iron_mu_r=float(iron_mu_r),
+            mu_rec=float(mu_rec),
+        )
+        for gap in gaps_m
+    ]
+    loadline_margins = [row["demag_margin_A_per_m"] for row in loadline_rows]
+    loadline_risk = _summarize_pm_loadline_risk(loadline_rows, axis_key="gap_m")
+    loadline_checks = dict(loadline_risk["checks"])
+    loadline_checks["B_gap_monotone_decreasing"] = all(
+        a["B_gap_T"] > b["B_gap_T"] for a, b in zip(loadline_rows, loadline_rows[1:])
+    )
+    fault_current_screening = {
+        "schema_version": "elf-python-motor-fault-current-demag-screening/v1",
+        "negative_id_a_peak": float(id_min_a_peak),
+        "negative_id_is_demag_direction": float(id_min_a_peak) <= 0.0,
+        "demag_field_proxy_ka_m": demag_field_proxy_ka_m,
+        "screening_rule": (
+            "short-circuit and field-weakening negative-Id rows use the same "
+            "HBRM/HBCN recoil-step and field_probe demag-margin contract as the "
+            "temperature/gap load-line sweep"
+        ),
+        "recommended_radia_ngsolve_gates": [
+            "short_circuit_operating_point",
+            "field_weakening_speed_capability",
+            "pm_recoil_demag_step_summary",
+            "pm_temperature_demag_sweep_summary",
+        ],
+        "recommended_observable_keys": [
+            "id_A_peak",
+            "iq_A_peak",
+            "d_axis_demag_fraction",
+            "current_ratio_to_characteristic",
+            "field_probe",
+            "demag_margin_A_per_m",
+            "safe_against_knee",
+            "irreversible_demag",
+            "recoil_remanence_ratio_proxy",
+        ],
+        "elf_step_contract": "carry fault rows through HBCN steps 0/1/2 before claiming irreversible-demag safety",
+    }
     if margin >= 3.0:
         label = "green"
     elif margin >= 1.5:
         label = "amber"
     else:
         label = "red"
+    if loadline_risk["risk_label"] == "red":
+        label = "red"
+    elif label == "green" and loadline_risk["risk_label"] == "amber":
+        label = "amber"
+    bem_source_balance_contract = {
+        "schema_version": "elf-python-pm-bem-source-balance-contract/v1",
+        "metadata_gate": "pm_bem_surface_normal_metadata_gate",
+        "balance_gate": "pm_bem_surface_source_balance_gate",
+        "surface_source_density": "sigma_m = M dot n",
+        "normal_convention": "outward_from_magnet",
+        "expected_normal_convention": "outward_from_magnet",
+        "source_convention": "sigma_m_equals_m_dot_n",
+        "signed_charge_proxy": "sum_i area_i * dot(M_i, n_i)",
+        "source_balance_unit": "area_weighted_m_dot_n",
+        "signed_charge_balance_rel_tol": 1.0e-9,
+        "required_row_keys": [
+            "surface_name",
+            "area_m2",
+            "normal_unit_vector",
+            "magnetization_A_per_m",
+            "surface_source_artifact_id",
+            "magnetization_source_id",
+            "material_id",
+            "material_name",
+        ],
+        "required_summary_keys": [
+            "surface_mesh_id",
+            "surface_mesh_digest",
+            "surface_row_count",
+            "source_balance_artifact_id",
+            "source_balance_digest",
+            "source_convention",
+            "expected_surface_source_artifact_id",
+            "expected_magnetization_source_id",
+            "expected_material_id",
+            "expected_material_name",
+            "total_area_m2",
+            "normal_convention",
+            "source_balance_unit",
+            "signed_charge_balance_abs",
+            "signed_charge_balance_rel_tol",
+        ],
+        "negative_controls": [
+            "inward normal",
+            "normal_convention not outward_from_magnet",
+            "non-unit normal",
+            "missing magnetization vector",
+            "duplicate surface name",
+            "open surface",
+            "missing surface_mesh_id",
+            "stale surface_mesh_digest",
+            "wrong surface_row_count",
+            "missing source_balance_artifact_id",
+            "stale source_balance_digest",
+            "wrong source_convention",
+            "stale surface_source_artifact_id",
+            "missing magnetization_source_id",
+            "stale material_name",
+            "missing total_area_m2",
+            "missing source_balance_unit",
+        ],
+        "public_boundary": "metadata and balance contract only; no licensed product field values",
+    }
+    run_result_loadline_handoff = {
+        "schema_version": "elf-python-run-result-loadline-handoff/v1",
+        "parser_tools": [
+            "elf_python_run_result_parse",
+            "elf_python_run_result_parse_path",
+        ],
+        "row_identity": "case_id",
+        "required_normalized_columns": [
+            "case_id",
+            "temperature_C",
+            "gap_m",
+            "B_gap_T",
+            "H_pm_A_per_m",
+            "H_knee_A_per_m",
+            "recoil_mu_r",
+            "safe_against_knee",
+        ],
+        "metadata_gate": "pm_loadline_metadata_gate",
+        "loadline_gate": "pm_temperature_demag_sweep_summary",
+        "recoil_step_gate": "pm_recoil_demag_step_summary",
+        "notebook_policy": (
+            "A local RunResult row is not a load-line notebook row until H/B/"
+            "temperature units, demag sign convention, magnetization axis, knee "
+            "reference, and recoil permeability are explicit."
+        ),
+        "negative_controls": [
+            "missing case_id",
+            "missing H_pm_A_per_m",
+            "wrong h_field_unit",
+            "missing recoil_mu_r",
+            "safe_against_knee not consistent with demag_margin_A_per_m",
+        ],
+        "public_boundary": "contract only; local product result values stay user-local",
+    }
+    demag_package_handoff = {
+        "schema_version": "elf-python-demag-package-handoff/v1",
+        "package_gate": "pm_demag_package_identity_gate",
+        "row_identity": ["case_id", "magnet_id"],
+        "required_artifacts": [
+            "run_result",
+            "loadline_metadata",
+            "bem_surface",
+            "recoil_steps",
+        ],
+        "required_run_result_columns": [
+            "H_pm_A_per_m",
+            "H_knee_A_per_m",
+            "safe_against_knee",
+        ],
+        "source_gates": {
+            "run_result": "elf_python_run_result_parse_path",
+            "loadline_metadata": "pm_loadline_metadata_gate",
+            "bem_surface": "pm_bem_surface_normal_metadata_gate",
+            "recoil_steps": "pm_recoil_demag_three_step_gate",
+        },
+        "negative_controls": [
+            "missing case_id",
+            "stale magnet_id",
+            "missing H_knee_A_per_m",
+            "missing safe_against_knee",
+            "recoil steps missing step 2",
+        ],
+        "public_boundary": "identity and gate contract only; product field values stay user-local",
+    }
+    demag_margin_screening_package = {
+        "schema_version": "elf-python-demag-margin-screening-package/v1",
+        "package_gate": "pm_demag_margin_screening_package_gate",
+        "manifest_gate": "pm_demag_margin_screening_package_gate",
+        "row_identity": ["case_id", "magnet_id", "temperature_C"],
+        "material_state_keys": [
+            "Br_T",
+            "H_knee_A_per_m",
+            "recoil_mu_r",
+        ],
+        "material_state_identity_keys": [
+            "material_state_artifact_id",
+            "material_state_digest",
+        ],
+        "material_state_contract": (
+            "If any demag-margin artifact records hot magnet material state, "
+            "all load-line, fault-current, BEM source-balance, and demag-package "
+            "artifacts must record the same Br_T, H_knee_A_per_m, and recoil_mu_r. "
+            "For ELF/MAGIC HBRM/HBCN demag workflows, also carry the material-state "
+            "artifact id and digest so stale B-H/recoil step files cannot be joined "
+            "to a fresh field-probe table."
+        ),
+        "step_identity_keys": [
+            "load_step_id",
+            "fault_step_id",
+            "demag_step_id",
+        ],
+        "step_identity_contract": (
+            "When the package combines load-line screening, negative-Id/fault "
+            "screening, and HBRM/HBCN demag evaluation, preserve the load, fault, "
+            "and demag step ids.  Matching case_id/magnet_id/temperature_C is not "
+            "sufficient if a row came from a stale solver step or manifest."
+        ),
+        "required_artifacts": [
+            "loadline_sweep",
+            "fault_current_screening",
+            "bem_source_balance",
+            "demag_package",
+        ],
+        "source_gates": {
+            "loadline_sweep": "pm_temperature_demag_sweep_summary",
+            "fault_current_screening": "fault_current_demag_screening",
+            "bem_source_balance": "pm_bem_surface_source_balance_gate",
+            "demag_package": "pm_demag_package_identity_gate",
+        },
+        "bem_source_balance_identity_keys": [
+            "source_balance_artifact_id",
+            "source_balance_digest",
+            "source_convention",
+        ],
+        "bem_source_balance_identity_contract": (
+            "The BEM source-balance row is itself an artifact.  Keep the "
+            "source-balance artifact id, digest, and source convention "
+            "(sigma_m = M dot n for the outward normal convention) with the "
+            "demag-margin package before accepting any downstream field-probe "
+            "or load-line row."
+        ),
+        "required_fault_observables": [
+            "field_probe",
+            "demag_margin_A_per_m",
+            "recoil_remanence_ratio_proxy",
+        ],
+        "field_probe_identity_keys": [
+            "field_probe_id",
+            "field_probe_family",
+            "observation_region_id",
+            "field_probe_geometry_digest",
+            "field_probe_point_xyz_m",
+            "observation_component",
+            "field_axis_convention",
+            "field_sign_convention",
+            "field_probe_method",
+            "averaging_rule",
+        ],
+        "field_probe_identity_contract": (
+            "A field_probe observable is solver-ready only when tied to a stable "
+            "probe id, observable family, magnet observation region, demag-axis "
+            "field component, probe geometry digest, representative probe point, "
+            "field-axis convention, sign convention, probe/export method, and "
+            "spatial averaging rule."
+        ),
+        "field_probe_output_identity_keys": [
+            "field_probe_output_artifact_id",
+            "field_probe_output_digest",
+            "field_probe_output_path",
+        ],
+        "field_probe_output_identity_contract": (
+            "The field_probe observation identity is not enough for notebook "
+            "promotion.  The exported probe table/result artifact id, digest, "
+            "and path must be recorded so stale demag-margin rows cannot reuse "
+            "an old output table."
+        ),
+        "required_bem_source_balance_summary_keys": [
+            "surface_mesh_id",
+            "surface_mesh_digest",
+            "surface_row_count",
+            "source_balance_artifact_id",
+            "source_balance_digest",
+            "source_convention",
+            "total_area_m2",
+            "normal_convention",
+            "expected_bem_normal_convention",
+            "source_balance_unit",
+            "signed_charge_balance_abs",
+            "signed_charge_balance_rel_tol",
+        ],
+        "negative_controls": [
+            "stale temperature_C",
+            "fault row with positive Id but marked as demag",
+            "missing field_probe",
+            "stale field_probe_id",
+            "wrong field_probe_family",
+            "stale field_probe_geometry_digest",
+            "missing field_probe_point_xyz_m",
+            "wrong observation_component",
+            "wrong field_axis_convention",
+            "wrong field_sign_convention",
+            "wrong field_probe_method",
+            "missing field_probe_method",
+            "missing averaging_rule",
+            "stale field_probe_output_artifact_id",
+            "stale field_probe_output_digest",
+            "missing field_probe_output_path",
+            "stale material_state_artifact_id",
+            "stale material_state_digest",
+            "missing material_state_artifact_id",
+            "stale fault_step_id",
+            "missing demag_step_id",
+            "missing BEM balance tolerance",
+            "missing BEM surface mesh id",
+            "stale BEM surface mesh digest",
+            "wrong BEM surface row count",
+            "missing BEM source-balance artifact id",
+            "stale BEM source-balance digest",
+            "wrong BEM source convention",
+            "missing BEM surface area",
+            "missing BEM normal convention",
+            "wrong BEM normal convention",
+            "missing BEM source unit",
+            "missing BEM balance residual value",
+            "demag package missing recoil_steps",
+            "stale magnet_id",
+            "stale Br_T/H_knee_A_per_m/recoil_mu_r material state",
+            "one artifact missing material_state while others include it",
+            "load-line sweep without minimum_demag_margin_A_per_m or risk label",
+        ],
+        "slot166_reference": {
+            "case_id": "demag_case_166",
+            "magnet_id": "pm_spm_A",
+            "temperature_C": temp,
+            "radia_ngsolve_gate": "pm_demag_margin_screening_package_gate",
+            "field_probe_id": "elf_slot286_field_probe_pm_spm_A_demag_axis_v1",
+            "field_probe_family": "elf_demag_margin_field_probe",
+            "observation_region_id": "pm_spm_A_volume",
+            "field_probe_geometry_digest": "sha256:elf_slot326_field_probe_volume_pm_spm_A",
+            "field_probe_point_xyz_m": [0.028, 0.0, 0.0],
+            "observation_component": "H_parallel_demag_axis",
+            "field_axis_convention": "magnetization_axis_positive",
+            "field_sign_convention": "negative_h_parallel_is_demag",
+            "field_probe_method": "elf_volume_average_h_parallel_probe",
+            "averaging_rule": "volume_average",
+            "field_probe_output_artifact_id": "elf_slot294_field_probe_table_pm_spm_A_v1",
+            "field_probe_output_digest": "sha256:elf_slot294_field_probe_table_pm_spm_A",
+            "surface_mesh_id": "bem_surface_mesh_pm_spm_A_v1",
+            "surface_mesh_digest": "sha256:bem_surface_mesh_pm_spm_A_v1",
+            "surface_row_count": 6,
+            "source_balance_artifact_id": "bem_source_balance_pm_spm_A_v1",
+            "source_balance_digest": "sha256:bem_source_balance_pm_spm_A_v1",
+            "source_convention": "sigma_m_equals_m_dot_n",
+            "material_state_artifact_id": "elf_slot334_pm_spm_A_hbrm_hbcn_state_v1.json",
+            "material_state_digest": "sha256:elf_slot334_pm_spm_A_hbrm_hbcn_state_v1",
+            "load_step_id": "elf_slot342_loadline_hot_120c_v1",
+            "fault_step_id": "elf_slot342_negative_id_fault_step_v1",
+            "demag_step_id": "elf_slot342_hbcn_demag_step2_v1",
+            "rejected_controls": [
+                "stale temperature_C",
+                "positive Id marked as demag",
+                "stale field_probe_id",
+                "wrong field_probe_family",
+                "stale field_probe_geometry_digest",
+                "missing field_probe_point_xyz_m",
+                "wrong observation_component",
+                "wrong field_axis_convention",
+                "wrong field_sign_convention",
+                "missing averaging_rule",
+                "stale field_probe_output_artifact_id",
+                "stale field_probe_output_digest",
+                "missing field_probe_output_path",
+                "stale BEM source-balance artifact id",
+                "stale BEM source-balance digest",
+                "wrong BEM source convention",
+                "stale material_state_artifact_id",
+                "stale material_state_digest",
+                "stale fault_step_id",
+                "missing demag_step_id",
+                "missing BEM balance tolerance",
+                "demag package missing recoil_steps",
+            ],
+        },
+        "notebook_policy": (
+            "Do not promote a demag-margin notebook row until load-line, "
+            "fault-current, BEM source-balance, and demag-package artifacts "
+            "share case_id, magnet_id, temperature_C, and any recorded hot "
+            "material-state tuple, material-state artifact id/digest, BEM "
+            "source-balance artifact id/digest/source convention, plus the field-probe "
+            "family, field-probe observation identity, field-probe geometry identity, "
+            "field-axis/sign convention, and field-probe output artifact identity when "
+            "fault-current rows provide a probe.  Carry load/fault/demag step ids "
+            "when rows are promoted from solver-step manifests."
+        ),
+        "public_boundary": "screening contract only; licensed product field values stay user-local",
+    }
     return {
         "schema_version": "elf-python-motor-demag-margin-plan/v1",
         "motor_type": family,
         "temperature_c": temp,
         "br_hot_t_proxy": br_hot,
         "hcj_ka_m": float(hcj_ka_m),
+        "hcj_hot_ka_m": hcj_hot_ka_m,
+        "h_knee_hot_a_per_m": h_knee_hot_a_per_m,
         "id_min_a_peak": float(id_min_a_peak),
         "demag_field_proxy_ka_m": demag_field_proxy_ka_m,
         "margin_proxy": margin,
         "risk_label": label,
+        "loadline_sweep": loadline_rows,
+        "loadline_summary": {
+            "magnet_len_m": float(magnet_len_m),
+            "iron_path_m": float(iron_path_m),
+            "iron_mu_r": float(iron_mu_r),
+            "mu_rec": float(mu_rec),
+            "safe_prefix_count": loadline_risk["safe_prefix_count"],
+            "first_unsafe_index": loadline_risk["first_unsafe_index"],
+            "first_unsafe_gap_m": loadline_risk["first_unsafe_gap_m"],
+            "largest_safe_gap_m": loadline_risk.get("largest_safe_gap_m"),
+            "minimum_demag_margin_A_per_m": min(loadline_margins) if loadline_margins else None,
+            "risk_label": loadline_risk["risk_label"],
+            "risk_summary": loadline_risk,
+            "checks": loadline_checks,
+        },
+        "elf_step_contract": {
+            "schema_version": "elf-python-pm-demag-hbrm-hbcn-contract/v1",
+            "lint_tool": "elf_python_pm_demag_step_lint",
+            "required_hbrm_role": "HBRM defines each recoil/knee curve used by a PM demag step",
+            "required_hbcn_role": "HBCN maps material id and step number to the HBRM curve",
+            "required_hbcn_steps": [0, 1, 2],
+            "recommended_observable_keys": [
+                "gap_m",
+                "B_gap_T",
+                "H_m_A_per_m",
+                "step0_H_A_per_m",
+                "step1_H_A_per_m",
+                "step2_H_A_per_m",
+                "H_knee_A_per_m",
+                "demag_margin_A_per_m",
+                "safe_against_knee",
+                "irreversible_demag",
+                "recoil_remanence_ratio_proxy",
+            ],
+            "metadata_gate": "pm_loadline_metadata_gate",
+            "radia_ngsolve_gate": "pm_recoil_demag_step_summary",
+            "loadline_gate": "pm_temperature_demag_sweep_summary",
+            "slot46_reference": {
+                "first_unsafe_gap_m": loadline_risk["first_unsafe_gap_m"],
+                "safe_prefix_count": loadline_risk["safe_prefix_count"],
+                "minimum_demag_margin_A_per_m": min(loadline_margins) if loadline_margins else None,
+                "risk_label": loadline_risk["risk_label"],
+            },
+            "slot102_reference": {
+                "step_fields_A_per_m": {"0": -2.0e5, "1": -6.0e5, "2": -3.0e5},
+                "H_knee_A_per_m": -5.0e5,
+                "irreversible_demag": True,
+                "recoil_remanence_ratio_proxy": 0.8,
+            },
+        },
+        "fault_current_screening": fault_current_screening,
+        "bem_source_balance_contract": bem_source_balance_contract,
+        "run_result_loadline_handoff": run_result_loadline_handoff,
+        "demag_package_handoff": demag_package_handoff,
+        "demag_margin_screening_package": demag_margin_screening_package,
         "required_observables": [
             "field_probe",
             "flux_linkage",
@@ -3415,8 +4168,38 @@ def build_motor_demag_margin_plan(
             "magnet_thickness_mm",
             "magnet_grade_or_hcj",
         ],
+        "loadline_checks": [
+            "run pm_loadline_metadata_gate before parsing B_gap/H_m/H_knee rows so H units and demag sign are explicit",
+            "run pm_bem_surface_normal_metadata_gate before magnetic-charge BEM assembly so outward normals and M dot n signs are explicit",
+            "run pm_bem_surface_source_balance_gate so closed PM surface signed source proxy sum_i area_i*(M dot n) is near zero before BEM assembly",
+            "record BEM source-balance summary keys surface_mesh_id, surface_mesh_digest, surface_row_count, source_balance_artifact_id, source_balance_digest, source_convention, total_area_m2, normal_convention, source_balance_unit, signed_charge_balance_abs, and signed_charge_balance_rel_tol before demag-margin notebook promotion",
+            "record BEM source row identity keys surface_source_artifact_id, magnetization_source_id, material_id, and material_name before accepting sigma_m = M dot n rows",
+            "estimate permeance coefficient Pc from magnet length, effective gap, and iron path before the run",
+            "record B_gap and H_m=(B_gap-Br)/(mu0*mu_rec) and compare H_m with the irreversible-demag knee",
+            "lint PM recoil/knee steps with HBRM/HBCN before running a demag sweep",
+            "run pm_recoil_demag_step_summary on steps 0/1/2 before accepting step-2 recovery",
+            "promote parsed RunResult rows through run_result_loadline_handoff before showing load-line notebooks",
+            "bundle RunResult, load-line metadata, BEM surface metadata, and recoil steps through pm_demag_package_identity_gate before demag notebook promotion",
+            "bundle load-line sweep, negative-Id fault screening, BEM source balance, and demag package through pm_demag_margin_screening_package_gate before demag-margin notebook promotion",
+            "when a hot material state is recorded, keep Br_T, H_knee_A_per_m, and recoil_mu_r identical across the package",
+            "map short-circuit and field-weakening negative-Id rows to the same field_probe and HBCN demag-step contract",
+            "record field_probe_output_artifact_id, field_probe_output_digest, and field_probe_output_path for the exported probe table before accepting demag-margin screening rows",
+            "treat load-line margin as an upper-bound precheck; product/local field results must confirm the worst magnet element",
+        ],
         "quality_gates": [
             "hot Br and Hcj assumptions are recorded",
+            "load-line table metadata declares columns, H/B/temperature units, magnetization axis, knee reference, and demag sign convention",
+            "PM BEM surface rows declare outward_from_magnet normals and have zero closed-surface signed-charge proxy",
+            "PM BEM surface source balance gate passes: sum_i area_i*(M dot n) is near zero for each closed magnet",
+            "PM BEM source-balance summary records surface area, normal convention, source unit, absolute balance residual, and relative tolerance",
+            "permeance-coefficient load-line precheck is recorded before claiming demag safety",
+            "HBRM/HBCN step contract is complete for every PM material id used in a demag sweep",
+            "step-2 recovery is checked by a recoil-remanence ratio gate after any knee crossing",
+            "RunResult load-line rows have case_id, H/B/temperature units, knee reference, recoil_mu_r, and demag sign convention",
+            "RunResult/load-line/BEM/recoil artifacts share case_id and magnet_id before demag notebook use",
+            "load-line sweep, fault-current screening, BEM source balance, and demag package share case_id, magnet_id, and temperature_C before demag-margin notebook use",
+            "load-line sweep, fault-current screening, BEM source balance, and demag package share the same Br_T/H_knee_A_per_m/recoil_mu_r material state when recorded",
+            "field-probe rows record output artifact id, digest, and path before any notebook or LLM handoff reads the demag-margin value",
             "negative d-axis current cases are separated from nominal MTPA cases",
             "irreversible demag claim requires local validated field results",
             "magnet supplier grade data stays separate from public examples unless licensed for publication",
@@ -3478,6 +4261,7 @@ def build_motor_drive_cycle_plan(
         ],
         "quality_gates": [
             "weights sum to one or are normalized before scoring",
+            "run drive_cycle_weighted_efficiency_gate on normalized result rows before ranking cycle_efficiency",
             "peak and continuous points are labeled separately",
             "efficiency map interpolation records nearest solved points",
             "thermal/NVH/stress follow-up uses weighted and worst-case points",
@@ -3826,8 +4610,12 @@ def build_motor_observable_contract(
         study_name = "static_flux_linkage"
     if study_name == "back_emf_speed_sweep":
         observables = ("flux_linkage", "back_emf_constant")
-        validation = ("flux sign", "speed derivative sign", "phase symmetry")
-        age_targets = ("back_emf", "airgap_harmonics")
+        validation = (
+            "flux sign",
+            "flux_linkage_back_emf_derivative_gate before Ke export",
+            "phase symmetry",
+        )
+        age_targets = ("back_emf", "airgap_harmonics", "flux_linkage_back_emf_derivative_gate")
     elif study_name == "static_torque_angle":
         observables = ("torque", "torque_ripple", "flux_linkage")
         validation = ("torque sign", "periodicity", "co-energy trend")
@@ -3836,6 +4624,16 @@ def build_motor_observable_contract(
         observables = ("ld_lq", "flux_linkage", "torque")
         validation = ("current perturbation linearity", "Ld/Lq ordering", "MTPA trend")
         age_targets = ("dq_inductance", "mtpa")
+    elif study_name == "force_gap_sweep":
+        observables = ("force", "field_probe", "convergence_status")
+        validation = (
+            "force sign",
+            "axis/component mapping",
+            "force quantity dimension declared before comparison",
+            "gap monotonicity",
+            "dipole-limit F*s^4 scaling when applicable",
+        )
+        age_targets = ("magnet_force", "bem_scalar_potential", "coaxial_pm_force_gap_sweep")
     elif study_name == "induction_slip_loss":
         observables = ("torque", "loss_proxy", "field_probe")
         validation = ("slip monotonicity near zero", "loss nonnegative", "frequency trend")
@@ -3846,8 +4644,69 @@ def build_motor_observable_contract(
         age_targets = ("eddy_current", "loss")
     else:
         observables = MOTOR_DEFAULT_OBSERVABLES.get(family, MOTOR_DEFAULT_OBSERVABLES["spm"])
-        validation = ("observable present", "sign/scale plausible", "no convergence warnings")
+        validation = (
+            "observable present",
+            "sign/scale plausible",
+            "mutual-flux sign and current-scaling gate",
+            "no convergence warnings",
+        )
         age_targets = ("airgap_field",)
+    force_result_contract = None
+    if "force" in observables:
+        force_result_contract = {
+            "schema_version": "elf-python-force-observable-package-contract/v1",
+            "required_metadata": [
+                "case_id",
+                "result_set_id",
+                "run_artifact_id",
+                "result_revision_id",
+                "observable_id",
+                "operating_point_id",
+                "source_function",
+                "quantity_dimension",
+                "force_unit",
+                "component_frame",
+                "sign_convention",
+            ],
+            "allowed_quantity_dimensions": [
+                "2d_per_length",
+                "3d_total",
+            ],
+            "allowed_force_units": [
+                "N/m",
+                "N",
+            ],
+            "per_length_parser_keys": [
+                "force_x_n_per_m",
+                "force_y_n_per_m",
+                "force_z_n_per_m",
+                "radial_force_n_per_m",
+            ],
+            "total_force_parser_keys": [
+                "force_x_n",
+                "force_y_n",
+                "force_z_n",
+            ],
+            "component_frames": [
+                "global_xyz",
+                "global_xy",
+                "local_normal_tangent",
+                "as_exported_with_map",
+            ],
+            "public_gate_candidates": [
+                "parallel_wire_force_result_package_gate",
+                "jmag_force_table_metadata_gate",
+                "maxwell_stress_surface_package_gate",
+                "force_moment_resultant_summary",
+            ],
+            "negative_controls": [
+                "2d_per_length row reported as N without explicit depth",
+                "stale case_id or operating_point_id",
+                "stale run_artifact_id or result_revision_id",
+                "missing component_frame",
+                "sign convention omitted for attractive/repulsive sweeps",
+            ],
+        }
     return {
         "schema_version": "elf-python-motor-observable-contract/v1",
         "motor_type": family,
@@ -3864,6 +4723,7 @@ def build_motor_observable_contract(
         "parser_observable_keys": [f"{obs}_value" for obs in observables],
         "validation_checks": list(validation),
         "age_targets": list(age_targets),
+        "force_result_contract": force_result_contract,
         "public_boundary": "Contract only; no product execution or raw solver output is included.",
     }
 
@@ -4382,6 +5242,33 @@ def format_deck_lint(report: Mapping[str, Any]) -> str:
         "",
         "## Issues",
     ]
+    if report["issues"]:
+        for issue in report["issues"]:
+            lines.append(f"- `{issue['severity']}` `{issue['field']}`: {issue['message']}")
+    else:
+        lines.append("- none")
+    return "\n".join(lines).rstrip()
+
+
+def format_pm_demag_step_lint(report: Mapping[str, Any]) -> str:
+    """Format a PM demagnetization HBRM/HBCN lint report."""
+
+    detected = report["detected"]
+    lines = [
+        "# ELF Python PM Demag Step Lint",
+        "",
+        f"- schema: `{report['schema_version']}`",
+        f"- status: `{report['status']}`",
+        "- complete material ids: "
+        + (", ".join(f"`{mid}`" for mid in detected["complete_three_step_mids"]) or "none"),
+        "- HBRM curves: "
+        + (", ".join(f"`{row['curve_id']}`" for row in detected["hbrm_rows"]) or "none"),
+        "- HBCN rows: " + str(len(detected["hbcn_rows"])),
+        "",
+        "## Contract",
+    ]
+    lines.extend(f"- {item}" for item in report["contract"])
+    lines.extend(["", "## Issues"])
     if report["issues"]:
         for issue in report["issues"]:
             lines.append(f"- `{issue['severity']}` `{issue['field']}`: {issue['message']}")
@@ -4912,6 +5799,8 @@ def format_motor_efficiency_map_result(result: Mapping[str, Any]) -> str:
                 f"- eta: `{best['efficiency']}`",
                 f"- total loss: `{best['total_loss_w']}` W",
                 f"- loss source: `{best['loss_source']}`",
+                f"- voltage margin: `{best.get('voltage_margin_v')}` V",
+                f"- current margin: `{best.get('current_margin_a')}` A",
             ]
         )
     else:
@@ -4929,6 +5818,8 @@ def format_motor_efficiency_map_result(result: Mapping[str, Any]) -> str:
             lines.append(
                 f"- `{point['point_id']}` case `{point['case_id']}`: "
                 f"eta `{point['efficiency']}`, loss `{point['total_loss_w']}`, "
+                f"voltage margin `{point.get('voltage_margin_v')}`, "
+                f"current margin `{point.get('current_margin_a')}`, "
                 f"status `{point['map_status']}`"
             )
     else:
@@ -5159,6 +6050,8 @@ def format_motor_demag_margin_plan(plan: Mapping[str, Any]) -> str:
         f"- temperature: `{plan['temperature_c']}` C",
         f"- hot Br proxy: `{plan['br_hot_t_proxy']}` T",
         f"- Hcj: `{plan['hcj_ka_m']}` kA/m",
+        f"- hot Hcj proxy: `{plan.get('hcj_hot_ka_m')}` kA/m",
+        f"- hot Hknee proxy: `{plan.get('h_knee_hot_a_per_m')}` A/m",
         f"- negative Id: `{plan['id_min_a_peak']}` A peak",
         f"- margin proxy: `{plan['margin_proxy']}`",
         f"- risk label: `{plan['risk_label']}`",
@@ -5168,6 +6061,182 @@ def format_motor_demag_margin_plan(plan: Mapping[str, Any]) -> str:
     lines.extend(f"- `{item}`" for item in plan["required_observables"])
     lines.extend(["", "## Sweep Axes"])
     lines.extend(f"- `{item}`" for item in plan["sweep_axes"])
+    if plan.get("loadline_sweep"):
+        summary = plan["loadline_summary"]
+        lines.extend(
+            [
+                "",
+                "## Load-Line Sweep",
+                f"- magnet length: `{summary['magnet_len_m']}` m",
+                f"- iron path: `{summary['iron_path_m']}` m",
+                f"- safe prefix count: `{summary.get('safe_prefix_count')}`",
+                f"- first unsafe gap: `{summary['first_unsafe_gap_m']}` m",
+                f"- largest safe gap: `{summary.get('largest_safe_gap_m')}` m",
+                f"- minimum demag margin: `{summary['minimum_demag_margin_A_per_m']}` A/m",
+                f"- load-line risk label: `{summary.get('risk_label')}`",
+            ]
+        )
+        for row in plan["loadline_sweep"]:
+            lines.append(
+                f"- gap `{row['gap_m']}` m: Bgap `{row['B_gap_T']}` T, "
+                f"Hm `{row['H_m_A_per_m']}` A/m, margin `{row['demag_margin_A_per_m']}` A/m, "
+                f"safe `{row['safe_against_knee']}`"
+            )
+        lines.append("")
+        lines.append("## Load-Line Quality Checks")
+        lines.extend(f"- `{key}`: `{value}`" for key, value in summary["checks"].items())
+    if plan.get("elf_step_contract"):
+        contract = plan["elf_step_contract"]
+        reference = contract.get("slot46_reference", {})
+        recoil_reference = contract.get("slot102_reference", {})
+        lines.extend(
+            [
+                "",
+                "## ELF/MAGIC Step Contract",
+                f"- lint tool: `{contract['lint_tool']}`",
+                f"- HBRM role: {contract['required_hbrm_role']}",
+                f"- HBCN role: {contract['required_hbcn_role']}",
+                "- required HBCN steps: "
+                + ", ".join(f"`{step}`" for step in contract["required_hbcn_steps"]),
+                f"- metadata gate: `{contract.get('metadata_gate')}`",
+                f"- radia-ngsolve gate: `{contract['radia_ngsolve_gate']}`",
+                f"- load-line gate: `{contract.get('loadline_gate')}`",
+                "- observable keys: "
+                + ", ".join(f"`{key}`" for key in contract["recommended_observable_keys"]),
+                f"- reference first unsafe gap: `{reference.get('first_unsafe_gap_m')}` m",
+                f"- reference safe prefix count: `{reference.get('safe_prefix_count')}`",
+                f"- reference minimum demag margin: `{reference.get('minimum_demag_margin_A_per_m')}` A/m",
+                f"- recoil reference irreversible: `{recoil_reference.get('irreversible_demag')}`",
+                f"- recoil reference ratio: `{recoil_reference.get('recoil_remanence_ratio_proxy')}`",
+            ]
+        )
+    if plan.get("fault_current_screening"):
+        fault = plan["fault_current_screening"]
+        lines.extend(
+            [
+                "",
+                "## Fault-Current Demag Screening",
+                f"- schema: `{fault['schema_version']}`",
+                f"- negative Id: `{fault['negative_id_a_peak']}` A peak",
+                f"- negative Id is demag direction: `{fault['negative_id_is_demag_direction']}`",
+                f"- demag field proxy: `{fault['demag_field_proxy_ka_m']}` kA/m",
+                f"- screening rule: {fault['screening_rule']}",
+                "- radia-ngsolve gates: "
+                + ", ".join(f"`{gate}`" for gate in fault["recommended_radia_ngsolve_gates"]),
+                "- observable keys: "
+                + ", ".join(f"`{key}`" for key in fault["recommended_observable_keys"]),
+                f"- ELF step contract: {fault['elf_step_contract']}",
+            ]
+        )
+    if plan.get("bem_source_balance_contract"):
+        balance = plan["bem_source_balance_contract"]
+        lines.extend(
+            [
+                "",
+                "## PM BEM Source Balance Contract",
+                f"- schema: `{balance['schema_version']}`",
+                f"- metadata gate: `{balance['metadata_gate']}`",
+                f"- balance gate: `{balance['balance_gate']}`",
+                f"- surface source density: `{balance['surface_source_density']}`",
+                f"- normal convention: `{balance['normal_convention']}`",
+                f"- signed charge proxy: `{balance['signed_charge_proxy']}`",
+                f"- source balance unit: `{balance['source_balance_unit']}`",
+                f"- signed charge balance relative tolerance: `{balance['signed_charge_balance_rel_tol']}`",
+                "- required row keys: "
+                + ", ".join(f"`{key}`" for key in balance["required_row_keys"]),
+                "- required summary keys: "
+                + ", ".join(f"`{key}`" for key in balance["required_summary_keys"]),
+                "- negative controls: "
+                + ", ".join(f"`{item}`" for item in balance["negative_controls"]),
+            ]
+        )
+    if plan.get("run_result_loadline_handoff"):
+        handoff = plan["run_result_loadline_handoff"]
+        lines.extend(
+            [
+                "",
+                "## RunResult Load-Line Handoff",
+                f"- schema: `{handoff['schema_version']}`",
+                "- parser tools: "
+                + ", ".join(f"`{tool}`" for tool in handoff["parser_tools"]),
+                f"- row identity: `{handoff['row_identity']}`",
+                "- required normalized columns: "
+                + ", ".join(f"`{key}`" for key in handoff["required_normalized_columns"]),
+                f"- metadata gate: `{handoff['metadata_gate']}`",
+                f"- load-line gate: `{handoff['loadline_gate']}`",
+                f"- recoil-step gate: `{handoff['recoil_step_gate']}`",
+                f"- notebook policy: {handoff['notebook_policy']}",
+                "- negative controls: "
+                + ", ".join(f"`{item}`" for item in handoff["negative_controls"]),
+            ]
+        )
+    if plan.get("demag_package_handoff"):
+        package = plan["demag_package_handoff"]
+        lines.extend(
+            [
+                "",
+                "## Demag Package Handoff",
+                f"- schema: `{package['schema_version']}`",
+                f"- package gate: `{package['package_gate']}`",
+                "- row identity: "
+                + ", ".join(f"`{key}`" for key in package["row_identity"]),
+                "- required artifacts: "
+                + ", ".join(f"`{key}`" for key in package["required_artifacts"]),
+                "- required RunResult columns: "
+                + ", ".join(f"`{key}`" for key in package["required_run_result_columns"]),
+                "- source gates: "
+                + ", ".join(
+                    f"`{kind}` -> `{gate}`"
+                    for kind, gate in package["source_gates"].items()
+                ),
+                "- negative controls: "
+                + ", ".join(f"`{item}`" for item in package["negative_controls"]),
+            ]
+        )
+    if plan.get("demag_margin_screening_package"):
+        package = plan["demag_margin_screening_package"]
+        lines.extend(
+            [
+                "",
+                "## Demag Margin Screening Package",
+                f"- schema: `{package['schema_version']}`",
+                f"- package gate: `{package['package_gate']}`",
+                "- row identity: "
+                + ", ".join(f"`{key}`" for key in package["row_identity"]),
+                "- step identity keys: "
+                + ", ".join(f"`{key}`" for key in package["step_identity_keys"]),
+                f"- step identity contract: {package['step_identity_contract']}",
+                "- required artifacts: "
+                + ", ".join(f"`{key}`" for key in package["required_artifacts"]),
+                "- source gates: "
+                + ", ".join(
+                    f"`{kind}` -> `{gate}`"
+                    for kind, gate in package["source_gates"].items()
+                ),
+                "- required fault observables: "
+                + ", ".join(f"`{key}`" for key in package["required_fault_observables"]),
+                "- field-probe identity keys: "
+                + ", ".join(f"`{key}`" for key in package["field_probe_identity_keys"]),
+                f"- field-probe identity contract: {package['field_probe_identity_contract']}",
+                "- field-probe output identity keys: "
+                + ", ".join(
+                    f"`{key}`" for key in package["field_probe_output_identity_keys"]
+                ),
+                (
+                    "- field-probe output identity contract: "
+                    f"{package['field_probe_output_identity_contract']}"
+                ),
+                "- required BEM source-balance summary keys: "
+                + ", ".join(
+                    f"`{key}`" for key in package["required_bem_source_balance_summary_keys"]
+                ),
+                f"- notebook policy: {package['notebook_policy']}",
+                "- negative controls: "
+                + ", ".join(f"`{item}`" for item in package["negative_controls"]),
+            ]
+        )
+    lines.extend(["", "## Load-Line Checks"])
+    lines.extend(f"- {item}" for item in plan["loadline_checks"])
     lines.extend(["", "## Quality Gates"])
     lines.extend(f"- {item}" for item in plan["quality_gates"])
     return "\n".join(lines).rstrip()
@@ -5438,6 +6507,26 @@ def format_motor_observable_contract(contract: Mapping[str, Any]) -> str:
     lines.append("- Observable keys: " + ", ".join(f"`{item}`" for item in contract["parser_observable_keys"]))
     lines.extend(["", "## Validation Checks"])
     lines.extend(f"- {check}" for check in contract["validation_checks"])
+    force_contract = contract.get("force_result_contract")
+    if force_contract:
+        lines.extend(["", "## Force Result Package"])
+        lines.append(
+            "- allowed quantity dimensions: "
+            + ", ".join(f"`{item}`" for item in force_contract["allowed_quantity_dimensions"])
+        )
+        lines.append(
+            "- allowed force units: "
+            + ", ".join(f"`{item}`" for item in force_contract["allowed_force_units"])
+        )
+        lines.append(
+            "- required metadata: "
+            + ", ".join(f"`{item}`" for item in force_contract["required_metadata"])
+        )
+        lines.append(
+            "- public gate candidates: "
+            + ", ".join(f"`{item}`" for item in force_contract["public_gate_candidates"])
+        )
+        lines.extend(f"- negative control: {item}" for item in force_contract["negative_controls"])
     lines.extend(["", "## AGE Targets"])
     lines.extend(f"- `{target}`" for target in contract["age_targets"])
     return "\n".join(lines).rstrip()

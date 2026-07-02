@@ -2395,6 +2395,149 @@ This is the live-drive leg used to cross-validate an independent BEM surface-cha
 against analytic closed forms.
 """
 
+
+FORCE_GAP_OBSERVABLE_CONTRACT = """\
+# PM force-gap observable contract for ELF/MAGIC -> open validation
+
+Use this contract when a MAGIC force observable from `SOL FORC`, `SOL FORT`, or
+`SOL FIXB` is being promoted into an open validation row.  The MCP server does
+not execute ELF/MAGIC and must not publish product result files; it can still
+prepare a public-safe row contract that a user-local runner can fill.
+
+## Minimum row schema
+
+Each row should keep the geometry and force semantics explicit before any
+solver comparison:
+
+| Field | Meaning |
+|---|---|
+| `case_id` | one force-gap sweep identifier |
+| `result_set_id` | one solved-result package identifier; do not mix old and new runs |
+| `observable_id` | stable force observable/table identifier, e.g. one `FORC` / `FORT` / `FIXB` target |
+| `gap_m` | signed-independent mechanical gap in metres; positive scalar |
+| `force_N` | force component along the declared approach axis |
+| `quantity_dimension` | `2d_per_length` for N/m rows, or `3d_total` for N rows |
+| `force_unit` | must match `quantity_dimension`: `N/m` for 2D rows, `N` for 3D rows |
+| `component_frame` | global or local frame used by the force component |
+| `axis` | force/gap axis, e.g. `z` |
+| `sign_convention` | e.g. `attractive_negative` for closing force |
+| `force_method` | `FORC`, `FORT`, or `FIXB` |
+| `status` | `ok` only after the row parser and unit checks passed |
+
+## Public analytic gate
+
+For coaxial permanent-magnet or dipole-limit teaching checks, the far-field
+force magnitude scales as `|F| proportional to 1/g^4`.  Before comparing
+detailed BEM values, pass the scrubbed table through the radia-mcp gate
+`coaxial_pm_force_gap_sweep_gate(rows)`.
+
+That gate checks:
+
+- every `gap_m` is positive,
+- force signs match the declared attraction convention,
+- the first/last force ratio agrees with the fourth-power gap ratio, and
+- `abs(force_N) * gap_m**4` is approximately invariant across the sweep.
+
+## Negative controls worth keeping
+
+- Flip one force sign; the gate must reject the row set.
+- Mix metre and millimetre gaps; the fourth-power invariant should fail
+  dramatically.
+- Reuse rows from different `case_id` values only after a package identity gate
+  has confirmed they describe the same magnet pair and approach axis.
+- Change only `result_set_id` or `observable_id`; the parser must reject stale
+  force tables before force values are compared.
+- Mark a 2D per-length row as `N` or a 3D total-force row as `N/m`; the unit
+  and quantity dimension must fail before numerical comparison.
+
+## ELF/MAGIC authoring notes
+
+`SOL MOME` or the appropriate magnetic solve block must run before force
+post-processing.  `FORC` and `FORT` are surface/stress-style outputs; `FIXB`
+is useful for coil-force checks.  Keep the product-local `.mag` / `.mao`
+files and raw numeric result tables outside the public MCP package.  Public
+artifacts should retain only the parsed row contract, tolerances, validation
+status, and a pointer to the open analytic gate.
+"""
+
+MAXWELL_STRESS_SURFACE_PACKAGE_CONTRACT = """\
+# Maxwell-stress surface package contract for ELF/MAGIC -> open validation
+
+Use this contract before promoting a `SOL FORT` Maxwell-stress force or torque
+result into an open validation row.  The MCP server does not execute ELF/MAGIC
+and must not publish product result files; it can still require a clean package
+identity so a user-local runner does not mix a stress surface, solve command,
+and observable table from different cases.
+
+## Minimum artifact package
+
+Keep these artifacts together before any numerical force/torque value is read:
+
+| Kind | Required fields |
+|---|---|
+| `stress_surface` | `case_id`, `stress_surface_id`, `result_set_id`, `observable_id`, `closed_surface`, `normal_orientation`, `formulation_id`, `kernel_family`, `singular_treatment`, `symmetry_factor`, `status` |
+| `solve_command` | `case_id`, `stress_surface_id`, `result_set_id`, `observable_id`, `sol_command`, `axis`, `formulation_id`, `kernel_family`, `singular_treatment`, `symmetry_factor`, `status` |
+| `observable_table` | `case_id`, `stress_surface_id`, `result_set_id`, `observable_id`, `force_method`, `axis`, `sign_convention`, `quantity_dimension`, `force_unit`, `formulation_id`, `kernel_family`, `singular_treatment`, `symmetry_factor`, `status` |
+
+## Public package gate
+
+Pass the scrubbed package through the radia-mcp gate
+`maxwell_stress_surface_package_gate(artifacts)` before comparing force or
+torque magnitudes.
+
+That gate checks:
+
+- the required artifact kinds are present,
+- all rows share the same `case_id`,
+- all rows share the same `stress_surface_id`,
+- all rows share the same `result_set_id` when present,
+- all rows share the same `observable_id` when present,
+- the stress surface is explicitly closed,
+- `SOL FORT` / `FORT` / Maxwell-stress method semantics are declared,
+- the force or torque axis is consistent,
+- if `observable_id` names an axis (for example `fort_z_force`), that named
+  axis must agree with the package `axis`,
+- normal orientation and sign convention are recorded,
+- when the package expects a normal orientation such as `outward`, the recorded
+  stress-surface normal orientation must match that expected direction,
+- when supplied, `formulation_id`, `kernel_family`, and `singular_treatment`
+  are consistent across all package artifacts,
+- when the package expects a formulation or kernel, the recorded
+  `formulation_id` / `kernel_family` must match before values are interpreted,
+- when present, `quantity_dimension` and `force_unit` agree (`2d_per_length`
+  with `N/m`, `3d_total` with `N`),
+- any symmetry factor is positive, and
+- artifact statuses are `ok` / `pass` / `verified`.
+
+## Negative controls worth keeping
+
+- Mark the stress surface as open; the package must fail before force values
+  are read.
+- Change only the observable-table `stress_surface_id`; the package must fail
+  as a stale-surface mix.
+- Change only the observable-table `result_set_id` or `observable_id`; the
+  package must fail as a stale result or wrong observable mix.
+- Keep `observable_id=fort_z_force` but change the package axis to `y`; the
+  package must fail before the z-force value is read as a y-force.
+- Flip the stress-surface `normal_orientation`; the package must fail when
+  `expected_normal_orientation` is supplied.
+- Change only the observable-table `kernel_family`; the package must fail as a
+  stale formulation/kernel mix even when the surface and result ids still match.
+- Replace `SOL FORT` with a non-Maxwell-stress force method; the package must
+  fail unless a separate method-specific gate is used.
+- Attach `quantity_dimension=2d_per_length` to a row whose `force_unit` is
+  `N`; the package must fail as a force-unit/quantity mismatch.
+
+## ELF/MAGIC authoring notes
+
+For motor torque or magnet force, prefer `SOL FORT` with a clean closed MCM/ECM
+stress surface in air.  `SOL FORC` and other force commands can still be useful,
+but they are different observable contracts.  Keep product-local `.mag` /
+`.mao` files and raw numeric result tables outside the public MCP package.
+Public artifacts should retain only package metadata, tolerances, validation
+status, and the open gate name.
+"""
+
 _TOPICS = {
     "overview": ELF_OVERVIEW,
     "mai_format": MAI_FORMAT,
@@ -2427,6 +2570,8 @@ _TOPICS = {
     "licensing": LICENSING_DOCS,
     "python_api": PYTHON_API_DOCS,
     "live_drive": LIVE_DRIVE_DOCS,
+    "force_gap_contract": FORCE_GAP_OBSERVABLE_CONTRACT,
+    "maxwell_stress_surface_package": MAXWELL_STRESS_SURFACE_PACKAGE_CONTRACT,
 }
 
 

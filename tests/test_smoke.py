@@ -9,6 +9,7 @@ import os
 import sys
 import asyncio
 import json
+import math
 import tomllib
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
@@ -82,6 +83,7 @@ def test_tool_surface_and_no_work_family():
     assert "elf_python_api_schema" in names
     assert "elf_python_motor_spec_lint" in names
     assert "elf_python_deck_lint" in names
+    assert "elf_python_pm_demag_step_lint" in names
     assert "elf_python_run_contract" in names
     assert "elf_python_motor_design_plan" in names
     assert "elf_python_motor_sweep_matrix" in names
@@ -124,7 +126,7 @@ def test_tool_surface_and_no_work_family():
     assert "elf_python_2d_motor_template" in names
     overview = elf_overview()
     overview_text = str(overview)
-    assert overview["n_tools"] == 84
+    assert overview["n_tools"] == 85
     assert "public_boundary" in overview
     assert "recommended_calls" in overview
     assert "elf_python_interface_design" in overview_text
@@ -199,6 +201,7 @@ def test_python_facade_schema_lint_and_generation_plan(tmp_path):
             parse_run_result_payload,
             parse_run_result_path,
         format_motor_drawing_bom_handoff,
+        format_pm_demag_step_lint,
         format_motor_demag_margin_plan,
         format_motor_drive_cycle_plan,
         format_induction_motor_slip_sweep_plan,
@@ -213,6 +216,7 @@ def test_python_facade_schema_lint_and_generation_plan(tmp_path):
         format_motor_dq_axis_map_plan,
         format_motor_mtpa_search_plan,
         format_motor_material_variation_plan,
+        format_motor_observable_contract,
         format_motor_optimization_study_plan,
         format_motor_optimization_loop,
         format_motor_ngsolve_result_crosscheck,
@@ -229,6 +233,7 @@ def test_python_facade_schema_lint_and_generation_plan(tmp_path):
             format_run_result_path_parse,
         format_reluctance_motor_design_plan,
         lint_mai_text,
+        lint_pm_demag_step_contract,
         MOTOR_TYPES,
         python_api_schema,
         validate_motor_spec_dict,
@@ -289,6 +294,34 @@ def test_python_facade_schema_lint_and_generation_plan(tmp_path):
     deck_lint = lint_mai_text(deck["text"], ["flux_linkage", "back_emf_constant"])
     assert deck_lint["status"] == "PASS"
     assert deck_lint["detected"]["has_flum"] is True
+    assert deck_lint["detected"]["has_hbrm"] is True
+    assert deck_lint["detected"]["has_hbcn"] is True
+
+    demag_lint = lint_pm_demag_step_contract(
+        "\n".join(
+            [
+                "USE MAGIC 3.50",
+                "PRE 3 2",
+                "HBRM 1 1.05 1.20",
+                "HBRM 2 1.05 1.00",
+                "HBRM 3 1.05 0.90",
+                "HBCN 7 0 1",
+                "HBCN 7 1 2",
+                "HBCN 7 2 3",
+                "END",
+                "SOL MOME",
+                "END",
+            ]
+        )
+    )
+    assert demag_lint["status"] == "PASS"
+    assert len(demag_lint["detected"]["hbrm_rows"]) == 3
+    assert len(demag_lint["detected"]["hbcn_rows"]) == 3
+    assert demag_lint["detected"]["complete_three_step_mids"] == [7]
+    assert demag_lint["detected"]["missing_recoil_curves"] == []
+    demag_lint_text = format_pm_demag_step_lint(demag_lint)
+    assert "PM Demag Step Lint" in demag_lint_text
+    assert "complete material ids: `7`" in demag_lint_text
 
     contract = build_run_request_contract(
         goal="SPM motor back EMF sweep",
@@ -311,6 +344,42 @@ def test_python_facade_schema_lint_and_generation_plan(tmp_path):
     parsed_text = format_run_result_parse(parsed_result)
     assert "RunResult Parser" in parsed_text
     assert "torque_value" in parsed_text
+
+    force_result = parse_run_result_payload(
+        {
+            "case_id": "force_ref",
+            "parsed_observables": {
+                "force_x_n_per_m": -4.0e-4,
+                "force_y_n_per_m": 0.0,
+                "force_unit": "N/m",
+                "quantity_dimension": "2d_per_length",
+            },
+        },
+        motor_type="linear_pm",
+        requested_observables=["force"],
+    )
+    assert force_result["parsed_observables"]["force_x_n_per_m"] == -4.0e-4
+    assert force_result["parsed_observables"]["force_unit"] == "N/m"
+    assert force_result["parsed_observables"]["quantity_dimension"] == "2d_per_length"
+    assert force_result["status"] == "PASS"
+    assert force_result["missing_requested_observables"] == []
+    assert force_result["force_metadata_checks"]["unit_dimension_consistent"] is True
+
+    bad_force_result = parse_run_result_payload(
+        {
+            "case_id": "force_bad_unit",
+            "parsed_observables": {
+                "force_x_n_per_m": -4.0e-4,
+                "force_unit": "N",
+                "quantity_dimension": "2d_per_length",
+            },
+        },
+        motor_type="linear_pm",
+        requested_observables=["force"],
+    )
+    assert bad_force_result["status"] == "WARN"
+    assert bad_force_result["force_metadata_checks"]["unit_dimension_consistent"] is False
+    assert any("does not match quantity_dimension" in item for item in bad_force_result["warnings"])
 
     run_dir = tmp_path / "completed_run"
     run_dir.mkdir()
@@ -395,11 +464,86 @@ def test_python_facade_schema_lint_and_generation_plan(tmp_path):
         "efficiency_range_0_to_1",
         "loss_nonnegative",
         "torque_error_within_limit",
+        "voltage_margin_nonnegative_when_present",
     }
+    assert any(point["voltage_margin_v"] == 12.0 for point in numeric_map["result_points"])
+    assert any(point["current_margin_a"] == 5.0 for point in numeric_map["result_points"])
     numeric_map_text = format_motor_efficiency_map_result(numeric_map)
     assert "Motor Efficiency Map Result" in numeric_map_text
     assert "Eta Grid" in numeric_map_text
+    assert "voltage margin" in numeric_map_text
     assert "Quality Gate Results" in numeric_map_text
+
+    omega_1000 = 2.0 * math.pi * 1000.0 / 60.0
+    p_out = 0.2 * omega_1000
+    loss_bucket_map = build_motor_efficiency_map_from_results(
+        "spm",
+        result_payloads=[
+            {
+                "schema_version": "elf-python-run-result-parse/v1",
+                "case_id": "loss_bucket",
+                "status": "PASS",
+                "parsed_observables": {
+                    "point_id": "s00_t00",
+                    "speed_rpm": 1000,
+                    "requested_torque_nm": 0.2,
+                    "torque_value": 0.2,
+                    "input_power_w": p_out + 4.0,
+                    "copper_loss_w": 2.0,
+                    "iron_loss_w": 1.0,
+                    "magnet_loss_w": 0.4,
+                    "mechanical_loss_w": 0.6,
+                },
+                "missing_requested_observables": [],
+            }
+        ],
+        torque_min_nm=0.2,
+        torque_max_nm=0.2,
+        torque_points=1,
+        speed_min_rpm=1000,
+        speed_max_rpm=1000,
+        speed_points=1,
+        base_speed_rpm=1000,
+    )
+    loss_cell = loss_bucket_map["result_points"][0]
+    assert loss_bucket_map["status"] == "PASS"
+    assert loss_cell["total_loss_w"] == 4.0
+    assert loss_cell["loss_source"] == "summed_loss_terms"
+    assert loss_cell["loss_terms_w"]["copper_loss_w"] == 2.0
+    assert loss_cell["dominant_loss_term"] == "copper_loss_w"
+    assert loss_cell["loss_bucket_balance_rel_error"] == 0.0
+    assert loss_cell["input_power_balance_rel_error"] == 0.0
+
+    negative_voltage_margin_map = build_motor_efficiency_map_from_results(
+        "spm",
+        result_payloads=[
+            {
+                "case_id": "negative_voltage_margin",
+                "status": "PASS",
+                "parsed_observables": {
+                    "point_id": "s00_t00",
+                    "speed_rpm": 1000,
+                    "requested_torque_nm": 0.2,
+                    "torque_nm": 0.2,
+                    "loss_w": 2.0,
+                    "voltage_margin_v": -0.25,
+                },
+            }
+        ],
+        torque_min_nm=0.2,
+        torque_max_nm=0.2,
+        torque_points=1,
+        speed_min_rpm=1000,
+        speed_max_rpm=1000,
+        speed_points=1,
+        base_speed_rpm=1000,
+    )
+    negative_voltage_gates = {
+        gate["gate"]: gate["status"] for gate in negative_voltage_margin_map["quality_gate_results"]
+    }
+    assert negative_voltage_margin_map["status"] == "WARN"
+    assert negative_voltage_gates["voltage_margin_nonnegative_when_present"] == "WARN"
+    assert negative_voltage_margin_map["result_points"][0]["voltage_margin_v"] == -0.25
 
     bad_map = build_motor_efficiency_map_from_results(
         "spm",
@@ -494,15 +638,358 @@ def test_python_facade_schema_lint_and_generation_plan(tmp_path):
     assert demag["schema_version"] == "elf-python-motor-demag-margin-plan/v1"
     assert demag["risk_label"] in {"green", "amber", "red"}
     assert "br_hot_t_proxy" in demag
+    assert demag["hcj_hot_ka_m"] == 495.00000000000006
+    assert demag["loadline_summary"]["first_unsafe_gap_m"] == 0.008
+    assert demag["loadline_summary"]["safe_prefix_count"] == 4
+    assert demag["loadline_summary"]["largest_safe_gap_m"] == 0.004
+    assert demag["loadline_summary"]["risk_label"] == "red"
+    assert demag["loadline_summary"]["risk_summary"]["schema_version"] == "elf-python-pm-loadline-risk-summary/v1"
+    assert demag["loadline_summary"]["minimum_demag_margin_A_per_m"] < 0.0
+    assert all(demag["loadline_summary"]["checks"].values())
+    assert [row["safe_against_knee"] for row in demag["loadline_sweep"]] == [True, True, True, True, False]
+    assert demag["elf_step_contract"]["schema_version"] == "elf-python-pm-demag-hbrm-hbcn-contract/v1"
+    assert demag["elf_step_contract"]["lint_tool"] == "elf_python_pm_demag_step_lint"
+    assert demag["elf_step_contract"]["required_hbcn_steps"] == [0, 1, 2]
+    assert demag["elf_step_contract"]["metadata_gate"] == "pm_loadline_metadata_gate"
+    assert demag["elf_step_contract"]["radia_ngsolve_gate"] == "pm_recoil_demag_step_summary"
+    assert demag["elf_step_contract"]["loadline_gate"] == "pm_temperature_demag_sweep_summary"
+    assert "step1_H_A_per_m" in demag["elf_step_contract"]["recommended_observable_keys"]
+    assert "recoil_remanence_ratio_proxy" in demag["elf_step_contract"]["recommended_observable_keys"]
+    assert demag["elf_step_contract"]["slot46_reference"]["first_unsafe_gap_m"] == 0.008
+    assert demag["elf_step_contract"]["slot46_reference"]["safe_prefix_count"] == 4
+    assert demag["elf_step_contract"]["slot102_reference"]["irreversible_demag"] is True
+    assert demag["elf_step_contract"]["slot102_reference"]["recoil_remanence_ratio_proxy"] == 0.8
+    assert demag["fault_current_screening"]["schema_version"] == "elf-python-motor-fault-current-demag-screening/v1"
+    assert demag["fault_current_screening"]["negative_id_is_demag_direction"] is True
+    assert "short_circuit_operating_point" in demag["fault_current_screening"]["recommended_radia_ngsolve_gates"]
+    assert "field_weakening_speed_capability" in demag["fault_current_screening"]["recommended_radia_ngsolve_gates"]
+    assert "pm_recoil_demag_step_summary" in demag["fault_current_screening"]["recommended_radia_ngsolve_gates"]
+    assert "d_axis_demag_fraction" in demag["fault_current_screening"]["recommended_observable_keys"]
+    assert "field_probe" in demag["fault_current_screening"]["recommended_observable_keys"]
+    assert "recoil_remanence_ratio_proxy" in demag["fault_current_screening"]["recommended_observable_keys"]
+    assert demag["bem_source_balance_contract"]["schema_version"] == "elf-python-pm-bem-source-balance-contract/v1"
+    assert demag["bem_source_balance_contract"]["metadata_gate"] == "pm_bem_surface_normal_metadata_gate"
+    assert demag["bem_source_balance_contract"]["balance_gate"] == "pm_bem_surface_source_balance_gate"
+    assert demag["bem_source_balance_contract"]["signed_charge_proxy"] == "sum_i area_i * dot(M_i, n_i)"
+    assert demag["bem_source_balance_contract"]["expected_normal_convention"] == "outward_from_magnet"
+    assert demag["bem_source_balance_contract"]["source_convention"] == "sigma_m_equals_m_dot_n"
+    assert demag["bem_source_balance_contract"]["source_balance_unit"] == "area_weighted_m_dot_n"
+    assert demag["bem_source_balance_contract"]["signed_charge_balance_rel_tol"] == 1.0e-9
+    assert "normal_unit_vector" in demag["bem_source_balance_contract"]["required_row_keys"]
+    assert "surface_source_artifact_id" in demag["bem_source_balance_contract"]["required_row_keys"]
+    assert "magnetization_source_id" in demag["bem_source_balance_contract"]["required_row_keys"]
+    assert "material_id" in demag["bem_source_balance_contract"]["required_row_keys"]
+    assert "material_name" in demag["bem_source_balance_contract"]["required_row_keys"]
+    assert "surface_mesh_id" in demag["bem_source_balance_contract"]["required_summary_keys"]
+    assert "surface_mesh_digest" in demag["bem_source_balance_contract"]["required_summary_keys"]
+    assert "surface_row_count" in demag["bem_source_balance_contract"]["required_summary_keys"]
+    assert "source_balance_artifact_id" in demag["bem_source_balance_contract"]["required_summary_keys"]
+    assert "source_balance_digest" in demag["bem_source_balance_contract"]["required_summary_keys"]
+    assert "source_convention" in demag["bem_source_balance_contract"]["required_summary_keys"]
+    assert "expected_surface_source_artifact_id" in demag["bem_source_balance_contract"]["required_summary_keys"]
+    assert "expected_magnetization_source_id" in demag["bem_source_balance_contract"]["required_summary_keys"]
+    assert "expected_material_id" in demag["bem_source_balance_contract"]["required_summary_keys"]
+    assert "expected_material_name" in demag["bem_source_balance_contract"]["required_summary_keys"]
+    assert "total_area_m2" in demag["bem_source_balance_contract"]["required_summary_keys"]
+    assert "source_balance_unit" in demag["bem_source_balance_contract"]["required_summary_keys"]
+    assert "open surface" in demag["bem_source_balance_contract"]["negative_controls"]
+    assert "normal_convention not outward_from_magnet" in demag["bem_source_balance_contract"]["negative_controls"]
+    assert "stale surface_mesh_digest" in demag["bem_source_balance_contract"]["negative_controls"]
+    assert "wrong surface_row_count" in demag["bem_source_balance_contract"]["negative_controls"]
+    assert "stale source_balance_digest" in demag["bem_source_balance_contract"]["negative_controls"]
+    assert "wrong source_convention" in demag["bem_source_balance_contract"]["negative_controls"]
+    assert "stale surface_source_artifact_id" in demag["bem_source_balance_contract"]["negative_controls"]
+    assert "missing magnetization_source_id" in demag["bem_source_balance_contract"]["negative_controls"]
+    assert "stale material_name" in demag["bem_source_balance_contract"]["negative_controls"]
+    assert "missing total_area_m2" in demag["bem_source_balance_contract"]["negative_controls"]
+    assert demag["run_result_loadline_handoff"]["schema_version"] == "elf-python-run-result-loadline-handoff/v1"
+    assert demag["run_result_loadline_handoff"]["row_identity"] == "case_id"
+    assert "elf_python_run_result_parse_path" in demag["run_result_loadline_handoff"]["parser_tools"]
+    assert "H_pm_A_per_m" in demag["run_result_loadline_handoff"]["required_normalized_columns"]
+    assert demag["run_result_loadline_handoff"]["metadata_gate"] == "pm_loadline_metadata_gate"
+    assert demag["run_result_loadline_handoff"]["loadline_gate"] == "pm_temperature_demag_sweep_summary"
+    assert demag["run_result_loadline_handoff"]["recoil_step_gate"] == "pm_recoil_demag_step_summary"
+    assert "missing case_id" in demag["run_result_loadline_handoff"]["negative_controls"]
+    assert "wrong h_field_unit" in demag["run_result_loadline_handoff"]["negative_controls"]
+    assert demag["demag_package_handoff"]["schema_version"] == "elf-python-demag-package-handoff/v1"
+    assert demag["demag_package_handoff"]["package_gate"] == "pm_demag_package_identity_gate"
+    assert demag["demag_package_handoff"]["row_identity"] == ["case_id", "magnet_id"]
+    assert demag["demag_package_handoff"]["required_artifacts"] == [
+        "run_result",
+        "loadline_metadata",
+        "bem_surface",
+        "recoil_steps",
+    ]
+    assert "H_knee_A_per_m" in demag["demag_package_handoff"]["required_run_result_columns"]
+    assert demag["demag_package_handoff"]["source_gates"]["run_result"] == "elf_python_run_result_parse_path"
+    assert demag["demag_package_handoff"]["source_gates"]["recoil_steps"] == "pm_recoil_demag_three_step_gate"
+    assert "stale magnet_id" in demag["demag_package_handoff"]["negative_controls"]
+    assert "recoil steps missing step 2" in demag["demag_package_handoff"]["negative_controls"]
+    assert demag["demag_margin_screening_package"]["schema_version"] == "elf-python-demag-margin-screening-package/v1"
+    assert demag["demag_margin_screening_package"]["package_gate"] == "pm_demag_margin_screening_package_gate"
+    assert demag["demag_margin_screening_package"]["manifest_gate"] == "pm_demag_margin_screening_package_gate"
+    assert demag["demag_margin_screening_package"]["row_identity"] == ["case_id", "magnet_id", "temperature_C"]
+    assert demag["demag_margin_screening_package"]["step_identity_keys"] == [
+        "load_step_id",
+        "fault_step_id",
+        "demag_step_id",
+    ]
+    assert "HBRM/HBCN demag evaluation" in demag["demag_margin_screening_package"]["step_identity_contract"]
+    assert "stale solver step" in demag["demag_margin_screening_package"]["step_identity_contract"]
+    assert demag["demag_margin_screening_package"]["required_artifacts"] == [
+        "loadline_sweep",
+        "fault_current_screening",
+        "bem_source_balance",
+        "demag_package",
+    ]
+    assert demag["demag_margin_screening_package"]["source_gates"]["demag_package"] == "pm_demag_package_identity_gate"
+    assert demag["demag_margin_screening_package"]["bem_source_balance_identity_keys"] == [
+        "source_balance_artifact_id",
+        "source_balance_digest",
+        "source_convention",
+    ]
+    assert "source-balance artifact id" in demag["demag_margin_screening_package"]["bem_source_balance_identity_contract"]
+    assert "field_probe" in demag["demag_margin_screening_package"]["required_fault_observables"]
+    assert demag["demag_margin_screening_package"]["field_probe_identity_keys"] == [
+        "field_probe_id",
+        "field_probe_family",
+        "observation_region_id",
+        "field_probe_geometry_digest",
+        "field_probe_point_xyz_m",
+        "observation_component",
+        "field_axis_convention",
+        "field_sign_convention",
+        "field_probe_method",
+        "averaging_rule",
+    ]
+    assert "demag-axis field component" in demag["demag_margin_screening_package"]["field_probe_identity_contract"]
+    assert "probe geometry digest" in demag["demag_margin_screening_package"]["field_probe_identity_contract"]
+    assert "representative probe point" in demag["demag_margin_screening_package"]["field_probe_identity_contract"]
+    assert "field-axis convention" in demag["demag_margin_screening_package"]["field_probe_identity_contract"]
+    assert "sign convention" in demag["demag_margin_screening_package"]["field_probe_identity_contract"]
+    assert "probe/export method" in demag["demag_margin_screening_package"]["field_probe_identity_contract"]
+    assert demag["demag_margin_screening_package"]["field_probe_output_identity_keys"] == [
+        "field_probe_output_artifact_id",
+        "field_probe_output_digest",
+        "field_probe_output_path",
+    ]
+    assert (
+        "exported probe table/result artifact id"
+        in demag["demag_margin_screening_package"]["field_probe_output_identity_contract"]
+    )
+    assert "total_area_m2" in demag["demag_margin_screening_package"]["required_bem_source_balance_summary_keys"]
+    assert "surface_mesh_id" in demag["demag_margin_screening_package"]["required_bem_source_balance_summary_keys"]
+    assert "surface_mesh_digest" in demag["demag_margin_screening_package"]["required_bem_source_balance_summary_keys"]
+    assert "surface_row_count" in demag["demag_margin_screening_package"]["required_bem_source_balance_summary_keys"]
+    assert "source_balance_artifact_id" in demag["demag_margin_screening_package"]["required_bem_source_balance_summary_keys"]
+    assert "source_balance_digest" in demag["demag_margin_screening_package"]["required_bem_source_balance_summary_keys"]
+    assert "source_convention" in demag["demag_margin_screening_package"]["required_bem_source_balance_summary_keys"]
+    assert "expected_bem_normal_convention" in demag["demag_margin_screening_package"]["required_bem_source_balance_summary_keys"]
+    assert "signed_charge_balance_abs" in demag["demag_margin_screening_package"]["required_bem_source_balance_summary_keys"]
+    assert "stale temperature_C" in demag["demag_margin_screening_package"]["negative_controls"]
+    assert "stale field_probe_id" in demag["demag_margin_screening_package"]["negative_controls"]
+    assert "wrong field_probe_family" in demag["demag_margin_screening_package"]["negative_controls"]
+    assert "stale field_probe_geometry_digest" in demag["demag_margin_screening_package"]["negative_controls"]
+    assert "missing field_probe_point_xyz_m" in demag["demag_margin_screening_package"]["negative_controls"]
+    assert "wrong observation_component" in demag["demag_margin_screening_package"]["negative_controls"]
+    assert "wrong field_axis_convention" in demag["demag_margin_screening_package"]["negative_controls"]
+    assert "wrong field_probe_method" in demag["demag_margin_screening_package"]["negative_controls"]
+    assert "missing field_probe_method" in demag["demag_margin_screening_package"]["negative_controls"]
+    assert "wrong field_sign_convention" in demag["demag_margin_screening_package"]["negative_controls"]
+    assert "missing averaging_rule" in demag["demag_margin_screening_package"]["negative_controls"]
+    assert "stale field_probe_output_artifact_id" in demag["demag_margin_screening_package"]["negative_controls"]
+    assert "stale field_probe_output_digest" in demag["demag_margin_screening_package"]["negative_controls"]
+    assert "missing field_probe_output_path" in demag["demag_margin_screening_package"]["negative_controls"]
+    assert "stale fault_step_id" in demag["demag_margin_screening_package"]["negative_controls"]
+    assert "missing demag_step_id" in demag["demag_margin_screening_package"]["negative_controls"]
+    assert "stale magnet_id" in demag["demag_margin_screening_package"]["negative_controls"]
+    assert "missing BEM source unit" in demag["demag_margin_screening_package"]["negative_controls"]
+    assert "missing BEM surface mesh id" in demag["demag_margin_screening_package"]["negative_controls"]
+    assert "stale BEM surface mesh digest" in demag["demag_margin_screening_package"]["negative_controls"]
+    assert "wrong BEM surface row count" in demag["demag_margin_screening_package"]["negative_controls"]
+    assert "missing BEM source-balance artifact id" in demag["demag_margin_screening_package"]["negative_controls"]
+    assert "stale BEM source-balance digest" in demag["demag_margin_screening_package"]["negative_controls"]
+    assert "wrong BEM source convention" in demag["demag_margin_screening_package"]["negative_controls"]
+    assert "wrong BEM normal convention" in demag["demag_margin_screening_package"]["negative_controls"]
+    assert demag["demag_margin_screening_package"]["slot166_reference"]["case_id"] == "demag_case_166"
+    assert demag["demag_margin_screening_package"]["slot166_reference"]["magnet_id"] == "pm_spm_A"
+    assert demag["demag_margin_screening_package"]["slot166_reference"]["radia_ngsolve_gate"] == "pm_demag_margin_screening_package_gate"
+    assert (
+        demag["demag_margin_screening_package"]["slot166_reference"]["field_probe_id"]
+        == "elf_slot286_field_probe_pm_spm_A_demag_axis_v1"
+    )
+    assert (
+        demag["demag_margin_screening_package"]["slot166_reference"]["source_balance_digest"]
+        == "sha256:bem_source_balance_pm_spm_A_v1"
+    )
+    assert (
+        demag["demag_margin_screening_package"]["slot166_reference"]["surface_mesh_digest"]
+        == "sha256:bem_surface_mesh_pm_spm_A_v1"
+    )
+    assert demag["demag_margin_screening_package"]["slot166_reference"]["surface_row_count"] == 6
+    assert (
+        demag["demag_margin_screening_package"]["slot166_reference"]["source_convention"]
+        == "sigma_m_equals_m_dot_n"
+    )
+    assert (
+        demag["demag_margin_screening_package"]["slot166_reference"]["field_probe_family"]
+        == "elf_demag_margin_field_probe"
+    )
+    assert (
+        demag["demag_margin_screening_package"]["slot166_reference"]["field_probe_geometry_digest"]
+        == "sha256:elf_slot326_field_probe_volume_pm_spm_A"
+    )
+    assert (
+        demag["demag_margin_screening_package"]["slot166_reference"]["field_probe_point_xyz_m"]
+        == [0.028, 0.0, 0.0]
+    )
+    assert (
+        demag["demag_margin_screening_package"]["slot166_reference"]["observation_component"]
+        == "H_parallel_demag_axis"
+    )
+    assert (
+        demag["demag_margin_screening_package"]["slot166_reference"]["field_axis_convention"]
+        == "magnetization_axis_positive"
+    )
+    assert (
+        demag["demag_margin_screening_package"]["slot166_reference"]["field_sign_convention"]
+        == "negative_h_parallel_is_demag"
+    )
+    assert (
+        demag["demag_margin_screening_package"]["slot166_reference"][
+            "field_probe_output_artifact_id"
+        ]
+        == "elf_slot294_field_probe_table_pm_spm_A_v1"
+    )
+    assert (
+        demag["demag_margin_screening_package"]["slot166_reference"][
+            "field_probe_output_digest"
+        ]
+        == "sha256:elf_slot294_field_probe_table_pm_spm_A"
+    )
+    assert (
+        demag["demag_margin_screening_package"]["slot166_reference"]["load_step_id"]
+        == "elf_slot342_loadline_hot_120c_v1"
+    )
+    assert (
+        demag["demag_margin_screening_package"]["slot166_reference"]["fault_step_id"]
+        == "elf_slot342_negative_id_fault_step_v1"
+    )
+    assert (
+        demag["demag_margin_screening_package"]["slot166_reference"]["demag_step_id"]
+        == "elf_slot342_hbcn_demag_step2_v1"
+    )
+    assert demag["demag_margin_screening_package"]["material_state_keys"] == [
+        "Br_T",
+        "H_knee_A_per_m",
+        "recoil_mu_r",
+    ]
+    assert demag["demag_margin_screening_package"]["material_state_identity_keys"] == [
+        "material_state_artifact_id",
+        "material_state_digest",
+    ]
+    assert "material-state tuple" in demag["demag_margin_screening_package"]["notebook_policy"]
+    assert "material-state artifact id/digest" in demag["demag_margin_screening_package"]["notebook_policy"]
+    assert "field-probe observation identity" in demag["demag_margin_screening_package"]["notebook_policy"]
+    assert "field-probe geometry identity" in demag["demag_margin_screening_package"]["notebook_policy"]
+    assert "field-probe output artifact identity" in demag["demag_margin_screening_package"]["notebook_policy"]
+    assert "load/fault/demag step ids" in demag["demag_margin_screening_package"]["notebook_policy"]
+    assert any("stale Br_T" in item for item in demag["demag_margin_screening_package"]["negative_controls"])
+    assert "stale material_state_artifact_id" in demag["demag_margin_screening_package"]["negative_controls"]
+    assert "stale material_state_digest" in demag["demag_margin_screening_package"]["negative_controls"]
+    assert "missing material_state_artifact_id" in demag["demag_margin_screening_package"]["negative_controls"]
+    assert (
+        demag["demag_margin_screening_package"]["slot166_reference"]["material_state_artifact_id"]
+        == "elf_slot334_pm_spm_A_hbrm_hbcn_state_v1.json"
+    )
+    assert (
+        demag["demag_margin_screening_package"]["slot166_reference"]["material_state_digest"]
+        == "sha256:elf_slot334_pm_spm_A_hbrm_hbcn_state_v1"
+    )
+    assert "loadline_checks" in demag
+    assert any("pm_loadline_metadata_gate" in item for item in demag["loadline_checks"])
+    assert any("pm_bem_surface_normal_metadata_gate" in item for item in demag["loadline_checks"])
+    assert any("pm_bem_surface_source_balance_gate" in item for item in demag["loadline_checks"])
+    assert any(
+        "surface_mesh_id" in item
+        and "surface_mesh_digest" in item
+        and "source_balance_artifact_id" in item
+        for item in demag["loadline_checks"]
+    )
+    assert any("surface_source_artifact_id" in item and "material_name" in item for item in demag["loadline_checks"])
+    assert any("total_area_m2" in item and "source_balance_unit" in item for item in demag["loadline_checks"])
+    assert any("permeance coefficient" in item for item in demag["loadline_checks"])
+    assert any("HBRM/HBCN" in item for item in demag["loadline_checks"])
+    assert any("Br_T" in item and "recoil_mu_r" in item for item in demag["loadline_checks"])
+    assert any("field_probe_output_artifact_id" in item for item in demag["loadline_checks"])
+    assert any("pm_recoil_demag_step_summary" in item for item in demag["loadline_checks"])
+    assert any("negative-Id" in item for item in demag["loadline_checks"])
+    assert any("surface source balance" in item for item in demag["quality_gates"])
     demag_text = format_motor_demag_margin_plan(demag)
     assert "Demag Margin Plan" in demag_text
     assert "field_probe" in demag_text
+    assert "Load-Line Sweep" in demag_text
+    assert "safe prefix count" in demag_text
+    assert "load-line risk label" in demag_text
+    assert "first unsafe gap" in demag_text
+    assert "Load-Line Checks" in demag_text
+    assert "ELF/MAGIC Step Contract" in demag_text
+    assert "pm_loadline_metadata_gate" in demag_text
+    assert "pm_bem_surface_normal_metadata_gate" in demag_text
+    assert "HBRM role" in demag_text
+    assert "HBCN role" in demag_text
+    assert "pm_recoil_demag_step_summary" in demag_text
+    assert "pm_temperature_demag_sweep_summary" in demag_text
+    assert "recoil_remanence_ratio_proxy" in demag_text
+    assert "Fault-Current Demag Screening" in demag_text
+    assert "short_circuit_operating_point" in demag_text
+    assert "PM BEM Source Balance Contract" in demag_text
+    assert "pm_bem_surface_source_balance_gate" in demag_text
+    assert "sum_i area_i * dot(M_i, n_i)" in demag_text
+    assert "source balance unit" in demag_text
+    assert "required summary keys" in demag_text
+    assert "surface_source_artifact_id" in demag_text
+    assert "magnetization_source_id" in demag_text
+    assert "expected_material_name" in demag_text
+    assert "total_area_m2" in demag_text
+    assert "H_m=(B_gap-Br)/(mu0*mu_rec)" in demag_text
+    assert "RunResult Load-Line Handoff" in demag_text
+    assert "elf_python_run_result_parse_path" in demag_text
+    assert "H_pm_A_per_m" in demag_text
+    assert "missing case_id" in demag_text
+    assert "Demag Package Handoff" in demag_text
+    assert "pm_demag_package_identity_gate" in demag_text
+    assert "magnet_id" in demag_text
+    assert "recoil steps missing step 2" in demag_text
+    assert "Demag Margin Screening Package" in demag_text
+    assert "pm_demag_margin_screening_package_gate" in demag_text
+    assert "fault_current_screening" in demag_text
+    assert "field-probe identity keys" in demag_text
+    assert "field_probe_id" in demag_text
+    assert "observation_component" in demag_text
+    assert "averaging_rule" in demag_text
+    assert "demag-axis field component" in demag_text
+    assert "field-probe output identity keys" in demag_text
+    assert "field_probe_output_artifact_id" in demag_text
+    assert "field_probe_output_digest" in demag_text
+    assert "field_probe_output_path" in demag_text
+    assert "step identity keys" in demag_text
+    assert "load_step_id" in demag_text
+    assert "fault_step_id" in demag_text
+    assert "demag_step_id" in demag_text
+    assert "stale solver step" in demag_text
+    assert "required BEM source-balance summary keys" in demag_text
+    assert "stale temperature_C" in demag_text
+    assert "stale field_probe_id" in demag_text
+    assert "missing averaging_rule" in demag_text
+    assert "stale field_probe_output_artifact_id" in demag_text
 
     cycle = build_motor_drive_cycle_plan("robot_drone")
     assert cycle["schema_version"] == "elf-python-motor-drive-cycle-plan/v1"
     assert len(cycle["operating_points"]) == 4
     assert abs(sum(point["weight"] for point in cycle["operating_points"]) - 1.0) < 1.0e-12
     assert "cycle_efficiency" in cycle["weighted_outputs"]
+    assert any("drive_cycle_weighted_efficiency_gate" in gate for gate in cycle["quality_gates"])
     cycle_text = format_motor_drive_cycle_plan(cycle)
     assert "Drive Cycle" in cycle_text
     assert "weighted_total_loss_w" in cycle_text
@@ -739,6 +1226,35 @@ def test_python_facade_schema_lint_and_generation_plan(tmp_path):
     assert "ld_lq" in observable_contract["observables"]
     assert "ld_lq_value" in observable_contract["parser_observable_keys"]
     assert "mtpa" in observable_contract["age_targets"]
+    force_contract = build_motor_observable_contract("linear_pm", "force_gap_sweep")
+    assert force_contract["study"] == "force_gap_sweep"
+    assert "force" in force_contract["observables"]
+    assert "force_value" in force_contract["parser_observable_keys"]
+    assert "SOL FORC|SOL FORT|SOL FIXB" in force_contract["elf_markers"]["force"]
+    assert force_contract["force_result_contract"]["schema_version"] == "elf-python-force-observable-package-contract/v1"
+    assert "quantity_dimension" in force_contract["force_result_contract"]["required_metadata"]
+    assert "result_set_id" in force_contract["force_result_contract"]["required_metadata"]
+    assert "run_artifact_id" in force_contract["force_result_contract"]["required_metadata"]
+    assert "result_revision_id" in force_contract["force_result_contract"]["required_metadata"]
+    assert "observable_id" in force_contract["force_result_contract"]["required_metadata"]
+    assert "N/m" in force_contract["force_result_contract"]["allowed_force_units"]
+    assert "parallel_wire_force_result_package_gate" in force_contract["force_result_contract"]["public_gate_candidates"]
+    assert "maxwell_stress_surface_package_gate" in force_contract["force_result_contract"]["public_gate_candidates"]
+    assert "stale run_artifact_id or result_revision_id" in force_contract["force_result_contract"]["negative_controls"]
+    assert "dipole-limit F*s^4 scaling when applicable" in force_contract["validation_checks"]
+    assert "force quantity dimension declared before comparison" in force_contract["validation_checks"]
+    assert "coaxial_pm_force_gap_sweep" in force_contract["age_targets"]
+    force_contract_text = format_motor_observable_contract(force_contract)
+    assert "Force Result Package" in force_contract_text
+    assert "2d_per_length" in force_contract_text
+    assert "parallel_wire_force_result_package_gate" in force_contract_text
+    assert "maxwell_stress_surface_package_gate" in force_contract_text
+    flux_contract = build_motor_observable_contract("spm", "static_flux_linkage")
+    assert "mutual-flux sign and current-scaling gate" in flux_contract["validation_checks"]
+    back_emf_contract = build_motor_observable_contract("spm", "back_emf_speed_sweep")
+    assert "flux_linkage_back_emf_derivative_gate before Ke export" in back_emf_contract["validation_checks"]
+    assert "flux_linkage_back_emf_derivative_gate" in back_emf_contract["age_targets"]
+    assert "flux_linkage_back_emf_derivative_gate" in format_motor_observable_contract(back_emf_contract)
 
     market = build_motor_market_brief("robot_drone", "spm", "outer_rotor")
     assert market["target_market"] == "robot_drone"
@@ -1598,6 +2114,52 @@ def test_public_policy_lint_passes():
 def test_usage_topic_nonempty():
     from elf_mcp_server.elf_knowledge import get_elf_documentation
     assert len(get_elf_documentation("overview")) > 100
+
+
+def test_force_gap_contract_topic_public_safe():
+    from elf_mcp_server.elf_knowledge import get_elf_documentation
+
+    doc = get_elf_documentation("force_gap_contract")
+    assert "coaxial_pm_force_gap_sweep_gate" in doc
+    assert "gap_m" in doc
+    assert "force_N" in doc
+    assert "result_set_id" in doc
+    assert "observable_id" in doc
+    assert "quantity_dimension" in doc
+    assert "N/m" in doc
+    assert "SOL FORT" in doc
+    assert "1/g^4" in doc
+    assert "product result files" in doc
+    assert "S:" + "\\" not in doc
+    assert "C:" + "\\temp" not in doc
+    assert "_cross" + "val" not in doc
+
+
+def test_maxwell_stress_surface_package_topic_public_safe():
+    from elf_mcp_server.elf_knowledge import get_elf_documentation
+
+    doc = get_elf_documentation("maxwell_stress_surface_package")
+    assert "maxwell_stress_surface_package_gate" in doc
+    assert "stress_surface_id" in doc
+    assert "result_set_id" in doc
+    assert "observable_id" in doc
+    assert "fort_z_force" in doc
+    assert "package `axis`" in doc
+    assert "closed_surface" in doc
+    assert "normal_orientation" in doc
+    assert "expected_normal_orientation" in doc
+    assert "formulation_id" in doc
+    assert "kernel_family" in doc
+    assert "singular_treatment" in doc
+    assert "expects a formulation or kernel" in doc
+    assert "sign_convention" in doc
+    assert "quantity_dimension" in doc
+    assert "N/m" in doc
+    assert "SOL FORT" in doc
+    assert "product result files" in doc
+    assert "S:" + "\\" not in doc
+    assert "C:" + "\\temp" not in doc
+    assert "_cross" + "val" not in doc
 
 
 def test_motor_radia_bridge_topic_public_safe():
