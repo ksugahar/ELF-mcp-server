@@ -117,6 +117,7 @@ from .python_facade import (
     parse_run_result_payload,
     parse_run_result_path,
     format_deck_lint,
+    format_pm_demag_step_lint,
     format_2d_motor_template,
     format_induction_motor_slip_sweep_plan,
     format_meg_generation_plan,
@@ -158,6 +159,7 @@ from .python_facade import (
     format_run_result_parse,
     format_run_result_path_parse,
     lint_mai_text,
+    lint_pm_demag_step_contract,
     python_api_schema,
     validate_motor_spec_dict,
 )
@@ -191,7 +193,7 @@ mcp = FastMCP("elf-mcp-server")
 # ============================================================
 
 _TOOL_CATALOG = [
-    ("elf_usage(topic)", "Curated documentation across 31 topics: "
+    ("elf_usage(topic)", "Curated documentation across 32 topics: "
                           ".mai/.mei/.meg formats, MAGIC/ELFIN/BEAM "
                           "solvers, element conventions, B-H, IPM motor, "
                           "radia motor bridge, SOL MOMC AC, cln_extraction, "
@@ -220,10 +222,10 @@ _TOOL_CATALOG = [
                                     "policy, object vocabulary, call order, "
                                     "deck lint, MEG generation, backend "
                                     "contract, validation, and examples"),
-    ("elf_python_api_schema / motor_spec_lint / deck_lint / run_contract / "
+    ("elf_python_api_schema / motor_spec_lint / deck_lint / pm_demag_step_lint / run_contract / "
      "meg_generation_plan / 2d_motor_template",
                             "Typed public Python facade: MotorSpec schema, "
-                            "deck lint, local backend contract, MEG "
+                            "deck lint, PM demag step lint, local backend contract, MEG "
                             "generation routing across Cubit, Netgen 2D, "
                             "and constrained LLM 2D motor templates"),
     ("elf_python_motor_design_plan / motor_sweep_matrix / motor_observable_contract",
@@ -308,16 +310,16 @@ _RELATED_PUBLIC_PACKAGES = [
 
 @mcp.tool()
 def elf_overview() -> dict:
-    """RECOMMENDED FIRST CALL. Catalog of ELF MCP's 84 tools + 1
+    """RECOMMENDED FIRST CALL. Catalog of ELF MCP's 85 tools + 1
     prompt, with public-safe routing hints for MCP clients.
 
     Returns:
-        dict with `tool_families` (curated 84-tool grouping), `n_tools`,
+        dict with `tool_families` (curated 85-tool grouping), `n_tools`,
         public boundary notes, recommended calls, and public companion package
         hints.
     """
     return {
-        "n_tools": 84,
+        "n_tools": 85,
         "n_prompts": 1,
         "tool_families": [
             {"signature": sig, "description": desc}
@@ -427,6 +429,10 @@ def elf_overview() -> dict:
             {
                 "goal": "Lint a public .mai deck against requested observables before a local run",
                 "call": "elf_python_deck_lint(mai_path='application/motor/pm_cosine_pickup_72/pm001/pm001.mai', requested_observables='flux_linkage,back_emf_constant')",
+            },
+            {
+                "goal": "Check HBRM/HBCN PM demagnetization 3-step deck contract before a local run",
+                "call": "elf_python_pm_demag_step_lint(mai_path='application/motor/spm_loop_10/spl001/spl001.mai')",
             },
             {
                 "goal": "Choose a .meg generation backend for a 2D/3D motor prompt",
@@ -592,7 +598,7 @@ def elf_overview() -> dict:
             for n, inst, gh, d in _RELATED_PUBLIC_PACKAGES
         ],
         "next_step_hint":
-            "Call elf_usage(topic='all') for the 31 curated topic "
+            "Call elf_usage(topic='all') for the 32 curated topic "
             "catalogue, elf_plan_workflow('goal') for a workflow plan, "
             "elf_mcp_readiness() for release-quality gates, "
             "elf_motor_readiness() for motor-specific coverage and validation gaps, "
@@ -614,6 +620,7 @@ def elf_overview() -> dict:
             "elf_python_interface_design() for the public Python facade contract, "
             "elf_python_api_manual() for the LLM-oriented API manual, "
             "elf_python_api_schema() / elf_python_deck_lint() / "
+            "elf_python_pm_demag_step_lint() / "
             "elf_python_run_contract() for concrete Python facade contracts, "
             "elf_python_meg_generation_plan() for Cubit/Netgen/LLM 2D MEG routing, "
             "elf_python_2d_motor_template() for constrained 2D motor drafting, "
@@ -724,6 +731,9 @@ def elf_usage(topic: str = "all") -> str:
                                  elftypes), Fortran-ABI calling convention,
                                  end-to-end call sequence, key function table,
                                  _R return variants, common pitfalls
+            "live_drive"       - Open MAGIC kernel live-drive note
+            "force_gap_contract" - PM force-gap observable contract for
+                                 ELF/MAGIC force rows before open validation
     """
     return get_elf_documentation(topic)
 
@@ -1611,6 +1621,47 @@ def elf_python_deck_lint(
 
 
 @mcp.tool()
+def elf_python_pm_demag_step_lint(
+    mai_path: str = "",
+    mai_text: str = "",
+) -> str:
+    """
+    Dry-run lint an ELF/MAGIC PM demagnetization `.mai` deck.
+
+    The lint checks the HBRM recoil definition and HBCN step-to-B-H-curve
+    mapping for the standard 0/1/2 demagnetization workflow. It does not run
+    MAGIC and does not read private solver outputs.
+
+    Args:
+        mai_path: Public sample `.mai` path. `.meg` is accepted and mapped to
+            the sibling `.mai`.
+        mai_text: Inline .mai text. Used when `mai_path` is omitted.
+
+    Returns:
+        Markdown PASS/FAIL/WARN report for the PM demagnetization step contract.
+    """
+    source = "inline"
+    text = mai_text
+    if mai_path.strip():
+        path = mai_path.strip()
+        if path.lower().endswith(".meg"):
+            path = path[:-4] + ".mai"
+        deck = get_sample_deck(path)
+        if deck.get("error"):
+            return (
+                "# ELF Python PM Demag Step Lint\n\n"
+                "- status: `FAIL`\n"
+                f"- issue: {deck['error']}"
+            )
+        source = deck["path"]
+        text = deck["text"]
+    if not text.strip():
+        return "# ELF Python PM Demag Step Lint\n\n- status: `FAIL`\n- issue: provide mai_path or mai_text"
+    report = lint_pm_demag_step_contract(text)
+    return f"- source: `{source}`\n\n" + format_pm_demag_step_lint(report)
+
+
+@mcp.tool()
 def elf_python_run_contract(
     goal: str,
     motor_type: str = "spm",
@@ -1979,7 +2030,13 @@ def elf_python_motor_demag_margin_plan(
     br_20c_t: float = 1.2,
     br_temp_coeff_pct_per_k: float = -0.11,
     hcj_ka_m: float = 900.0,
+    hcj_temp_coeff_pct_per_k: float = -0.45,
     id_min_a_peak: float = -40.0,
+    magnet_len_m: float = 0.004,
+    gap_csv_m: str = "0.0005,0.001,0.002,0.004,0.008",
+    iron_path_m: float = 0.08,
+    iron_mu_r: float = 1000.0,
+    mu_rec: float = 1.05,
 ) -> str:
     """
     Build a PM demagnetization margin screening contract.
@@ -1994,11 +2051,18 @@ def elf_python_motor_demag_margin_plan(
         br_20c_t: Room-temperature remanence.
         br_temp_coeff_pct_per_k: Remanence temperature coefficient.
         hcj_ka_m: Coercivity reference.
+        hcj_temp_coeff_pct_per_k: Coercivity temperature coefficient.
         id_min_a_peak: Worst negative d-axis current candidate.
+        magnet_len_m: Magnet length along the load line.
+        gap_csv_m: Comma-separated candidate gap lengths.
+        iron_path_m: Effective iron path length.
+        iron_mu_r: Effective iron relative permeability.
+        mu_rec: Magnet recoil relative permeability.
 
     Returns:
         Markdown demagnetization margin plan.
     """
+    gaps_m = tuple(float(item.strip()) for item in gap_csv_m.split(",") if item.strip())
     return format_motor_demag_margin_plan(
         build_motor_demag_margin_plan(
             motor_type=motor_type,
@@ -2006,7 +2070,13 @@ def elf_python_motor_demag_margin_plan(
             br_20c_t=br_20c_t,
             br_temp_coeff_pct_per_k=br_temp_coeff_pct_per_k,
             hcj_ka_m=hcj_ka_m,
+            hcj_temp_coeff_pct_per_k=hcj_temp_coeff_pct_per_k,
             id_min_a_peak=id_min_a_peak,
+            magnet_len_m=magnet_len_m,
+            gaps_m=gaps_m,
+            iron_path_m=iron_path_m,
+            iron_mu_r=iron_mu_r,
+            mu_rec=mu_rec,
         )
     )
 
@@ -2691,8 +2761,8 @@ def elf_python_motor_observable_contract(
     Args:
         motor_type: Motor family.
         study: Study type such as "back_emf_speed_sweep",
-            "static_torque_angle", "dq_inductance", "induction_slip_loss", or
-            "ac_loss_frequency_sweep".
+            "static_torque_angle", "dq_inductance", "force_gap_sweep",
+            "induction_slip_loss", or "ac_loss_frequency_sweep".
 
     Returns:
         Markdown observable contract.
@@ -3508,6 +3578,11 @@ def main():
         )
         assert "status: `PASS`" in deck_lint
         assert "FLUM: `True`" in deck_lint
+        pm_demag_lint = elf_python_pm_demag_step_lint(
+            mai_text="USE MAGIC 3.50\nPRE 1 2\nHBRM 1 1.05 1.2\nHBCN 1 0 1\nHBCN 1 1 1\nHBCN 1 2 1\nEND\nSOL MOME\nEND"
+        )
+        assert "PM Demag Step Lint" in pm_demag_lint
+        assert "status: `PASS`" in pm_demag_lint
         run_contract = elf_python_run_contract(
             goal="SPM motor back EMF sweep",
             motor_type="spm",
@@ -3857,7 +3932,7 @@ def main():
             "treasure_box", "sinusoidal", "anisotropy", "sted",
             "meshing", "convergence", "force_methods", "errors",
             "iemesh", "tools", "cln_extraction", "licensing", "python_api",
-            "live_drive",
+            "live_drive", "force_gap_contract",
         ]
         for t in topics:
             result = elf_usage(t)

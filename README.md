@@ -548,7 +548,7 @@ sol_commands, mei_commands, ipm_motor, motor_radia_bridge, inductance,
 magnetization, examples, meg_export, treasure_box,
 sinusoidal, anisotropy, sted, meshing, convergence,
 force_methods, errors, iemesh, tools, cln_extraction,
-licensing, python_api, live_drive
+licensing, python_api, live_drive, force_gap_contract
 ```
 
 The `cln_extraction` topic documents the 6-step ELF MAGIC -> Cauer Ladder
