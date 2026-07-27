@@ -5,6 +5,8 @@ from __future__ import annotations
 import math
 from collections.abc import Mapping, Sequence
 
+from .v59_identity import validate_source_v59_identity
+
 
 MESH = "bem_duplicatepanel_nonmanifold_normal_solidangle_meshowner_identity"
 NONLINEAR = "nonlinear_bh_relaxation_residual_iteration_material_owner_identity"
@@ -112,7 +114,7 @@ def validate_source_v58_identity(identities: list[object]) -> dict[str, bool]:
         return {}
     meshes = [row[MESH] for row in rows if MESH in row]
     nonlinear = [row[NONLINEAR] for row in rows if NONLINEAR in row]
-    checks: dict[str, bool] = {}
+    checks: dict[str, bool] = validate_source_v59_identity(identities)
     if meshes:
         checks["source_v58_bem_mesh_panel_edge_normal_angle_owner"] = len(meshes) == len(rows) and all(isinstance(item, Mapping) and _mesh_ok(item) for item in meshes)
     if nonlinear:
