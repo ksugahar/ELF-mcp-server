@@ -23,4 +23,4 @@ authoring ELF input files, a guarded user-local Python/ctypes product runner,
 and release-readiness gates for MCP maintainers.
 """
 
-__version__ = "1.63.0"
+__version__ = "1.63.1"

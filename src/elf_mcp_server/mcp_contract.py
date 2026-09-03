@@ -1,14 +1,37 @@
 """Explicit MCP metadata and runtime composition contract."""
 from __future__ import annotations
 
+import sys
 from typing import Any, Iterable
 
-from mcp.types import ToolAnnotations
+from mcp.types import InitializedNotification, ToolAnnotations
 
 from .tool_definitions import TOOL_CONTRACTS
 
 
-SCHEMA = "elf.mcp-server-contract.v3"
+SCHEMA = "elf.mcp-server-contract.v4"
+
+
+def _install_connection_notice(mcp: Any, server_name: str, version: str) -> bool:
+    """Log completed MCP handshakes without touching local product sessions."""
+    low_level = getattr(mcp, "_mcp_server", None)
+    if low_level is None or getattr(low_level, "_elf_connection_notice", False):
+        return False
+    previous = low_level.notification_handlers.get(InitializedNotification)
+
+    async def _on_initialized(notification: InitializedNotification) -> None:
+        print(
+            f"[{server_name}] {version} client initialized; "
+            "no product process was launched or modified",
+            file=sys.stderr,
+            flush=True,
+        )
+        if previous is not None:
+            await previous(notification)
+
+    low_level.notification_handlers[InitializedNotification] = _on_initialized
+    low_level._elf_connection_notice = True
+    return True
 
 
 def apply_tool_contract(
@@ -62,7 +85,12 @@ def apply_tool_contract(
                 f"Use {server_name} for public guidance and guarded user-local product execution. "
                 "Call detect and case_check before product_run; keep raw results local."
             )
-    return {"tools": len(selected), "explicit_contracts": len(contracts)}
+    installed = _install_connection_notice(mcp, server_name, version)
+    return {
+        "tools": len(selected),
+        "explicit_contracts": len(contracts),
+        "connection_notice_installed": int(installed),
+    }
 
 
 def build_runtime_contract(capability_packs: Iterable[str], session_policy: str) -> dict[str, Any]:
@@ -74,6 +102,12 @@ def build_runtime_contract(capability_packs: Iterable[str], session_policy: str)
         "skill_layer": "separate workflow skills",
         "explicit_tool_annotations": True,
         "semantic_output_models": True,
+        "client_connection_visibility": {
+            "initialize_identity": "server name, version, and instructions",
+            "initialized_notification_logged": True,
+            "product_session_side_effect": False,
+        },
+        "archive_extraction_policy": "public runtime does not extract untrusted archives",
         "session_policy": session_policy,
         "protocol_smoke": "initialize + tools/list + resources/list/read + prompts/list/get + representative calls",
     }

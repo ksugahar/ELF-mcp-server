@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from mcp.types import InitializedNotification
+
 from elf_mcp_server import __version__
 from elf_mcp_server.server import elf_agentic_profile, mcp
 
@@ -15,7 +17,11 @@ def test_elf_tools_expose_explicit_runtime_contract() -> None:
     )
     assert mcp._mcp_server.instructions
     assert mcp._mcp_server.version == __version__
-    assert elf_agentic_profile()["runtime_contract"]["explicit_tool_annotations"] is True
+    contract = elf_agentic_profile()["runtime_contract"]
+    assert contract["explicit_tool_annotations"] is True
+    assert contract["client_connection_visibility"]["initialized_notification_logged"] is True
+    assert contract["client_connection_visibility"]["product_session_side_effect"] is False
+    assert InitializedNotification in mcp._mcp_server.notification_handlers
 
 
 def test_mcp_sdk_dependency_stays_on_the_supported_v1_api() -> None:

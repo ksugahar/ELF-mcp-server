@@ -39,7 +39,7 @@ def test_runtime_surface_is_explicit_and_safely_annotated() -> None:
         assert tool.annotations.destructiveHint is contract.destructive
         assert tool.annotations.idempotentHint is contract.idempotent
         assert tool.annotations.openWorldHint is contract.open_world
-        assert tool.meta["elf.contract"] == "elf.mcp-server-contract.v3"
+        assert tool.meta["elf.contract"] == "elf.mcp-server-contract.v4"
         expected_classification = (
             "read-only-external"
             if contract.read_only and contract.open_world
