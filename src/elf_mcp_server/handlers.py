@@ -45,7 +45,11 @@ from .guards import (
     page,
 )
 from .learning_quality import build_balanced_learning_profile
-from .mcp_contract import apply_tool_contract, build_runtime_contract
+from .mcp_contract import (
+    apply_tool_contract,
+    build_runtime_contract,
+    get_client_connection_state,
+)
 from .mcp_resources import register_resources
 from .models import GateResponse, PageResponse, ReadResponse, SearchHit, SearchResponse
 from .runtime import mcp
@@ -747,6 +751,7 @@ def elf_agentic_profile() -> dict:
             ["public-documentation", "input-contracts", "scrubbed-artifact-gates", "local-product-ctypes-execution"],
             "detect and check are non-invasive; product_run uses an isolated Python worker and raw RunResult artifacts remain local",
         ),
+        "client_connection": get_client_connection_state(mcp),
         "reference_runtime_pattern": {
             "runtime_vs_skills": "Keep the fixed ctypes runtime adapter separate from public guidance and external workflow skills.",
             "environment_probe": "Call elf_product_detect without loading the DLL; call elf_overview and elf_mcp_readiness before release claims.",

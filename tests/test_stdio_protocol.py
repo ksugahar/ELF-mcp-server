@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import sys
 from pathlib import Path
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
+from mcp.types import Implementation
 from pydantic import AnyUrl
 
 
@@ -25,11 +27,21 @@ async def _probe_stdio() -> dict:
         env=env,
     )
     async with stdio_client(params) as (read_stream, write_stream):
-        async with ClientSession(read_stream, write_stream) as session:
+        async with ClientSession(
+            read_stream,
+            write_stream,
+            client_info=Implementation(
+                name="cae-lab-elf-probe",
+                title="CAE Lab ELF Probe",
+                version="2026.09",
+            ),
+        ) as session:
             initialized = await session.initialize()
             listed = await session.list_tools()
             tools = listed.tools
             called = await session.call_tool("elf_overview", {})
+            profiled = await session.call_tool("elf_agentic_profile", {})
+            profile_payload = json.loads(profiled.content[0].text)
             searched = await session.call_tool(
                 "elf_search", {"query": "electrostatic", "source": "help", "top_k": 3}
             )
@@ -41,6 +53,9 @@ async def _probe_stdio() -> dict:
             prompted = await session.get_prompt(
                 "new_elf_analysis",
                 {"geometry": "parallel-plate capacitor", "solver": "ELFIN"},
+            )
+            profile_after_calls = json.loads(
+                (await session.call_tool("elf_agentic_profile", {})).content[0].text
             )
             hints = (
                 "readOnlyHint",
@@ -63,6 +78,8 @@ async def _probe_stdio() -> dict:
                 ],
                 "probe_is_error": bool(called.isError),
                 "probe_has_content": bool(called.content),
+                "client_connection": profile_payload["client_connection"],
+                "connection_count_after_calls": profile_after_calls["client_connection"]["connection_count"],
                 "structured_is_error": bool(searched.isError),
                 "structured_schema": (searched.structuredContent or {}).get("schema_version"),
                 "product_detect_is_error": bool(detected.isError),
@@ -86,6 +103,20 @@ def test_stdio_initialize_list_and_safe_call_contract() -> None:
     assert result["missing_annotations"] == []
     assert result["probe_is_error"] is False
     assert result["probe_has_content"] is True
+    assert result["client_connection"] == {
+        "connection_count": 1,
+        "latest": {
+            "name": "cae-lab-elf-probe",
+            "title": "CAE Lab ELF Probe",
+            "version": "2026.09",
+        },
+        "recent": [{
+            "name": "cae-lab-elf-probe",
+            "title": "CAE Lab ELF Probe",
+            "version": "2026.09",
+        }],
+    }
+    assert result["connection_count_after_calls"] == 1
     assert result["structured_is_error"] is False
     assert result["structured_schema"] == "elf.search.v1"
     assert result["resource_count"] == 4

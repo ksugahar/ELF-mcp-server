@@ -1,37 +1,88 @@
 """Explicit MCP metadata and runtime composition contract."""
 from __future__ import annotations
 
+import json
 import sys
 from typing import Any, Iterable
 
-from mcp.types import InitializedNotification, ToolAnnotations
+from mcp.types import ToolAnnotations
 
 from .tool_definitions import TOOL_CONTRACTS
 
 
-SCHEMA = "elf.mcp-server-contract.v4"
+SCHEMA = "elf.mcp-server-contract.v5"
+_CLIENT_HISTORY_LIMIT = 8
+_CLIENT_FIELD_LIMIT = 256
 
 
-def _install_connection_notice(mcp: Any, server_name: str, version: str) -> bool:
-    """Log completed MCP handshakes without touching local product sessions."""
+def _bounded_client_field(value: Any) -> str | None:
+    if value is None:
+        return None
+    return str(value)[:_CLIENT_FIELD_LIMIT]
+
+
+def _capture_current_client(low_level: Any, server_name: str, version: str) -> None:
+    """Capture initialize clientInfo on the first request after the handshake."""
+    try:
+        session = low_level.request_context.session
+    except LookupError:
+        return
+    if getattr(session, "_caeai_client_info_captured", False):
+        return
+    params = getattr(session, "client_params", None)
+    client_info = getattr(params, "clientInfo", None)
+    if client_info is None:
+        return
+
+    snapshot = {
+        "name": _bounded_client_field(getattr(client_info, "name", None)),
+        "title": _bounded_client_field(getattr(client_info, "title", None)),
+        "version": _bounded_client_field(getattr(client_info, "version", None)),
+    }
+    session._caeai_client_info_captured = True
+    state = low_level._caeai_client_connection_state
+    state["connection_count"] += 1
+    state["latest"] = snapshot
+    state["recent"] = (state["recent"] + [snapshot])[-_CLIENT_HISTORY_LIMIT:]
+    print(
+        f"[{server_name}] {version} client connected: "
+        f"{json.dumps(snapshot, ensure_ascii=False)}; "
+        "no product process was launched or modified",
+        file=sys.stderr,
+        flush=True,
+    )
+
+
+def _install_client_info_capture(mcp: Any, server_name: str, version: str) -> bool:
+    """Install bounded, process-local clientInfo capture without product effects."""
     low_level = getattr(mcp, "_mcp_server", None)
-    if low_level is None or getattr(low_level, "_elf_connection_notice", False):
+    if low_level is None or getattr(low_level, "_caeai_client_info_capture", False):
         return False
-    previous = low_level.notification_handlers.get(InitializedNotification)
+    low_level._caeai_client_connection_state = {
+        "connection_count": 0,
+        "latest": None,
+        "recent": [],
+    }
+    for request_type, previous in tuple(low_level.request_handlers.items()):
+        async def _capture_then_handle(request: Any, _previous: Any = previous) -> Any:
+            _capture_current_client(low_level, server_name, version)
+            return await _previous(request)
 
-    async def _on_initialized(notification: InitializedNotification) -> None:
-        print(
-            f"[{server_name}] {version} client initialized; "
-            "no product process was launched or modified",
-            file=sys.stderr,
-            flush=True,
-        )
-        if previous is not None:
-            await previous(notification)
-
-    low_level.notification_handlers[InitializedNotification] = _on_initialized
-    low_level._elf_connection_notice = True
+        low_level.request_handlers[request_type] = _capture_then_handle
+    low_level._caeai_client_info_capture = True
     return True
+
+
+def get_client_connection_state(mcp: Any) -> dict[str, Any]:
+    """Return a detached copy of bounded client connection metadata."""
+    low_level = getattr(mcp, "_mcp_server", None)
+    state = getattr(low_level, "_caeai_client_connection_state", None) or {}
+    latest = state.get("latest")
+    return {
+        "connection_count": int(state.get("connection_count", 0)),
+        "latest": dict(latest) if isinstance(latest, dict) else None,
+        "recent": [dict(item) for item in state.get("recent", []) if isinstance(item, dict)],
+    }
 
 
 def apply_tool_contract(
@@ -85,11 +136,11 @@ def apply_tool_contract(
                 f"Use {server_name} for public guidance and guarded user-local product execution. "
                 "Call detect and case_check before product_run; keep raw results local."
             )
-    installed = _install_connection_notice(mcp, server_name, version)
+    installed = _install_client_info_capture(mcp, server_name, version)
     return {
         "tools": len(selected),
         "explicit_contracts": len(contracts),
-        "connection_notice_installed": int(installed),
+        "client_info_capture_installed": int(installed),
     }
 
 
@@ -104,7 +155,10 @@ def build_runtime_contract(capability_packs: Iterable[str], session_policy: str)
         "semantic_output_models": True,
         "client_connection_visibility": {
             "initialize_identity": "server name, version, and instructions",
-            "initialized_notification_logged": True,
+            "capture_point": "first post-initialize request",
+            "captured_fields": ["name", "title", "version"],
+            "process_local_history_limit": _CLIENT_HISTORY_LIMIT,
+            "client_info_notice_logged": True,
             "product_session_side_effect": False,
         },
         "archive_extraction_policy": "public runtime does not extract untrusted archives",
