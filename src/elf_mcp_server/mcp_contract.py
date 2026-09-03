@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 from typing import Any, Iterable
 
@@ -10,9 +11,49 @@ from mcp.types import ToolAnnotations
 from .tool_definitions import TOOL_CONTRACTS
 
 
-SCHEMA = "elf.mcp-server-contract.v5"
+SCHEMA = "elf.mcp-server-contract.v6"
+ARTIFACT_IDENTITY_SCHEMA = "cae-ai-lab.solver-artifact-identity.v1"
+CAPABILITY_MATURITY_LEVELS = (
+    "knowledge_only", "artifact_gate", "solver_ready",
+    "live_verified", "cross_validated",
+)
 _CLIENT_HISTORY_LIMIT = 8
 _CLIENT_FIELD_LIMIT = 256
+_ARTIFACT_GATE = re.compile(r"(?:^|_)(?:audit|check|compare|diagnos|gate|inspect|lint|preflight|review|validate)(?:_|$)")
+
+
+def _infer_maturity(tool_name: str, *, read_only: bool) -> str:
+    if not read_only:
+        return "solver_ready"
+    if _ARTIFACT_GATE.search(tool_name.lower()):
+        return "artifact_gate"
+    return "knowledge_only"
+
+
+def build_capability_maturity_contract() -> dict[str, Any]:
+    return {
+        "schema": "cae-ai-lab.mcp-capability-maturity.v1",
+        "levels": list(CAPABILITY_MATURITY_LEVELS),
+        "automatic_ceiling": "solver_ready",
+        "evidence_required_for": ["live_verified", "cross_validated"],
+    }
+
+
+def build_artifact_identity_contract() -> dict[str, Any]:
+    return {
+        "schema": ARTIFACT_IDENTITY_SCHEMA,
+        "canonical_container": ".hdf5",
+        "required_fields": [
+            "artifact_id", "created_at_utc", "producer", "solver", "status",
+            "coordinate_system", "unit_system", "input_sha256",
+            "result_sha256", "total_compute_seconds", "timing_breakdown_s",
+        ],
+        "conditional_fields": {
+            "mesh_based": ["mesh_sha256"],
+            "transient": ["time_axis"],
+        },
+        "digest": "sha256",
+    }
 
 
 def _bounded_client_field(value: Any) -> str | None:
@@ -120,6 +161,9 @@ def apply_tool_contract(
         )
         meta = dict(getattr(tool, "meta", None) or {})
         meta["elf.contract"] = SCHEMA
+        meta["caeai.maturity"] = _infer_maturity(
+            name, read_only=contract.read_only
+        )
         if contract.read_only:
             meta["elf.classification"] = (
                 "read-only-external" if contract.open_world else "read-only-local"
@@ -153,6 +197,8 @@ def build_runtime_contract(capability_packs: Iterable[str], session_policy: str)
         "skill_layer": "separate workflow skills",
         "explicit_tool_annotations": True,
         "semantic_output_models": True,
+        "capability_maturity": build_capability_maturity_contract(),
+        "artifact_identity": build_artifact_identity_contract(),
         "client_connection_visibility": {
             "initialize_identity": "server name, version, and instructions",
             "capture_point": "first post-initialize request",
