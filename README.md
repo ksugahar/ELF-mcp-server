@@ -25,7 +25,7 @@ remain in the user-selected local case directory.
 | `elf://guides/* / elf://corpus/* / elf://topics/{topic}` | Stable MCP Resources | original public summaries |
 | `elf_help_*(...)` | Compatibility access to original summaries | no product-help snapshot |
 | `elf_examples_*(...)` | Compatibility access to original example patterns | no product examples |
-| `elf_sample_decks_*(...)` | Lab-authored ELF-runnable public `.mai`/`.meg` sample decks | 1600 cases, 3200 input files |
+| `elf_sample_decks_*(...)` | Lab-authored ELF-runnable public `.mai`/`.meg` sample decks | 1360 cases, 2720 input files |
 | `elf_recipe_*(...)` | Workflow decision cards for elements, PRE/SOL blocks, outputs, checks, and pitfalls | public-safe recipes |
 | `elf_wiki_*(...)` | Compatibility access to public link summaries | no vendor-wiki text |
 | `elf_python_*(...)` | Compatibility access to public facade contracts | no vendor wrappers/configs |
@@ -41,7 +41,7 @@ remain in the user-selected local case directory.
 | `elf_python_motor_efficiency_map_plan / motor_loss_model_contract / motor_torque_speed_envelope / induction_slip_sweep_plan` | Motor map API layer | efficiency maps, loss terms, torque-speed clipping, IM slip |
 | `elf_python_motor_market_brief / motor_design_agent_handoff` | Spec-to-design-agent workflow | robot/drone SPM, GUI-free backend handoff, drawings/BOM/prototype gates |
 | `elf_python_ngsolve_validation_plan / ngsolve_validation_script` | Executable open multiphysics validation | NGSolve thermal, NVH, and stress script generation |
-| `elf_public_promotion(...)` | Public-safe promotion copy for the 1600-case corpus | Japanese/English drafts |
+| `elf_public_promotion(...)` | Public-safe promotion copy for the 1360-case corpus | Japanese/English drafts |
 
 Legacy `_*` index/search/get tools remain for compatibility. New clients should
 prefer Resources plus `elf_catalog_page`, `elf_search`, `elf_read`, and
@@ -56,9 +56,9 @@ calls, validation levels, and representative `.mai` files.
 `elf_sample_decks_validation()` summarizes the validation level and public
 limitations for the corpus before an agent claims a deck is validated.
 `elf_sample_decks_representatives()` gives a curated first-stop tour through
-the 1600-case corpus. `elf_sample_decks_quality()` summarizes the public
-quality labels: 674 `gold_numeric_invariant` cases, 500
-`silver_observable_contract` cases, and 426 `silver_proxy_energy` cases, and reports publication quality gates for pairing,
+the 1360-case corpus. `elf_sample_decks_quality()` summarizes the public
+quality labels: 674 `gold_numeric_invariant` cases, 410
+`silver_observable_contract` cases, and 276 `silver_proxy_energy` cases, and reports publication quality gates for pairing,
 manifest coverage, public-boundary hygiene, solver-output exclusion, and the
 `application/motor` hierarchy. `elf_sample_decks_physics()` maps the corpus to
 physical quantities such as flux linkage, inductance/co-energy, force/torque,
@@ -66,7 +66,7 @@ AC loss, permanent-magnet flux, transformer coupling, WPT coupling, and MRI
 shield response. `elf_sample_decks_validation_matrix()` joins quantities,
 quality labels, validation methods, representative decks, and next MCP calls
 into a prompt-routing audit table. `elf_sample_decks_observable_contracts()`
-audits the 500-case quality upgrade where public `.mai` decks expose the
+audits the 410-case quality upgrade where public `.mai` decks expose the
 expected FLUM/OHM2/FREQ/HBRM/HBCU markers for their mapped physical quantities.
 `elf_sample_decks_cross_validation()` audits whether every
 family has an independent NGSolve cross-check, separates gold dual-invariant
@@ -83,7 +83,7 @@ DLL. The package does not publish or bundle solver outputs.
 `elf_mcp_readiness()` aggregates public quality gates, cross-validation gates,
 duplicate checks, local-runner handoff boundary checks, and key route checks
 into a release-readiness report for maintainers. `elf_motor_readiness()`
-audits the 652-case motor subset across 37 motor families, separates breadth
+audits the 452-case motor subset across 17 motor families, separates breadth
 from validation-depth gaps, and lists radia-motor / radia-ngsolve targets such
 as back-EMF, cogging torque, Ld/Lq, MTPA, induction slip loss, and reluctance
 torque. `elf_motor_hybrid_router(goal)` dispatches motor prompts across public
@@ -183,7 +183,7 @@ public boundary. The most useful calls while authoring ELF/MAGIC inputs are:
   coverage before choosing sample decks or making validation claims
 - `elf_sample_decks_validation_matrix(quantity="transformer")` to map prompt
   intent to physical quantity, quality label, validation method, and first deck
-- `elf_sample_decks_observable_contracts()` to inspect the 500-case
+- `elf_sample_decks_observable_contracts()` to inspect the 410-case
   observable-contract quality upgrade before publication
 - `elf_sample_decks_cross_validation()` to audit independent cross-validation
   coverage and find any remaining validation gaps
@@ -192,7 +192,7 @@ public boundary. The most useful calls while authoring ELF/MAGIC inputs are:
 - `elf_local_simulation_handoff("SPM motor flux linkage sweep")` to prepare
   the runner/parser contract for a user-local ELF/MAGIC execution layer
 - `elf_public_promotion(audience="ja")` to draft a public-safe Japanese
-  introduction of the 1600-case corpus
+  introduction of the 1360-case corpus
 - `elf_plan_workflow("WPT misalignment with conducting shield")` to get both
   a recipe-level plan and related public sample-deck routes
 - `elf_sample_decks_playbook(limit=20, family="pm_square")` for compact cards
@@ -203,10 +203,6 @@ public boundary. The most useful calls while authoring ELF/MAGIC inputs are:
   motor decks with salient iron and phase-pair excitation
 - `elf_sample_decks_playbook(limit=20, family="induction_cage_10")` for induction
   motor cage decks with transient eddy-current pickup patterns
-- `elf_sample_decks_playbook(limit=20, query="EMDLAB-style")` for 240
-  EMDLAB-style decks covering BLDC/SPM, BLDC outer-rotor, SPM static-torque,
-  IPM hairpin, induction, SynRM, SRM, AFPM, transformer, and benchmark
-  patterns
 - `elf_sample_decks_playbook(limit=20, query="Loop13 motor")` for extra IPM,
   wound-field synchronous, axial-flux PM, linear PM, and stepper motor decks
 - `elf_sample_decks_playbook(limit=20, family="application")` for transformer
@@ -265,12 +261,6 @@ public boundary. The most useful calls while authoring ELF/MAGIC inputs are:
   and eddy-current setup patterns
 - `elf_sample_decks_search("induction motor cage OHM2 FLUM", ext="mai")` to find
   induction-motor cage and pickup setup patterns
-- `elf_sample_decks_search("EMDLAB-style IPM hairpin FLUM", ext="mai")` to find
-  IPM hairpin motor setup patterns
-- `elf_sample_decks_search("EMDLAB-style SynRM flux-barrier FLUM", ext="mai")`
-  to find synchronous-reluctance flux-barrier setup patterns
-- `elf_sample_decks_search("EMDLAB-style AFPM linearized-airgap FLUM", ext="mai")`
-  to find axial-flux PM line-airgap setup patterns
 - `elf_sample_decks_search("Loop13 wound-field synchronous FLUM", ext="mai")`
   to find wound-field synchronous motor setup patterns
 - `elf_sample_decks_search("Loop13 stepper motor detent FLUM", ext="mai")` to
@@ -394,24 +384,21 @@ ELF/MAGIC is useful for magnetostatic and AC magnetic input authoring when the
 model is expressed as `.mai` analysis control plus `.meg` mesh data. This server
 turns that knowledge into MCP tools:
 
-- 652 public motor input-deck pairs under `application/motor/`, covering
+- 452 public motor input-deck pairs under `application/motor/`, covering
   2-pole, 4-pole, 6-pole, 8-pole,
   cosine-remanence PM pickup families, 10 explicit SPM motor examples, and
   10 SRM switched-reluctance examples, 10 induction cage examples, plus
   loop-reviewed SPM, SR motor, synchronous-reluctance motor, hysteresis motor,
-  and 200 EMDLAB-style motor cases spanning BLDC/SPM, BLDC outer-rotor,
-  induction, IPM hairpin, SPMSM static torque, SynRM, SRM 6/4 through 12/16,
-  and AFPM variants, plus Loop13 IPM, wound-field synchronous, axial-flux PM,
+  plus Loop13 IPM, wound-field synchronous, axial-flux PM,
   linear PM, and stepper families
-- 948 public non-motor application input-deck pairs covering transformer core/pickup
+- 908 public non-motor application input-deck pairs covering transformer core/pickup
   coupling, MRI gradient-coil/eddy-current shield patterns, WPT coupled coils,
   IH induction-heating workpieces, accelerator electromagnets, actuator
   plungers, maglev bearings, magnetic separators, eddy-current brakes,
   NDT eddy-current probes, magnetic gears, voice-coil actuators,
   relay solenoids, Hall-sensor fixtures, electromagnetic clutches, WPT
   misalignment, MRI gradient sequences, transformer leakage, IH susceptors,
-  accelerator corrector magnets, 40 EMDLAB-style transformer/benchmark
-  application decks, 10 compact numeric-validation anchor decks, and 64
+  accelerator corrector magnets, 10 compact numeric-validation anchor decks, and 64
   numeric FLUM-law validation decks, plus 100 numeric inductance/co-energy
   validation decks, 100 numeric force/torque-gradient validation decks, and
   100 numeric AC-loss validation decks, plus 100 numeric magnetic-circuit
@@ -422,13 +409,13 @@ turns that knowledge into MCP tools:
 - representative cards that identify first-stop examples and why each is a
   good seed for agent-assisted authoring
 - quality labels that distinguish `gold_numeric_invariant` families,
-  500-case `silver_observable_contract` families, and broader
+  410-case `silver_observable_contract` families, and broader
   `silver_proxy_energy` families
 - physical-quantity coverage that links examples to FLUM-based flux linkage,
   inductance/co-energy, force/torque-gradient, AC-loss, magnetic-circuit,
   permanent-magnet, transformer-coupling, WPT, MRI, actuator, and accelerator
   quantities without bundling solver outputs
-- observable-contract audits that require 500 selected public cases to expose
+- observable-contract audits that require 410 selected public cases to expose
   the expected FLUM/OHM2/FREQ/HBRM/HBCU markers for their physical quantities
 - cross-validation audits that require every public family to have an
   independent NGSolve check and distinguish `gold_numeric_invariant`,
@@ -446,7 +433,7 @@ Useful entry points are `elf_usage(topic="ipm_motor")`,
 `elf_sample_decks_playbook(family="spm")`, or
 `elf_sample_decks_playbook(family="srm")`, or
 `elf_sample_decks_playbook(family="induction_cage_10")`, or
-`elf_sample_decks_playbook(query="EMDLAB-style")`, or
+`elf_sample_decks_playbook(query="motor")`, or
 `elf_sample_decks_playbook(query="Loop13 motor")`. For non-motor applications,
 start with `elf_sample_decks_playbook(family="application")`,
 `elf_sample_decks_search("transformer FLUM")`,
@@ -505,7 +492,7 @@ inside the public sample decks, and exact agreement with
 `public_samples/PUBLICATION_BATCHES.json`. Only sample families marked
 `validation: passed` in that manifest are intended for publication.
 The manifest records the public verification level for each family:
-`ngsolve_proxy_energy` or `ngsolve_numeric_invariant`. All 1600 public sample
+`ngsolve_proxy_energy` or `ngsolve_numeric_invariant`. All 1360 public sample
 decks are cross-checked with an independent NGSolve proxy-field energy gate
 before they are listed. The numeric-validation anchor decks and numeric
 FLUM-law decks go one level further; the numeric inductance/co-energy decks
@@ -532,9 +519,9 @@ MCP clients can inspect this contract with `elf_sample_decks_validation()`;
 the broad proxy gate is intentionally not claimed as a full absolute field,
 force, torque, or loss agreement suite.
 The publication batch manifest groups the validated baseline into deterministic
-100-case checkpoints: 16 full checkpoints, 1600 cases total.
+100-case checkpoints: 13 full checkpoints and a 60-case remainder, 1360 cases total.
 No additional cases are required for this baseline. A future optional
-100-case checkpoint would be 1700 cases.
+100-case checkpoint would be 1400 cases.
 
 Bundled data consists of repository-owned public input decks, validation
 manifests, original summaries, schemas, and contracts. Product manuals, help

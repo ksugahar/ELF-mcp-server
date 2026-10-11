@@ -667,7 +667,7 @@ EXAMPLES = [
             'elf_python_motor_demag_margin_plan(motor_type="ipm", temperature_c=140)',
             'elf_python_motor_voltage_field_weakening_plan(motor_type="ipm", dc_bus_v=48)',
             'elf_python_motor_cogging_ripple_plan(motor_type="ipm", stator_slots=48, pole_pairs=4)',
-            'elf_python_deck_lint(mai_path="application/motor/emdlab_ipm_hairpin_10/eip001/eip001.mai", requested_observables="flux_linkage,torque,ld_lq")',
+            'elf_python_deck_lint(mai_path="application/motor/ipm_interior_pm_10/ipm001/ipm001.mai", requested_observables="flux_linkage,torque,ld_lq")',
             'elf_python_motor_sweep_matrix(motor_type="ipm", objective="torque_density", budget=9)',
             'elf_python_motor_optimization_study_plan(motor_type="ipm", objective="torque_density", budget=36)',
             'elf_python_motor_optimization_loop(motor_type="ipm", objective="torque_density", result_payloads_json="[...local parsed results...]")',

@@ -30,6 +30,8 @@ CURATED_PATHS = (
 )
 
 PRIVATE_MARKERS = (
+    "EMD" + "LAB",
+    "emd" + "lab",
     "S:\\",
     "S:/",
     "W:\\",

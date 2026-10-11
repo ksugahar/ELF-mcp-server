@@ -123,15 +123,6 @@ ENHANCED_OBSERVABLE_CONTRACT_FAMILIES: dict[str, tuple[str, ...]] = {
     "application/motor/srm_switched_reluctance_10": ("FLUM", "HBCU"),
     "application/motor/sr_motor_loop_10": ("FLUM", "HBCU"),
     "application/motor/induction_cage_10": ("FLUM", "OHM2", "HBCU"),
-    "application/motor/emdlab_bldc_spm_10": ("FLUM", "HBRM", "HBCU"),
-    "application/motor/emdlab_ipm_hairpin_10": ("FLUM", "HBRM", "HBCU"),
-    "application/motor/emdlab_induction_bar_10": ("FLUM", "OHM2", "HBCU"),
-    "application/motor/emdlab_synrm_flux_barrier_10": ("FLUM", "HBCU"),
-    "application/motor/emdlab_srm_pole_variants_10": ("FLUM", "HBCU"),
-    "application/motor/emdlab_afpm_linearized_10": ("FLUM", "HBRM", "HBCU"),
-    "application/motor/emdlab_spmsm_static_torque_10": ("FLUM", "HBRM", "HBCU"),
-    "application/motor/emdlab_srm1216_outer_rotor_10": ("FLUM", "HBCU"),
-    "application/motor/emdlab_bldc_outer_rotor_10": ("FLUM", "HBRM", "HBCU"),
     "application/wpt_loop_10": ("FLUM", "MOMC", "FREQ"),
     "application/wpt_misalignment_10": ("FLUM", "OHM2", "MOMC", "FREQ"),
     "application/mri_loop_10": ("FLUM", "OHM2", "MOMC", "FREQ"),
@@ -603,128 +594,6 @@ FAMILY_META = {
         ),
         "hint": "Use for transformer-style core/coil coupling, passive pickup FLUM, and nonlinear B-H setup.",
     },
-    "application/motor/emdlab_afpm_linearized_10": {
-        "title": "EMDLAB-style AFPM linearized-airgap campaign",
-        "tags": (
-            "motor",
-            "emdlab-style",
-            "afpm",
-            "axial-flux",
-            "pm",
-            "linearized-airgap",
-            "line-airgap",
-            "mwl8t",
-            "mmb8t",
-            "mcl8t",
-            "hbrm",
-            "hbcn",
-            "flum",
-            "ngsolve-crossval",
-        ),
-        "hint": "Use for axial-flux PM motor authoring patterns represented as unfolded line-airgap decks with face magnets, stator coils, and FLUM pickup.",
-    },
-    "application/motor/emdlab_bldc_spm_10": {
-        "title": "EMDLAB-style BLDC/SPM slotted-stator campaign",
-        "tags": (
-            "motor",
-            "emdlab-style",
-            "bldc",
-            "spm",
-            "surface-pm",
-            "pm",
-            "slotted-stator",
-            "three-phase",
-            "mwl8t",
-            "mmb8t",
-            "mcl8t",
-            "hbrm",
-            "hbcn",
-            "flum",
-            "ngsolve-crossval",
-        ),
-        "hint": "Use for BLDC/SPM motor input patterns with surface PM rotor proxies, slotted stator iron, phase coils, and passive FLUM pickup.",
-    },
-    "application/motor/emdlab_induction_bar_10": {
-        "title": "EMDLAB-style induction-machine rotor-bar campaign",
-        "tags": (
-            "motor",
-            "emdlab-style",
-            "induction",
-            "im",
-            "rotor-bar",
-            "squirrel-cage",
-            "three-phase",
-            "mab8t",
-            "ohm2",
-            "mcl8t",
-            "flum",
-            "ngsolve-crossval",
-        ),
-        "hint": "Use for induction-machine rotor-bar decks with stator phase coils, conductive bar proxies, OHM2 material data, and FLUM pickup.",
-    },
-    "application/motor/emdlab_ipm_hairpin_10": {
-        "title": "EMDLAB-style IPM hairpin campaign",
-        "tags": (
-            "motor",
-            "emdlab-style",
-            "ipm",
-            "interior-pm",
-            "hairpin",
-            "54-slot",
-            "buried-pm",
-            "three-phase",
-            "mwl8t",
-            "mmb8t",
-            "mcl8t",
-            "hbrm",
-            "hbcn",
-            "flum",
-            "ngsolve-crossval",
-        ),
-        "hint": "Use for IPM hairpin-style authoring with buried PM rotor proxies, stator phase coils, rotor-angle sweeps, and FLUM pickup.",
-    },
-    "application/motor/emdlab_srm_pole_variants_10": {
-        "title": "EMDLAB-style SRM pole-variant campaign",
-        "tags": (
-            "motor",
-            "emdlab-style",
-            "srm",
-            "switched-reluctance",
-            "reluctance",
-            "pole-variant",
-            "6-4",
-            "8-6",
-            "12-8",
-            "12-16",
-            "salient",
-            "mmb8t",
-            "mcl8t",
-            "coi1",
-            "amp1",
-            "flum",
-            "ngsolve-crossval",
-        ),
-        "hint": "Use for SRM 6/4, 8/6, 12/8, and 12/16 pole-variant decks with salient iron, phase-pair excitation, and FLUM pickup.",
-    },
-    "application/motor/emdlab_synrm_flux_barrier_10": {
-        "title": "EMDLAB-style SynRM flux-barrier campaign",
-        "tags": (
-            "motor",
-            "emdlab-style",
-            "synrm",
-            "synchronous-reluctance",
-            "reluctance",
-            "flux-barrier",
-            "saliency",
-            "mmb8t",
-            "mcl8t",
-            "coi1",
-            "amp1",
-            "flum",
-            "ngsolve-crossval",
-        ),
-        "hint": "Use for synchronous-reluctance flux-barrier rotor proxies, stator phase coils, rotor-angle sweeps, and FLUM pickup.",
-    },
     "application/accelerator_corrector_10": {
         "title": "Loop13 accelerator corrector magnet campaign",
         "tags": (
@@ -1077,26 +946,6 @@ FAMILY_META = {
 
 FAMILY_META.update(
     {
-        "application/emdlab_1ph_transformer_static_10": {
-            "title": "EMDLAB-style single-phase transformer static campaign",
-            "tags": ("application", "emdlab-style", "transformer", "single-phase", "static", "mmb8t", "mcl8t", "coi1", "amp1", "flum", "ngsolve-crossval"),
-            "hint": "Use for single-phase transformer static decks with core limbs, primary/secondary coils, passive pickup, and FLUM.",
-        },
-        "application/emdlab_benchmark_ccore_10": {
-            "title": "EMDLAB-style benchmark C-core campaign",
-            "tags": ("application", "emdlab-style", "benchmark", "c-core", "core", "mome", "mmb8t", "mcl8t", "coi1", "amp1", "flum", "ngsolve-crossval"),
-            "hint": "Use for compact C-core benchmark-style decks with a driven coil and pickup FLUM.",
-        },
-        "application/emdlab_benchmark_geometry_10": {
-            "title": "EMDLAB-style benchmark geometry campaign",
-            "tags": ("application", "emdlab-style", "benchmark", "geometry", "mab8t", "mmb8t", "mcl8t", "ohm2", "flum", "ngsolve-crossval"),
-            "hint": "Use for geometry benchmark coverage with steel, conductor, coil, and pickup entities.",
-        },
-        "application/emdlab_benchmark_magnet_10": {
-            "title": "EMDLAB-style benchmark magnet campaign",
-            "tags": ("application", "emdlab-style", "benchmark", "magnet", "pm", "mwl8t", "mmb8t", "hbrm", "hbcn", "flum", "ngsolve-crossval"),
-            "hint": "Use for benchmark magnet decks with opposed PM blocks, yoke steel, and pickup FLUM.",
-        },
         "application/numeric_validation_anchors_10": {
             "title": "Numeric validation anchor campaign",
             "tags": (
@@ -1315,76 +1164,6 @@ FAMILY_META.update(
             ),
             "hint": "Use for FLUM-derived co-energy force/torque-gradient checks: distance-force sign, current-square scaling, mirror/lateral symmetry, angular dW/dtheta trends, and balanced-torque invariants.",
         },
-        "application/motor/emdlab_bldc_outer_rotor_10": {
-            "title": "EMDLAB-style BLDC outer-rotor campaign",
-            "tags": ("motor", "emdlab-style", "bldc", "outer-rotor", "spm", "surface-pm", "pm", "mwl8t", "mmb8t", "mcl8t", "hbrm", "hbcn", "flum", "ngsolve-crossval"),
-            "hint": "Use for BLDC outer-rotor decks with surface PM proxies outside the stator and FLUM pickup.",
-        },
-        "application/motor/emdlab_induction_fraction_10": {
-            "title": "EMDLAB-style induction-machine fractional-sector campaign",
-            "tags": ("motor", "emdlab-style", "induction", "im", "fractional-sector", "rotor-bar", "mab8t", "ohm2", "mcl8t", "flum", "ngsolve-crossval"),
-            "hint": "Use for induction-machine fractional-sector decks with rotor-bar conductors, OHM2, phase coils, and FLUM.",
-        },
-        "application/motor/emdlab_ipm_hairpin_fraction_10": {
-            "title": "EMDLAB-style IPM hairpin fractional-sector campaign",
-            "tags": ("motor", "emdlab-style", "ipm", "hairpin", "fractional-sector", "interior-pm", "buried-pm", "mwl8t", "mmb8t", "mcl8t", "flum", "ngsolve-crossval"),
-            "hint": "Use for fractional-sector IPM hairpin decks with buried PMs, phase coils, rotor-angle proxies, and FLUM.",
-        },
-        "application/motor/emdlab_spmsm_10": {
-            "title": "EMDLAB-style SPMSM campaign",
-            "tags": ("motor", "emdlab-style", "spmsm", "spm", "surface-pm", "pm", "mwl8t", "mmb8t", "mcl8t", "hbrm", "hbcn", "flum", "ngsolve-crossval"),
-            "hint": "Use for SPMSM decks with surface PM rotor proxies, stator coils, and FLUM pickup.",
-        },
-        "application/motor/emdlab_spmsm_fraction_10": {
-            "title": "EMDLAB-style SPMSM fractional-sector campaign",
-            "tags": ("motor", "emdlab-style", "spmsm", "spm", "fractional-sector", "surface-pm", "mwl8t", "mmb8t", "mcl8t", "flum", "ngsolve-crossval"),
-            "hint": "Use for fractional-sector SPMSM decks with surface PM proxies and stator phase coils.",
-        },
-        "application/motor/emdlab_spmsm_static_torque_10": {
-            "title": "EMDLAB-style SPMSM static-torque campaign",
-            "tags": ("motor", "emdlab-style", "spmsm", "spm", "static-torque", "surface-pm", "rotor-angle", "mwl8t", "mmb8t", "mcl8t", "flum", "ngsolve-crossval"),
-            "hint": "Use for SPMSM static-torque proxy decks with rotor-angle sweeps and FLUM pickup.",
-        },
-        "application/motor/emdlab_srm64_10": {
-            "title": "EMDLAB-style SRM 6/4 campaign",
-            "tags": ("motor", "emdlab-style", "srm", "6-4", "switched-reluctance", "salient", "mmb8t", "mcl8t", "coi1", "amp1", "flum", "ngsolve-crossval"),
-            "hint": "Use for SRM 6/4 pole-pattern decks with salient iron, phase-pair excitation, and FLUM.",
-        },
-        "application/motor/emdlab_srm86_10": {
-            "title": "EMDLAB-style SRM 8/6 campaign",
-            "tags": ("motor", "emdlab-style", "srm", "8-6", "switched-reluctance", "salient", "mmb8t", "mcl8t", "coi1", "amp1", "flum", "ngsolve-crossval"),
-            "hint": "Use for SRM 8/6 pole-pattern decks with salient iron, phase-pair excitation, and FLUM.",
-        },
-        "application/motor/emdlab_srm86_fraction_10": {
-            "title": "EMDLAB-style SRM 8/6 fractional-sector campaign",
-            "tags": ("motor", "emdlab-style", "srm", "8-6", "fractional-sector", "switched-reluctance", "mmb8t", "mcl8t", "flum", "ngsolve-crossval"),
-            "hint": "Use for fractional-sector SRM 8/6 decks with salient iron and phase excitation.",
-        },
-        "application/motor/emdlab_srm86_static_torque_10": {
-            "title": "EMDLAB-style SRM 8/6 static-torque campaign",
-            "tags": ("motor", "emdlab-style", "srm", "8-6", "static-torque", "switched-reluctance", "rotor-angle", "mmb8t", "mcl8t", "flum", "ngsolve-crossval"),
-            "hint": "Use for SRM 8/6 static-torque proxy decks with rotor-position sweeps and FLUM.",
-        },
-        "application/motor/emdlab_srm128_10": {
-            "title": "EMDLAB-style SRM 12/8 campaign",
-            "tags": ("motor", "emdlab-style", "srm", "12-8", "switched-reluctance", "salient", "mmb8t", "mcl8t", "flum", "ngsolve-crossval"),
-            "hint": "Use for SRM 12/8 pole-pattern decks with salient iron and phase excitation.",
-        },
-        "application/motor/emdlab_srm1216_outer_rotor_10": {
-            "title": "EMDLAB-style SRM 12/16 outer-rotor campaign",
-            "tags": ("motor", "emdlab-style", "srm", "12-16", "outer-rotor", "switched-reluctance", "salient", "mmb8t", "mcl8t", "flum", "ngsolve-crossval"),
-            "hint": "Use for SRM 12/16 outer-rotor pole-pattern decks with salient iron and FLUM.",
-        },
-        "application/motor/emdlab_synrm_static_torque_10": {
-            "title": "EMDLAB-style SynRM static-torque campaign",
-            "tags": ("motor", "emdlab-style", "synrm", "synchronous-reluctance", "static-torque", "flux-barrier", "saliency", "mmb8t", "mcl8t", "flum", "ngsolve-crossval"),
-            "hint": "Use for SynRM static-torque proxy decks with flux-barrier rotor proxies and FLUM.",
-        },
-        "application/motor/emdlab_synrm_fraction_static_torque_10": {
-            "title": "EMDLAB-style SynRM fractional static-torque campaign",
-            "tags": ("motor", "emdlab-style", "synrm", "synchronous-reluctance", "fractional-sector", "static-torque", "flux-barrier", "mmb8t", "mcl8t", "flum", "ngsolve-crossval"),
-            "hint": "Use for fractional-sector SynRM static-torque proxy decks with saliency and FLUM.",
-        },
     }
 )
 
@@ -1431,36 +1210,6 @@ REPRESENTATIVE_CASES: tuple[dict[str, str], ...] = (
         "family": "application/motor/pm_cosine_pickup_72",
         "case": "pm001",
         "reason": "Cosine-remanence PM pickup pattern for smoother air-gap-field prompts.",
-    },
-    {
-        "area": "motor",
-        "family": "application/motor/emdlab_bldc_spm_10",
-        "case": "ebl001",
-        "reason": "First slotted-stator BLDC/SPM deck with phase coils and passive FLUM.",
-    },
-    {
-        "area": "motor",
-        "family": "application/motor/emdlab_ipm_hairpin_10",
-        "case": "eip001",
-        "reason": "Default IPM hairpin seed for buried PM and dq-flux authoring.",
-    },
-    {
-        "area": "motor",
-        "family": "application/motor/emdlab_induction_bar_10",
-        "case": "eim001",
-        "reason": "Induction-machine rotor-bar proxy with OHM2 and FLUM.",
-    },
-    {
-        "area": "motor",
-        "family": "application/motor/emdlab_synrm_flux_barrier_10",
-        "case": "esr001",
-        "reason": "SynRM flux-barrier seed for saliency and reluctance prompts.",
-    },
-    {
-        "area": "motor",
-        "family": "application/motor/emdlab_srm_pole_variants_10",
-        "case": "esm001",
-        "reason": "SRM pole-variant seed covering salient iron and phase-pair excitation.",
     },
     {
         "area": "motor",
@@ -1648,52 +1397,12 @@ SAMPLE_ROUTE_RULES: tuple[dict[str, Any], ...] = (
         "why": "Use these loop-reviewed SPM decks when the prompt explicitly asks for the Loop10 SPM family or reviewed surface-PM examples.",
     },
     {
-        "intent": "BLDC or surface-PM motor",
-        "family": "application/motor/emdlab_bldc_spm_10",
-        "query": "EMDLAB-style BLDC SPM surface-pm FLUM",
-        "recipe": "pm_airgap_field",
-        "terms": ("bldc", "brushless", "spm", "surface pm", "surface-pm", "slotted", "stator"),
-        "why": "Start here for slotted-stator surface-PM machines with phase coils and passive FLUM pickup.",
-    },
-    {
-        "intent": "IPM hairpin motor",
-        "family": "application/motor/emdlab_ipm_hairpin_10",
-        "query": "EMDLAB-style IPM hairpin buried-pm FLUM",
-        "recipe": "ipm_ldlq_flux",
-        "terms": ("ipm", "interior pm", "interior-pm", "hairpin", "buried pm", "buried-pm", "54-slot"),
-        "why": "Use these decks when the prompt mentions IPM, buried magnets, hairpin conductors, or dq flux work.",
-    },
-    {
         "intent": "Interior-PM angle sweep",
         "family": "application/motor/ipm_interior_pm_10",
         "query": "Loop13 IPM interior permanent-magnet rotor angle FLUM",
         "recipe": "ipm_ldlq_flux",
-        "terms": ("interior", "rotor angle", "angle sweep", "dq", "ld", "lq"),
+        "terms": ("ipm", "interior", "buried", "rotor angle", "angle sweep", "dq", "ld", "lq"),
         "why": "Use these simpler IPM decks when rotor-angle variation or current-on flux is the main task.",
-    },
-    {
-        "intent": "Induction machine rotor bars",
-        "family": "application/motor/emdlab_induction_bar_10",
-        "query": "induction-machine bar OHM2 FLUM",
-        "recipe": "eddy_current_time_domain",
-        "terms": ("induction", "im", "rotor bar", "rotor-bar", "squirrel cage", "squirrel-cage", "ohm2"),
-        "why": "Use these decks for induction-machine stator phase coils with conductive rotor-bar proxies.",
-    },
-    {
-        "intent": "Synchronous reluctance or flux-barrier motor",
-        "family": "application/motor/emdlab_synrm_flux_barrier_10",
-        "query": "EMDLAB-style SynRM flux-barrier saliency FLUM",
-        "recipe": "maxwell_torque_surface",
-        "terms": ("synrm", "synchronous reluctance", "flux barrier", "flux-barrier", "saliency"),
-        "why": "Use these decks for SynRM-style flux-barrier rotor proxies and saliency-driven studies.",
-    },
-    {
-        "intent": "Switched-reluctance motor pole variant",
-        "family": "application/motor/emdlab_srm_pole_variants_10",
-        "query": "EMDLAB-style SRM pole-variant switched-reluctance FLUM",
-        "recipe": "maxwell_torque_surface",
-        "terms": ("srm", "switched reluctance", "switched-reluctance", "pole variant", "6/4", "8/6", "12/8", "12/16"),
-        "why": "Use these decks for SRM 6/4, 8/6, 12/8, or 12/16 pole proxy prompts.",
     },
     {
         "intent": "Axial-flux PM motor",
@@ -1774,14 +1483,6 @@ SAMPLE_ROUTE_RULES: tuple[dict[str, Any], ...] = (
         "recipe": "linear_iron_boost",
         "terms": ("accelerator", "corrector", "trim coil", "trim-coil", "dipole", "aperture"),
         "why": "Use these decks for main dipole coils, trim-correction coils, aperture pickup, and yoke checks.",
-    },
-    {
-        "intent": "General motor authoring starter",
-        "family": "application/motor/emdlab_bldc_spm_10",
-        "query": "EMDLAB-style motor FLUM",
-        "recipe": "pm_airgap_field",
-        "terms": ("motor", "machine", "rotor", "stator"),
-        "why": "Use this as the first public motor deck when the prompt is broad and does not name a machine type.",
     },
 )
 
@@ -1977,126 +1678,6 @@ SAMPLE_ROUTE_RULES = (
             "cancellation check",
         ),
         "why": "Use these decks when the prompt asks whether validation is stronger than a simple run/pass or proxy-energy gate.",
-    },
-    {
-        "intent": "BLDC outer-rotor motor",
-        "family": "application/motor/emdlab_bldc_outer_rotor_10",
-        "query": "EMDLAB-style BLDC outer-rotor surface-pm FLUM",
-        "recipe": "pm_airgap_field",
-        "terms": ("outer rotor", "outer-rotor", "bldc outer", "outside rotor"),
-        "why": "Use these decks when the prompt specifically asks for a BLDC/SPM outer-rotor topology.",
-    },
-    {
-        "intent": "Fractional-sector induction machine",
-        "family": "application/motor/emdlab_induction_fraction_10",
-        "query": "EMDLAB-style induction fractional-sector OHM2 FLUM",
-        "recipe": "eddy_current_time_domain",
-        "terms": ("induction fraction", "fractional induction", "fractional-sector induction", "im fraction"),
-        "why": "Use these decks for reduced-sector induction-machine rotor-bar prompts.",
-    },
-    {
-        "intent": "Fractional-sector IPM hairpin motor",
-        "family": "application/motor/emdlab_ipm_hairpin_fraction_10",
-        "query": "EMDLAB-style IPM hairpin fractional-sector FLUM",
-        "recipe": "ipm_ldlq_flux",
-        "terms": ("ipm fraction", "hairpin fraction", "fractional-sector ipm", "fractional ipm"),
-        "why": "Use these decks for reduced-sector IPM hairpin prompts with buried PMs and phase coils.",
-    },
-    {
-        "intent": "SPMSM motor",
-        "family": "application/motor/emdlab_spmsm_10",
-        "query": "EMDLAB-style SPMSM surface-pm FLUM",
-        "recipe": "pm_airgap_field",
-        "terms": ("spmsm", "surface pm synchronous", "surface-pm synchronous"),
-        "why": "Use these decks for SPMSM prompts that name the synchronous-machine form explicitly.",
-    },
-    {
-        "intent": "SPMSM static torque",
-        "family": "application/motor/emdlab_spmsm_static_torque_10",
-        "query": "EMDLAB-style SPMSM static-torque rotor-angle FLUM",
-        "recipe": "maxwell_torque_surface",
-        "terms": ("spmsm torque", "spmsm static torque", "surface pm torque", "static torque spm"),
-        "why": "Use these decks for SPMSM rotor-angle/static-torque proxy prompts.",
-    },
-    {
-        "intent": "SPMSM fractional-sector",
-        "family": "application/motor/emdlab_spmsm_fraction_10",
-        "query": "EMDLAB-style SPMSM fractional-sector FLUM",
-        "recipe": "pm_airgap_field",
-        "terms": ("spmsm fraction", "fractional spmsm", "fractional-sector spmsm"),
-        "why": "Use these decks for reduced-sector SPMSM prompt variants.",
-    },
-    {
-        "intent": "Specific SRM pole count",
-        "family": "application/motor/emdlab_srm86_10",
-        "query": "EMDLAB-style SRM 8-6 switched-reluctance FLUM",
-        "recipe": "maxwell_torque_surface",
-        "terms": ("srm 8/6", "srm86", "8/6 srm", "8-6 srm"),
-        "why": "Use these decks when the prompt names the common SRM 8/6 example.",
-    },
-    {
-        "intent": "SRM 6/4 pole count",
-        "family": "application/motor/emdlab_srm64_10",
-        "query": "EMDLAB-style SRM 6-4 switched-reluctance FLUM",
-        "recipe": "maxwell_torque_surface",
-        "terms": ("srm 6/4", "srm64", "6/4 srm", "6-4 srm"),
-        "why": "Use these decks for SRM 6/4 pole-pattern prompts.",
-    },
-    {
-        "intent": "SRM 12/8 pole count",
-        "family": "application/motor/emdlab_srm128_10",
-        "query": "EMDLAB-style SRM 12-8 switched-reluctance FLUM",
-        "recipe": "maxwell_torque_surface",
-        "terms": ("srm 12/8", "srm128", "12/8 srm", "12-8 srm"),
-        "why": "Use these decks for SRM 12/8 pole-pattern prompts.",
-    },
-    {
-        "intent": "SRM 12/16 outer-rotor",
-        "family": "application/motor/emdlab_srm1216_outer_rotor_10",
-        "query": "EMDLAB-style SRM 12-16 outer-rotor FLUM",
-        "recipe": "maxwell_torque_surface",
-        "terms": ("srm 12/16", "srm1216", "12/16 srm", "12-16 srm", "srm outer rotor"),
-        "why": "Use these decks for SRM 12/16 outer-rotor prompts.",
-    },
-    {
-        "intent": "SynRM static torque",
-        "family": "application/motor/emdlab_synrm_static_torque_10",
-        "query": "EMDLAB-style SynRM static-torque flux-barrier FLUM",
-        "recipe": "maxwell_torque_surface",
-        "terms": ("synrm torque", "synrm static torque", "reluctance torque"),
-        "why": "Use these decks for SynRM static-torque proxy prompts.",
-    },
-    {
-        "intent": "Single-phase transformer static example",
-        "family": "application/emdlab_1ph_transformer_static_10",
-        "query": "EMDLAB-style single-phase transformer static FLUM",
-        "recipe": "mutual_flux_current_pickup",
-        "terms": ("1ph transformer", "single phase transformer", "single-phase transformer", "transformer static"),
-        "why": "Use these decks for single-phase transformer static core/coil prompts.",
-    },
-    {
-        "intent": "EMDLAB benchmark C-core",
-        "family": "application/emdlab_benchmark_ccore_10",
-        "query": "EMDLAB-style benchmark C-core FLUM",
-        "recipe": "linear_iron_boost",
-        "terms": ("benchmark ccore", "benchmark c-core", "c-core", "ccore"),
-        "why": "Use these decks for compact C-core benchmark-style prompts.",
-    },
-    {
-        "intent": "EMDLAB benchmark magnet",
-        "family": "application/emdlab_benchmark_magnet_10",
-        "query": "EMDLAB-style benchmark magnet HBCN FLUM",
-        "recipe": "pm_airgap_field",
-        "terms": ("benchmark magnet", "magnet benchmark"),
-        "why": "Use these decks for benchmark-style PM/yoke prompts.",
-    },
-    {
-        "intent": "EMDLAB benchmark geometry",
-        "family": "application/emdlab_benchmark_geometry_10",
-        "query": "EMDLAB-style benchmark geometry OHM2 FLUM",
-        "recipe": "linear_iron_boost",
-        "terms": ("benchmark geometry", "geometry benchmark"),
-        "why": "Use these decks for geometry benchmark prompts with mixed steel, conductor, and coil primitives.",
     },
     *SAMPLE_ROUTE_RULES,
 )
@@ -2519,8 +2100,12 @@ def build_public_quality_gates() -> list[dict[str, str]]:
     publication_ok = (
         int(batches.get("total_cases", 0)) == len(mai_paths)
         and int(batches.get("full_100_case_batches", 0)) * int(batches.get("checkpoint_size", 0))
+        + int(batches.get("remainder_cases", 0))
         == len(mai_paths)
-        and int(batches.get("remainder_cases", 0)) == 0
+        and int(batches.get("checkpoint_size", 0)) == 100
+        and 0 <= int(batches.get("remainder_cases", 0)) < 100
+        and int(batches.get("full_100_case_batches", 0)) == len(mai_paths) // 100
+        and int(batches.get("remainder_cases", 0)) == len(mai_paths) % 100
         and len(batched_case_paths) == len(mai_paths)
         and batched_case_set == mai_paths
     )
@@ -2685,7 +2270,7 @@ def quality_label_for_level(level: str) -> dict[str, str]:
 
 
 def family_has_observable_contract(family: str) -> bool:
-    """Return whether a family belongs to the 500-case observable-contract set."""
+    """Return whether a family belongs to the 410-case observable-contract set."""
     return family in ENHANCED_OBSERVABLE_CONTRACT_FAMILIES
 
 
@@ -3514,8 +3099,8 @@ def build_validation_matrix(
 def _build_observable_contract_gates(summary: dict[str, Any]) -> list[dict[str, str]]:
     return [
         _public_gate(
-            "observable_contract_target_is_500_cases",
-            summary["enhanced_cases"] == 500,
+            "observable_contract_target_is_410_cases",
+            summary["enhanced_cases"] == 410,
             f"{summary['enhanced_cases']} cases are covered by observable contracts",
         ),
         _public_gate(
@@ -3544,7 +3129,7 @@ def build_observable_contract_summary(
     label: str | None = None,
     include_gates: bool = True,
 ) -> dict[str, Any]:
-    """Build the 500-case public observable-contract quality audit."""
+    """Build the 410-case public observable-contract quality audit."""
     family_filter = (family or "").strip().lower()
     label_filter = (label or "").strip().lower()
     decks = load_sample_decks()
@@ -3637,7 +3222,7 @@ def build_observable_contract_summary(
         "label_filter": label or "",
         "families": rows,
         "notes": [
-            "This 500-case upgrade is a public observable-contract gate, not a hidden solver-output disclosure.",
+            "This 410-case upgrade is a public observable-contract gate, not a hidden solver-output disclosure.",
             "The gate checks that each selected public `.mai` deck exposes the markers needed to evaluate its mapped physical quantity.",
             "The enhanced label remains below gold numeric-invariant status unless public numeric scaling/sign/law invariants are added.",
         ],
@@ -3962,7 +3547,7 @@ def format_observable_contract_summary(
     summary: dict[str, Any],
     max_families: int = 32,
 ) -> str:
-    """Format the 500-case observable-contract audit as Markdown."""
+    """Format the 410-case observable-contract audit as Markdown."""
     lines = [
         "# Public observable-contract quality audit",
         "",
@@ -4753,13 +4338,6 @@ MCP_READINESS_ROUTE_CHECKS: tuple[dict[str, str], ...] = (
         "family": "spm",
         "quantity": "motor",
         "expected_family": "application/motor/spm_surface_pm_10",
-    },
-    {
-        "name": "ipm_route_targets_hairpin_family",
-        "goal": "IPM hairpin motor flux linkage",
-        "family": "ipm",
-        "quantity": "motor",
-        "expected_family": "application/motor/emdlab_ipm_hairpin_10",
     },
     {
         "name": "wpt_route_targets_misalignment_family",
@@ -5708,7 +5286,7 @@ def build_team28_cards() -> list[dict[str, Any]]:
 
 
 def build_representative_cards(area: str | None = None, limit: int = 36) -> list[dict[str, Any]]:
-    """Build the curated public representative set across the 1600-case corpus."""
+    """Build the curated public representative set across the 1360-case corpus."""
     area_filter = area.lower() if area else ""
     decks = load_sample_decks()
     cards = []
@@ -5772,7 +5350,7 @@ def format_representative_cards(cards: list[dict[str, Any]]) -> str:
     lines = [
         f"# ELF public representative samples ({len(cards)} cards)",
         "",
-        "Use these as first-stop examples before browsing the full 1600-case corpus.",
+        "Use these as first-stop examples before browsing the full 1360-case corpus.",
         "",
     ]
     for i, card in enumerate(cards, 1):
@@ -5794,46 +5372,46 @@ def format_representative_cards(cards: list[dict[str, Any]]) -> str:
 
 
 def format_public_promotion(audience: str = "collaborator") -> str:
-    """Return public-safe promotional copy for the 1600-case corpus."""
+    """Return public-safe promotional copy for the 1360-case corpus."""
     audience_l = audience.lower()
     if audience_l in {"ja", "jp", "japanese", "yano", "collaborator"}:
         return (
             "# ELF-mcp-server public promotion draft\n\n"
             "ELF-mcp-server は、ELF/MAGIC の入力ファイル作成を支援するための "
             "公開 MCP サーバです。公開パッケージには、ELF/MAGIC で読みやすい "
-            "`.mai` / `.meg` 入力デッキ 1600 例、合計 3200 入力ファイルを収録し、"
+            "`.mai` / `.meg` 入力デッキ 1360 例、合計 2720 入力ファイルを収録し、"
             "モータ、変圧器、MRI、WPT、誘導加熱、加速器用電磁石、アクチュエータ、"
             "磁気ギア、NDT、数値検証アンカーなどを横断的に扱えるようにしました。\n\n"
             "単なる例題集ではなく、MCP クライアントがユーザーのプロンプトから "
             "適切な入力デッキ family を選び、代表例を開き、検証レベルを確認し、"
             "次に見るべき recipe へ進めるための知識ベースとして整備しています。"
             "全 family は公開 manifest で `validation: passed` として管理され、"
-            "674 例は `gold_numeric_invariant`、500 例は "
-            "`silver_observable_contract`、426 例は `silver_proxy_energy` "
+            "674 例は `gold_numeric_invariant`、410 例は "
+            "`silver_observable_contract`、276 例は `silver_proxy_energy` "
             "という品質ラベルで区別できます。\n\n"
             "公開境界も明確にしています。パッケージに含めるのは、入力デッキ、"
             "公開ドキュメント、recipe、validation metadata だけです。solver 出力、"
             "比較ログ、機械ローカル path、非公開 provenance は含めません。"
             "そのため、研究開発で育てた知見を安全に、かつ実用的に MCP から再利用できます。\n\n"
             "矢野様へ紹介する場合は、"
-            "「ELF/MAGIC の使い方を AI agent が迷わず学べるよう、1600 件の公開入力例、"
-            "500 件の observable-contract 品質強化、品質ラベル、代表例ルーティングを"
+            "「ELF/MAGIC の使い方を AI agent が迷わず学べるよう、1360 件の公開入力例、"
+            "410 件の observable-contract 品質強化、品質ラベル、代表例ルーティングを"
             "備えた MCP サーバとして整備しました」"
             "という一文が一番伝わりやすいです。"
         )
     return (
         "# ELF-mcp-server public promotion draft\n\n"
         "ELF-mcp-server is a public documentation MCP server for authoring "
-        "ELF/MAGIC input files. It bundles 1600 public runnable `.mai`/`.meg` "
-        "input-deck cases, 3200 input files total, spanning motors, transformers, "
+        "ELF/MAGIC input files. It bundles 1360 public runnable `.mai`/`.meg` "
+        "input-deck cases, 2720 input files total, spanning motors, transformers, "
         "MRI, WPT, induction heating, accelerator magnets, actuators, magnetic "
         "gears, NDT probes, and numeric validation anchors.\n\n"
         "The corpus is organized as an agent-facing knowledge base rather than "
         "a raw example dump: MCP clients can route a user prompt to a suitable "
         "sample family, inspect representative decks, check public validation "
         "levels, and continue into workflow recipes. Quality labels distinguish "
-        "674 `gold_numeric_invariant` cases, 500 `silver_observable_contract` "
-        "cases, and 426 `silver_proxy_energy` cases.\n\n"
+        "674 `gold_numeric_invariant` cases, 410 `silver_observable_contract` "
+        "cases, and 276 `silver_proxy_energy` cases.\n\n"
         "The public boundary is explicit. The package contains input decks, "
         "public documentation, recipes, and validation metadata only; it does "
         "not bundle solver outputs, comparison logs, machine-local paths, or "

@@ -173,7 +173,7 @@ def test_motor_dual_solver_review_packet_is_public_safe_and_two_lane():
     from elf_mcp_server.server import elf_motor_dual_solver_review_packet
 
     packet = json.loads(elf_motor_dual_solver_review_packet(
-        family="application/motor/emdlab_ipm_hairpin_10",
+        family="application/motor/ipm_interior_pm_10",
         observable="torque",
         limit=2,
     ))
@@ -1467,32 +1467,13 @@ def test_public_sample_decks_are_runnable_inputs_only():
         get_sample_deck,
     )
     decks = list_sample_decks()
-    assert len(decks) == 3200
-    assert sum(1 for d in decks if d["ext"] == "mai") == 1600
-    assert sum(1 for d in decks if d["ext"] == "meg") == 1600
+    assert len(decks) == 2720
+    assert sum(1 for d in decks if d["ext"] == "mai") == 1360
+    assert sum(1 for d in decks if d["ext"] == "meg") == 1360
     assert any(d["path"] == "application/motor/pm_cosine_pickup_72/pm001/pm001.mai" for d in decks)
     assert any(d["path"] == "application/motor/spm_surface_pm_10/spm001/spm001.mai" for d in decks)
     assert any(d["path"] == "application/motor/srm_switched_reluctance_10/srm001/srm001.mai" for d in decks)
     assert any(d["path"] == "application/motor/induction_cage_10/im001/im001.mai" for d in decks)
-    assert any(d["path"] == "application/motor/emdlab_bldc_spm_10/ebl001/ebl001.mai" for d in decks)
-    assert any(d["path"] == "application/motor/emdlab_ipm_hairpin_10/eip001/eip001.mai" for d in decks)
-    assert any(d["path"] == "application/motor/emdlab_induction_bar_10/eim001/eim001.mai" for d in decks)
-    assert any(d["path"] == "application/motor/emdlab_synrm_flux_barrier_10/esr001/esr001.mai" for d in decks)
-    assert any(d["path"] == "application/motor/emdlab_srm_pole_variants_10/esm001/esm001.mai" for d in decks)
-    assert any(d["path"] == "application/motor/emdlab_afpm_linearized_10/eaf001/eaf001.mai" for d in decks)
-    assert any(d["path"] == "application/motor/emdlab_bldc_outer_rotor_10/ebo001/ebo001.mai" for d in decks)
-    assert any(d["path"] == "application/motor/emdlab_induction_fraction_10/eif001/eif001.mai" for d in decks)
-    assert any(d["path"] == "application/motor/emdlab_spmsm_static_torque_10/eptq001/eptq001.mai" for d in decks)
-    assert any(d["path"] == "application/motor/emdlab_srm1216_outer_rotor_10/ero001/ero001.mai" for d in decks)
-    assert any(d["path"] == "application/motor/emdlab_synrm_fraction_static_torque_10/eyf001/eyf001.mai" for d in decks)
-    assert any(
-        d["path"] == "application/emdlab_1ph_transformer_static_10/ept001/ept001.mai"
-        for d in decks
-    )
-    assert any(
-        d["path"] == "application/emdlab_benchmark_ccore_10/ecc001/ecc001.mai"
-        for d in decks
-    )
     assert any(
         d["path"] == "application/numeric_validation_anchors_10/nva001/nva001.mai"
         for d in decks
@@ -1621,19 +1602,13 @@ def test_public_sample_decks_are_runnable_inputs_only():
     )
     with open(manifest_path, encoding="ascii") as f:
         manifest = json.load(f)
-    assert manifest["total_cases"] == 1600
-    assert manifest["total_input_files"] == 3200
-    assert len(manifest["families"]) == 72
+    assert manifest["total_cases"] == 1360
+    assert manifest["total_input_files"] == 2720
+    assert len(manifest["families"]) == 48
     assert all(v["validation"] == "passed" for v in manifest["families"].values())
     assert all(v["validation_level"] for v in manifest["families"].values())
     levels = {v["validation_level"] for v in manifest["families"].values()}
     assert levels == {"ngsolve_proxy_energy", "ngsolve_numeric_invariant"}
-    assert "ngsolve_proxy_energy_positive" in manifest["families"][
-        "application/motor/emdlab_ipm_hairpin_10"
-    ]["checks"]
-    assert "ngsolve_proxy_energy_positive" in manifest["families"][
-        "application/emdlab_benchmark_ccore_10"
-    ]["checks"]
     assert "ngsolve_proxy_energy_positive" in manifest["families"][
         "application/motor/wound_field_sync_10"
     ]["checks"]
@@ -1677,31 +1652,31 @@ def test_public_sample_decks_are_runnable_inputs_only():
     assert "analytic_flux_invariants_passed" in transformer_coupling_manifest["checks"]
     assert "ngsolve_numeric_invariants_passed" in transformer_coupling_manifest["checks"]
     validation_summary = build_validation_summary()
-    assert validation_summary["total_cases"] == 1600
-    assert validation_summary["total_input_files"] == 3200
-    assert validation_summary["total_families"] == 72
-    assert validation_summary["level_counts"]["ngsolve_proxy_energy"]["families"] == 64
-    assert validation_summary["level_counts"]["ngsolve_proxy_energy"]["cases"] == 926
+    assert validation_summary["total_cases"] == 1360
+    assert validation_summary["total_input_files"] == 2720
+    assert validation_summary["total_families"] == 48
+    assert validation_summary["level_counts"]["ngsolve_proxy_energy"]["families"] == 40
+    assert validation_summary["level_counts"]["ngsolve_proxy_energy"]["cases"] == 686
     assert validation_summary["level_counts"]["ngsolve_numeric_invariant"]["families"] == 8
     assert validation_summary["level_counts"]["ngsolve_numeric_invariant"]["cases"] == 674
     publication_batches = build_publication_batch_summary()
     assert publication_batches["checkpoint_size"] == 100
-    assert publication_batches["total_cases"] == 1600
-    assert publication_batches["total_batches"] == 16
-    assert publication_batches["full_100_case_batches"] == 16
-    assert publication_batches["remainder_cases"] == 0
-    assert publication_batches["next_checkpoint_cases"] == 1700
-    assert publication_batches["additional_cases_needed_for_next_100_case_checkpoint"] == 100
+    assert publication_batches["total_cases"] == 1360
+    assert publication_batches["total_batches"] == 14
+    assert publication_batches["full_100_case_batches"] == 13
+    assert publication_batches["remainder_cases"] == 60
+    assert publication_batches["next_checkpoint_cases"] == 1400
+    assert publication_batches["additional_cases_needed_for_next_100_case_checkpoint"] == 40
     validation_text = format_validation_summary(validation_summary)
-    assert "1600 cases" in validation_text
+    assert "1360 cases" in validation_text
     assert "ngsolve_proxy_energy" in validation_text
     assert "not a full absolute field/force/torque/loss agreement suite" in validation_text
     assert "100-case publication checkpoints" in validation_text
-    assert "100 additional validated cases would make the next optional increment" in validation_text
+    assert "40 additional validated cases would make the next optional increment" in validation_text
     quality_summary = build_quality_summary()
     assert quality_summary["label_counts"]["gold_numeric_invariant"]["cases"] == 674
-    assert quality_summary["label_counts"]["silver_observable_contract"]["cases"] == 500
-    assert quality_summary["label_counts"]["silver_proxy_energy"]["cases"] == 426
+    assert quality_summary["label_counts"]["silver_observable_contract"]["cases"] == 410
+    assert quality_summary["label_counts"]["silver_proxy_energy"]["cases"] == 276
     assert quality_summary["quality_gate_status"] == "PASS"
     assert all(gate["status"] == "PASS" for gate in quality_summary["quality_gates"])
     assert {gate["gate"] for gate in quality_summary["quality_gates"]} >= {
@@ -1712,7 +1687,7 @@ def test_public_sample_decks_are_runnable_inputs_only():
         "public_boundary_text",
         "no_solver_output_files",
         "application_hierarchy",
-        "observable_contract_target_is_500_cases",
+        "observable_contract_target_is_410_cases",
         "observable_contract_markers_pass",
     }
     quality_text = format_quality_summary(quality_summary)
@@ -1727,12 +1702,12 @@ def test_public_sample_decks_are_runnable_inputs_only():
     gold_quality_text = format_quality_summary(build_quality_summary(label="gold"))
     assert "application/numeric_transformer_coupling_100" in gold_quality_text
     enhanced_quality_text = format_quality_summary(build_quality_summary(label="observable"))
-    assert "500 cases" in enhanced_quality_text
+    assert "410 cases" in enhanced_quality_text
     assert "application/motor/pm_square_2pole_pickup_100" in enhanced_quality_text
     observable_contract_summary = build_observable_contract_summary()
     assert observable_contract_summary["observable_contract_gate_status"] == "PASS"
-    assert observable_contract_summary["enhanced_cases"] == 500
-    assert observable_contract_summary["enhanced_family_count"] == 28
+    assert observable_contract_summary["enhanced_cases"] == 410
+    assert observable_contract_summary["enhanced_family_count"] == 19
     assert observable_contract_summary["failed_case_count"] == 0
     observable_contract_text = format_observable_contract_summary(observable_contract_summary)
     assert "Observable Contract Gates (PASS)" in observable_contract_text
@@ -1741,9 +1716,9 @@ def test_public_sample_decks_are_runnable_inputs_only():
     physics_summary = build_physical_quantity_summary()
     assert physics_summary["physical_gate_status"] == "PASS"
     assert all(gate["status"] == "PASS" for gate in physics_summary["physical_gates"])
-    assert physics_summary["quantity_counts"]["flux_linkage"]["cases"] == 1600
+    assert physics_summary["quantity_counts"]["flux_linkage"]["cases"] == 1360
     assert physics_summary["quantity_counts"]["flux_linkage"]["gold_cases"] == 674
-    assert physics_summary["quantity_counts"]["motor_flux_linkage"]["cases"] == 652
+    assert physics_summary["quantity_counts"]["motor_flux_linkage"]["cases"] == 452
     assert physics_summary["quantity_counts"]["force_torque_gradient"]["gold_cases"] == 100
     assert physics_summary["quantity_counts"]["ac_loss"]["gold_cases"] == 100
     assert physics_summary["quantity_counts"]["permanent_magnet_flux"]["gold_cases"] == 100
@@ -1766,7 +1741,7 @@ def test_public_sample_decks_are_runnable_inputs_only():
     )
     assert cross_validation_summary["gaps"]["families_without_independent_cross_validation"] == 0
     assert cross_validation_summary["gaps"]["cases_without_independent_cross_validation"] == 0
-    assert cross_validation_summary["method_counts"]["ngsolve_proxy_energy_positive"]["cases"] == 926
+    assert cross_validation_summary["method_counts"]["ngsolve_proxy_energy_positive"]["cases"] == 686
     assert cross_validation_summary["method_counts"]["ngsolve_numeric_invariants_passed"]["cases"] == 674
     assert cross_validation_summary["method_counts"]["analytic_flux_invariants_passed"]["cases"] == 674
     cross_validation_text = format_cross_validation_summary(cross_validation_summary)
@@ -1839,17 +1814,11 @@ def test_public_sample_decks_are_runnable_inputs_only():
     assert not any(marker in linear_handoff_text for marker in forbidden_private_markers)
 
     motor_replay_families = (
-        "application/motor/emdlab_spmsm_10",
-        "application/motor/emdlab_ipm_hairpin_10",
-        "application/motor/emdlab_induction_bar_10",
-        "application/motor/emdlab_srm86_static_torque_10",
-        "application/motor/emdlab_synrm_static_torque_10",
-        "application/motor/emdlab_bldc_spm_10",
-        "application/motor/emdlab_bldc_outer_rotor_10",
-        "application/motor/emdlab_spmsm_fraction_10",
-        "application/motor/emdlab_srm_pole_variants_10",
-        "application/motor/emdlab_synrm_flux_barrier_10",
-        "application/motor/emdlab_afpm_linearized_10",
+        "application/motor/spm_surface_pm_10",
+        "application/motor/ipm_interior_pm_10",
+        "application/motor/induction_cage_10",
+        "application/motor/srm_switched_reluctance_10",
+        "application/motor/axial_flux_pm_10",
     )
     for family_name in motor_replay_families:
         family_decks = list_sample_decks(family=family_name, ext=".mai")
@@ -1873,12 +1842,12 @@ def test_public_sample_decks_are_runnable_inputs_only():
     assert "Release Steps" in readiness_text
     assert "S:" + "\\" not in readiness_text
     motor_readiness = build_motor_readiness()
-    assert motor_readiness["motor_readiness"] == "motor_coverage_ready_validation_upgrade_recommended"
-    assert motor_readiness["motor_cases"] == 652
-    assert motor_readiness["motor_families"] == 37
-    assert motor_readiness["quality_counts"]["silver_observable_contract"] == 18
-    assert motor_readiness["quality_counts"]["silver_proxy_energy"] == 19
-    assert motor_readiness["validation_counts"]["ngsolve_proxy_energy"] == 37
+    assert motor_readiness["motor_readiness"] == "motor_coverage_needs_attention"
+    assert motor_readiness["motor_cases"] == 452
+    assert motor_readiness["motor_families"] == 17
+    assert motor_readiness["quality_counts"]["silver_observable_contract"] == 9
+    assert motor_readiness["quality_counts"]["silver_proxy_energy"] == 8
+    assert motor_readiness["validation_counts"]["ngsolve_proxy_energy"] == 17
     assert motor_readiness["gold_numeric_motor_families"] == 0
     assert any(
         gate["gate"] == "motor_gold_numeric_anchors" and gate["status"] == "WARN"
@@ -1889,13 +1858,12 @@ def test_public_sample_decks_are_runnable_inputs_only():
         for row in motor_readiness["archetypes"]
     )
     motor_readiness_text = format_motor_readiness(motor_readiness)
-    assert "652 cases across 37 families" in motor_readiness_text
+    assert "452 cases across 17 families" in motor_readiness_text
     assert "radia-motor targets" in motor_readiness_text
     assert "S:" + "\\" not in motor_readiness_text
     hybrid_route = build_motor_hybrid_router("IPM hairpin motor flux linkage and MTPA")
     assert hybrid_route["schema_version"] == "elf-motor-hybrid-router/v2"
     assert hybrid_route["inferred_family"] == "ipm"
-    assert hybrid_route["elf_deck_routes"][0]["family"] == "application/motor/emdlab_ipm_hairpin_10"
     assert "elf_motor_mmm_quick_check" in hybrid_route["mmm_quick_check"]["call"]
     assert hybrid_route["age_validation"]["lane"] == "ngsolve_age"
     assert 'ngsolve_usage("mtpa")' in hybrid_route["age_validation"]["calls"]
@@ -1910,7 +1878,6 @@ def test_public_sample_decks_are_runnable_inputs_only():
     )
     hybrid_text = format_motor_hybrid_router(hybrid_route)
     assert "ELF/radia motor hybrid router" in hybrid_text
-    assert "application/motor/emdlab_ipm_hairpin_10" in hybrid_text
     assert "hdiv_mmm_hcurl_eddy_bubble" in hybrid_text
     assert "HDiv-MMM" in hybrid_text
     assert "HCurl Eddy-Bubble" in hybrid_text
@@ -1965,20 +1932,18 @@ def test_public_sample_decks_are_runnable_inputs_only():
         for row in transformer_matrix["families"]
     )
     representatives = build_representative_cards()
-    assert len(representatives) >= 32
+    assert len(representatives) == 28
     assert representatives[0]["quality_label"] == "silver_observable_contract"
     representative_text = format_representative_cards(representatives)
     assert "why representative" in representative_text
-    assert "application/motor/emdlab_ipm_hairpin_10/eip001/eip001.mai" in representative_text
     assert "application/numeric_transformer_coupling_100/ntc001/ntc001.mai" in representative_text
     motor_representatives = build_representative_cards(area="motor")
-    assert any(card["family"] == "application/motor/emdlab_ipm_hairpin_10" for card in motor_representatives)
     promotion_ja = format_public_promotion("ja")
-    assert "1600" in promotion_ja
+    assert "1360" in promotion_ja
     assert "品質ラベル" in promotion_ja
     assert "solver 出力" in promotion_ja
     promotion_en = format_public_promotion("en")
-    assert "1600 public runnable" in promotion_en
+    assert "1360 public runnable" in promotion_en
     numeric_summary = build_validation_summary(family="numeric_validation")
     assert numeric_summary["selected_family_count"] == 1
     assert numeric_summary["families"][0]["family"] == "application/numeric_validation_anchors_10"
@@ -2017,13 +1982,6 @@ def test_public_sample_decks_are_runnable_inputs_only():
     assert hits[0]["path"].endswith(".mai")
     transformer_hits = search_sample_decks("transformer FLUM", ext="mai")
     assert transformer_hits
-    assert transformer_hits[0]["path"].startswith(
-        (
-            "application/transformer",
-            "application/emdlab_1ph_transformer_static_10",
-            "application/numeric_transformer_coupling_100",
-        )
-    )
     transformer_coupling_hits = search_sample_decks("transformer coupling turns ratio HBCU FLUM", ext="mai")
     assert transformer_coupling_hits
     assert transformer_coupling_hits[0]["path"].startswith("application/numeric_transformer_coupling_100")
@@ -2041,30 +1999,6 @@ def test_public_sample_decks_are_runnable_inputs_only():
     assert any(h["path"].startswith("application/motor/srm_switched_reluctance_10") for h in srm_hits)
     spm_route = route_sample_decks("SPM motor flux linkage sweep", limit=3)
     assert spm_route[0]["family"] == "application/motor/spm_surface_pm_10"
-    emdlab_ipm_hits = search_sample_decks("EMDLAB-style IPM hairpin FLUM", ext="mai")
-    assert emdlab_ipm_hits
-    assert emdlab_ipm_hits[0]["path"].startswith("application/motor/emdlab_ipm_hairpin_10")
-    emdlab_im_hits = search_sample_decks("induction-machine bar OHM2 FLUM", ext="mai")
-    assert emdlab_im_hits
-    assert emdlab_im_hits[0]["path"].startswith("application/motor/emdlab_induction_bar_10")
-    emdlab_synrm_hits = search_sample_decks("EMDLAB-style SynRM flux-barrier FLUM", ext="mai")
-    assert emdlab_synrm_hits
-    assert emdlab_synrm_hits[0]["path"].startswith("application/motor/emdlab_synrm_flux_barrier_10")
-    emdlab_srm_hits = search_sample_decks("EMDLAB-style SRM pole-variant FLUM", ext="mai")
-    assert emdlab_srm_hits
-    assert emdlab_srm_hits[0]["path"].startswith("application/motor/emdlab_srm_pole_variants_10")
-    emdlab_afpm_hits = search_sample_decks("EMDLAB-style AFPM linearized-airgap FLUM", ext="mai")
-    assert emdlab_afpm_hits
-    assert emdlab_afpm_hits[0]["path"].startswith("application/motor/emdlab_afpm_linearized_10")
-    emdlab_spmsm_static_hits = search_sample_decks("EMDLAB-style SPM static-torque FLUM", ext="mai")
-    assert emdlab_spmsm_static_hits
-    assert emdlab_spmsm_static_hits[0]["path"].startswith("application/motor/emdlab_spmsm_static_torque_10")
-    emdlab_transformer_hits = search_sample_decks("EMDLAB-style single-phase transformer static FLUM", ext="mai")
-    assert emdlab_transformer_hits
-    assert emdlab_transformer_hits[0]["path"].startswith("application/emdlab_1ph_transformer_static_10")
-    emdlab_ccore_hits = search_sample_decks("EMDLAB-style benchmark C-core FLUM", ext="mai")
-    assert emdlab_ccore_hits
-    assert emdlab_ccore_hits[0]["path"].startswith("application/emdlab_benchmark_ccore_10")
     numeric_hits = search_sample_decks("numeric validation anchor current scaling FLUM", ext="mai")
     assert numeric_hits
     assert numeric_hits[0]["path"].startswith("application/numeric_validation_anchors_10")
@@ -2088,18 +2022,13 @@ def test_public_sample_decks_are_runnable_inputs_only():
     assert permanent_magnet_hits[0]["path"].startswith("application/numeric_permanent_magnet_100")
     route = route_sample_decks("I want an IPM hairpin motor flux linkage deck", limit=3)
     assert route
-    assert route[0]["family"] == "application/motor/emdlab_ipm_hairpin_10"
     route_text = format_sample_deck_routes(route, "IPM hairpin motor flux linkage")
     assert "elf_sample_decks_playbook" in route_text
-    assert "application/motor/emdlab_ipm_hairpin_10/eip001/eip001.mai" in route_text
     wpt_route = route_sample_decks("WPT misalignment with a conducting shield", limit=2)
     assert wpt_route[0]["family"] == "application/wpt_misalignment_10"
     outer_route = route_sample_decks("BLDC outer rotor motor", limit=2)
-    assert outer_route[0]["family"] == "application/motor/emdlab_bldc_outer_rotor_10"
     transformer_static_route = route_sample_decks("single phase transformer static", limit=2)
-    assert transformer_static_route[0]["family"] == "application/emdlab_1ph_transformer_static_10"
     ccore_route = route_sample_decks("benchmark C-core magnet", limit=2)
-    assert ccore_route[0]["family"] == "application/emdlab_benchmark_ccore_10"
     numeric_route = route_sample_decks("numeric validation anchor FLUM invariant", limit=2)
     assert numeric_route[0]["family"] == "application/numeric_validation_anchors_10"
     flum_law_route = route_sample_decks("FLUM law current linearity superposition", limit=2)
@@ -2188,8 +2117,8 @@ def test_public_sample_decks_are_runnable_inputs_only():
     assert "HBCN 1 0 1" in text
     assert "HBCN 2 0 2" in text
     assert "FLUM  49" in text
-    cards = build_sample_deck_cards(limit=1600)
-    assert len(cards) == 1600
+    cards = build_sample_deck_cards(limit=1360)
+    assert len(cards) == 1360
     spm_cards = build_sample_deck_cards(limit=20, family="spm_surface_pm_10")
     assert len(spm_cards) == 10
     assert "spm" in spm_cards[0]["tags"]
@@ -2212,57 +2141,6 @@ def test_public_sample_decks_are_runnable_inputs_only():
     assert len(wpt_cards) == 10
     assert "wpt" in wpt_cards[0]["tags"]
     assert "MCL8T" in wpt_cards[0]["elements"]
-    loop_family_checks = [
-        ("application/wpt_loop_10", "wpt", "MCL8T"),
-        ("application/mri_loop_10", "mri", "MAB8T"),
-        ("application/motor/sr_motor_loop_10", "sr-motor", "MMB8T"),
-        ("application/motor/spm_loop_10", "spm", "MWL8T"),
-        ("application/ih_induction_heating_10", "ih", "MAB8T"),
-        ("application/motor/reluctance_motor_10", "reluctance", "MMB8T"),
-        ("application/motor/hysteresis_motor_10", "hysteresis", "MMB8T"),
-        ("application/transformer_loop_10", "transformer", "MCL8T"),
-        ("application/accelerator_magnet_10", "accelerator", "MMB8T"),
-        ("application/actuator_plunger_10", "actuator", "MMB8T"),
-        ("application/maglev_bearing_10", "maglev", "MMB8T"),
-        ("application/magnetic_separator_10", "separator", "MWL8T"),
-        ("application/eddy_current_brake_10", "brake", "MAB8T"),
-        ("application/ndt_eddy_probe_10", "ndt", "MAB8T"),
-        ("application/magnetic_gear_10", "magnetic-gear", "MWL8T"),
-        ("application/voice_coil_10", "voice-coil", "MCL8T"),
-        ("application/relay_solenoid_10", "relay", "MMB8T"),
-        ("application/hall_sensor_fixture_10", "hall-sensor", "MWL8T"),
-        ("application/electromagnetic_clutch_10", "clutch", "MAB8T"),
-        ("application/motor/emdlab_bldc_spm_10", "bldc", "MWL8T"),
-        ("application/motor/emdlab_ipm_hairpin_10", "ipm", "MWL8T"),
-        ("application/motor/emdlab_induction_bar_10", "rotor-bar", "MAB8T"),
-        ("application/motor/emdlab_synrm_flux_barrier_10", "synrm", "MMB8T"),
-        ("application/motor/emdlab_srm_pole_variants_10", "pole-variant", "MMB8T"),
-        ("application/motor/emdlab_afpm_linearized_10", "afpm", "MWL8T"),
-        ("application/motor/emdlab_bldc_outer_rotor_10", "outer-rotor", "MWL8T"),
-        ("application/motor/emdlab_spmsm_static_torque_10", "static-torque", "MWL8T"),
-        ("application/motor/emdlab_srm1216_outer_rotor_10", "12-16", "MMB8T"),
-        ("application/motor/emdlab_synrm_fraction_static_torque_10", "fractional-sector", "MMB8T"),
-        ("application/emdlab_1ph_transformer_static_10", "single-phase", "MMB8T"),
-        ("application/emdlab_benchmark_ccore_10", "c-core", "MMB8T"),
-        ("application/motor/ipm_interior_pm_10", "ipm", "MWL8T"),
-        ("application/motor/wound_field_sync_10", "wound-field", "MCL8T"),
-        ("application/motor/axial_flux_pm_10", "afpm", "MWL8T"),
-        ("application/motor/linear_pm_motor_10", "linear-pm", "MWL8T"),
-        ("application/motor/stepper_motor_10", "stepper", "MWL8T"),
-        ("application/wpt_misalignment_10", "misalignment", "MAB8T"),
-        ("application/mri_gradient_sequence_10", "gradient-sequence", "MAB8T"),
-        ("application/transformer_leakage_10", "leakage", "MMB8T"),
-        ("application/ih_susceptor_ring_10", "susceptor", "MAB8T"),
-        ("application/accelerator_corrector_10", "corrector", "MMB8T"),
-        ("application/numeric_validation_anchors_10", "numeric-validation", "MCL8T"),
-        ("application/numeric_flum_law_64", "flum-law", "MCL8T"),
-        ("application/numeric_inductance_energy_100", "inductance", "MCL8T"),
-        ("application/numeric_force_torque_100", "force", "MCL8T"),
-        ("application/numeric_ac_loss_100", "ac-loss", "MAB8T"),
-        ("application/numeric_magnetic_circuit_100", "magnetic-circuit", "MMB8T"),
-        ("application/numeric_permanent_magnet_100", "permanent-magnet", "MWL8T"),
-        ("application/numeric_transformer_coupling_100", "transformer-coupling", "MMB8T"),
-    ]
     expected_family_lengths = {
         "application/numeric_flum_law_64": 64,
         "application/numeric_inductance_energy_100": 100,
@@ -2272,6 +2150,43 @@ def test_public_sample_decks_are_runnable_inputs_only():
         "application/numeric_permanent_magnet_100": 100,
         "application/numeric_transformer_coupling_100": 100,
     }
+    loop_family_checks = [('application/wpt_loop_10', 'wpt', 'MCL8T'),
+     ('application/mri_loop_10', 'mri', 'MAB8T'),
+     ('application/motor/sr_motor_loop_10', 'sr-motor', 'MMB8T'),
+     ('application/motor/spm_loop_10', 'spm', 'MWL8T'),
+     ('application/ih_induction_heating_10', 'ih', 'MAB8T'),
+     ('application/motor/reluctance_motor_10', 'reluctance', 'MMB8T'),
+     ('application/motor/hysteresis_motor_10', 'hysteresis', 'MMB8T'),
+     ('application/transformer_loop_10', 'transformer', 'MCL8T'),
+     ('application/accelerator_magnet_10', 'accelerator', 'MMB8T'),
+     ('application/actuator_plunger_10', 'actuator', 'MMB8T'),
+     ('application/maglev_bearing_10', 'maglev', 'MMB8T'),
+     ('application/magnetic_separator_10', 'separator', 'MWL8T'),
+     ('application/eddy_current_brake_10', 'brake', 'MAB8T'),
+     ('application/ndt_eddy_probe_10', 'ndt', 'MAB8T'),
+     ('application/magnetic_gear_10', 'magnetic-gear', 'MWL8T'),
+     ('application/voice_coil_10', 'voice-coil', 'MCL8T'),
+     ('application/relay_solenoid_10', 'relay', 'MMB8T'),
+     ('application/hall_sensor_fixture_10', 'hall-sensor', 'MWL8T'),
+     ('application/electromagnetic_clutch_10', 'clutch', 'MAB8T'),
+     ('application/motor/ipm_interior_pm_10', 'ipm', 'MWL8T'),
+     ('application/motor/wound_field_sync_10', 'wound-field', 'MCL8T'),
+     ('application/motor/axial_flux_pm_10', 'afpm', 'MWL8T'),
+     ('application/motor/linear_pm_motor_10', 'linear-pm', 'MWL8T'),
+     ('application/motor/stepper_motor_10', 'stepper', 'MWL8T'),
+     ('application/wpt_misalignment_10', 'misalignment', 'MAB8T'),
+     ('application/mri_gradient_sequence_10', 'gradient-sequence', 'MAB8T'),
+     ('application/transformer_leakage_10', 'leakage', 'MMB8T'),
+     ('application/ih_susceptor_ring_10', 'susceptor', 'MAB8T'),
+     ('application/accelerator_corrector_10', 'corrector', 'MMB8T'),
+     ('application/numeric_validation_anchors_10', 'numeric-validation', 'MCL8T'),
+     ('application/numeric_flum_law_64', 'flum-law', 'MCL8T'),
+     ('application/numeric_inductance_energy_100', 'inductance', 'MCL8T'),
+     ('application/numeric_force_torque_100', 'force', 'MCL8T'),
+     ('application/numeric_ac_loss_100', 'ac-loss', 'MAB8T'),
+     ('application/numeric_magnetic_circuit_100', 'magnetic-circuit', 'MMB8T'),
+     ('application/numeric_permanent_magnet_100', 'permanent-magnet', 'MWL8T'),
+     ('application/numeric_transformer_coupling_100', 'transformer-coupling', 'MMB8T')]
     for family, tag, element in loop_family_checks:
         family_cards = build_sample_deck_cards(limit=120, family=family)
         expected_len = expected_family_lengths.get(family, 10)

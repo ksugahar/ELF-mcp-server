@@ -38,9 +38,9 @@ Validation levels:
 Publication cadence:
 
 - validated decks are reviewed in 100-case checkpoints
-- this baseline contains 16 full checkpoints and no release-remainder batch
-- no additional cases are required for this baseline; a future optional
-  100-case checkpoint would be 1700 cases
+- this baseline contains 13 full checkpoints and a 60-case release-remainder batch
+- 40 additional cases would complete the next
+  100-case checkpoint would be 1400 cases
 
 The decks are intended as public examples that users can inspect, copy, and run
 with their own ELF/MAGIC installation. `elf_product_run` can execute a work copy
@@ -52,11 +52,11 @@ Quality labels used by the MCP tools:
 - `gold_numeric_invariant`: 674 numeric-anchor cases where ELF `FLUM`-derived
   scaling/sign/energy/loss/coupling invariants and independent NGSolve proxy
   invariants both passed.
-- `silver_observable_contract`: 500 runnable authoring-pattern cases where
+- `silver_observable_contract`: 410 runnable authoring-pattern cases where
   ELF/MAGIC run checks and independent NGSolve proxy-field energy checks
   passed, and the public `.mai` decks expose the expected FLUM/OHM2/FREQ/HBRM/
   HBCU markers for their mapped physical quantities.
-- `silver_proxy_energy`: 426 broader runnable authoring-pattern cases where
+- `silver_proxy_energy`: 276 broader runnable authoring-pattern cases where
   ELF/MAGIC run checks passed and an independent NGSolve proxy-field energy
   sanity gate was positive. This is useful for authoring patterns, but is not
   a claim of full absolute field/force/torque/loss agreement.
@@ -81,11 +81,11 @@ Representative routing:
   quantity, public observable, quality label, validation methods,
   representative `.mai` decks, and next MCP calls so agents can answer prompts
   without guessing which quantity to evaluate.
-- `elf_sample_decks_observable_contracts()` audits the 500-case public
+- `elf_sample_decks_observable_contracts()` audits the 410-case public
   observable-contract upgrade and reports required deck markers for each
   enhanced family.
 - `elf_sample_decks_cross_validation()` audits the validation contract across
-  all 1600 cases. It requires every family to have an independent NGSolve
+  all 1360 cases. It requires every family to have an independent NGSolve
   cross-check, reports that no family is missing one, and separates stronger
   `gold_numeric_invariant` families from enhanced `silver_observable_contract`
   and broader `silver_proxy_energy` proxy-check families.
@@ -101,7 +101,7 @@ Representative routing:
 - `elf_mcp_readiness()` aggregates the public quality gates, cross-validation
   gates, duplicate audit, local-runner handoff boundary, and high-value route
   checks into a release-readiness report before tag push.
-- `elf_motor_readiness()` audits the motor subset specifically: 652 cases
+- `elf_motor_readiness()` audits the motor subset specifically: 452 cases
   across 37 public motor families, current quality-label coverage, validation
   depth gaps, and radia-motor/radia-ngsolve strengthening targets such as
   back-EMF, cogging torque, Ld/Lq, MTPA, slip loss, and reluctance torque.
@@ -122,40 +122,11 @@ can emit ELF-compatible `.meg` meshes when that route is appropriate.
 
 Current families:
 
-- `application/motor/`: 652 motor-oriented examples, including 332 permanent-magnet
+- `application/motor/`: 452 motor-oriented examples, including 332 permanent-magnet
   pickup decks, 10 explicit SPM decks, 10 SRM switched-reluctance decks,
   10 induction cage decks, and 40 loop-reviewed SR/SPM/reluctance/hysteresis
-  motor decks, plus 200 EMDLAB-style motor decks covering all bundled EMDLAB
-  v0.2.0 motor example scripts, plus 50 Loop13 IPM, wound-field synchronous,
+  motor decks, plus 50 Loop13 IPM, wound-field synchronous,
   axial-flux PM, linear PM, and stepper motor decks
-- `application/motor/emdlab_bldc_spm_10/`: 10 EMDLAB-style BLDC/SPM examples using
-  slotted stator iron, surface PM rotor proxies, phase coils, and `FLUM`
-- `application/motor/emdlab_ipm_hairpin_10/`: 10 EMDLAB-style IPM hairpin examples with
-  buried PM rotor proxies, hairpin-conductor proxy counts, and `FLUM`
-- `application/motor/emdlab_induction_bar_10/`: 10 EMDLAB-style induction-machine rotor-bar
-  examples using phase coils, conductive bar proxies, `OHM2`, and `FLUM`
-- `application/motor/emdlab_synrm_flux_barrier_10/`: 10 EMDLAB-style SynRM flux-barrier
-  examples with saliency, rotor-angle proxies, and `FLUM`
-- `application/motor/emdlab_srm_pole_variants_10/`: 10 EMDLAB-style SRM pole-variant
-  examples covering 6/4, 8/6, 12/8, and 12/16 pole proxy patterns
-- `application/motor/emdlab_afpm_linearized_10/`: 10 EMDLAB-style AFPM linearized-airgap
-  examples with unfolded pole pitch, face magnets, stator coils, and `FLUM`
-- `application/motor/emdlab_bldc_outer_rotor_10/`: 10 EMDLAB-style BLDC outer-rotor
-  examples with surface PM proxies, stator iron, phase coils, and `FLUM`
-- `application/motor/emdlab_induction_fraction_10/`: 10 EMDLAB-style fractional-sector
-  induction-machine examples with phase coils, conducting bars, and `OHM2`
-- `application/motor/emdlab_ipm_hairpin_fraction_10/`: 10 EMDLAB-style fractional-sector
-  IPM hairpin examples with buried PMs, hairpin proxies, and `FLUM`
-- `application/motor/emdlab_spmsm_10/`, `application/motor/emdlab_spmsm_fraction_10/`, and
-  `application/motor/emdlab_spmsm_static_torque_10/`: 30 EMDLAB-style SPMSM examples
-  covering full, fractional-sector, and static-torque variants
-- `application/motor/emdlab_srm64_10/`, `application/motor/emdlab_srm86_10/`,
-  `application/motor/emdlab_srm86_fraction_10/`, `application/motor/emdlab_srm86_static_torque_10/`,
-  `application/motor/emdlab_srm128_10/`, and `application/motor/emdlab_srm1216_outer_rotor_10/`: 60
-  EMDLAB-style SRM examples covering 6/4, 8/6, 12/8, and 12/16 proxy patterns
-- `application/motor/emdlab_synrm_static_torque_10/` and
-  `application/motor/emdlab_synrm_fraction_static_torque_10/`: 20 EMDLAB-style SynRM
-  static-torque examples with flux-barrier and fractional-sector proxies
 - `application/motor/ipm_interior_pm_10/`: 10 Loop13 IPM examples with buried PM pairs,
   rotor/stator iron, phase coils, rotor-angle parameters, and `FLUM`
 - `application/motor/wound_field_sync_10/`: 10 Loop13 wound-field synchronous motor
@@ -181,25 +152,17 @@ Current families:
   saliency, phase excitation, and passive pickup coils
 - `application/motor/hysteresis_motor_10/`: 10 high-coercivity hysteresis-motor input-deck
   proxy examples using origin-starting B-H curves and pickup coils
-- non-motor `application/` families: 948 examples covering transformers, MRI,
+- non-motor `application/` families: 908 examples covering transformers, MRI,
   wireless power transfer, induction heating, accelerator electromagnets,
   actuator plungers, maglev bearings, magnetic separators, eddy-current
   brakes, NDT eddy-current probes, magnetic gears, voice-coil actuators,
   relay solenoids, Hall-sensor fixtures, electromagnetic clutches, WPT
   misalignment, MRI gradient sequences, transformer leakage, IH susceptors,
-  accelerator corrector magnets, EMDLAB-style transformer/benchmark decks,
-  numeric-validation anchors, numeric FLUM-law validation decks, numeric
+  accelerator corrector magnets, numeric-validation anchors, numeric FLUM-law validation decks, numeric
   inductance/co-energy validation decks, and numeric force/torque-gradient
   validation decks, numeric AC-loss validation decks, and numeric
   magnetic-circuit validation decks, numeric permanent-magnet validation decks,
   and numeric transformer-coupling validation decks
-- `application/emdlab_1ph_transformer_static_10/`: 10 EMDLAB-style
-  single-phase transformer static examples with core limbs, primary/secondary
-  coils, and `FLUM`
-- `application/emdlab_benchmark_ccore_10/`,
-  `application/emdlab_benchmark_geometry_10/`, and
-  `application/emdlab_benchmark_magnet_10/`: 30 EMDLAB-style benchmark
-  examples covering C-core, geometry, and magnet patterns
 - `application/numeric_validation_anchors_10/`: 10 compact numeric anchor
   examples for current scaling, sign reversal, distance decay, symmetry, and
   cancellation checks using ELF `FLUM` and NGSolve proxy invariants
