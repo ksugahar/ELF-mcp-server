@@ -235,6 +235,10 @@ Only `SOL BEAM` (trajectory computation).
 | `MACH` | DC superposition (2-pass) | `MACH problem1` |
 | `FREQ` | Frequency [Hz] (MOMC only) | `FREQ 0 1000` |
 
+For observed `EIEM n` behavior in static `SOL MOME` with `MMB8T`,
+see the EIEM section of `elf_usage("magic")`. Preserve the distinction between
+an omitted line and an explicit `EIEM 0` when reproducing a deck.
+
 ### NONL Convergence Strategy
 ```
 NONL  -3  0.01        # Newton-Raphson: 3 iterations (fast approach)
@@ -805,6 +809,57 @@ END
 6. `SOL FIXA` -- Flux linkage, vector potential
 7. `SOL MAS` -- Charge file for BEAM
 8. `SOL FMAG` -- Center field at MJH elements
+
+## EIEM in static MOME
+
+The input form exercised here is a line `EIEM n` inside `SOL MOME`.
+For a baseline, omit the line explicitly. The product experiments below
+used 3D `MMB8T`, uniform linear material, a uniform oblique applied field
+and the direct LU solver. They covered MAGIC 16.0 (2026-03-18) and
+16.1 (2026-10-07), two independently constructed two-cell shapes (an
+affine shear and a tapered extrusion), and 12 field probes per shape.
+
+| MOME input | Observed result in these experiments |
+|------------|--------------------------------------|
+| Line omitted | Completed. Field differed from all five explicit values. |
+| `EIEM 0` | Completed. Field and magnetic coefficient output matched 2, 3 and 4. |
+| `EIEM 1` | Completed. Field and magnetic coefficient output differed from the 0 group. |
+| `EIEM 2` | Completed. Field and magnetic coefficient output matched 0. |
+| `EIEM 3` | Completed. Field and magnetic coefficient output matched 0. |
+| `EIEM 4` | Completed. Field and magnetic coefficient output matched 0. |
+
+The field matches are at the printed output precision. Within each test,
+the binary magnetic coefficient files also matched byte for byte for
+0, 2, 3 and 4. The saved matrix files matched for all five explicit values,
+including 1. Their relationship to the complete matrix used by the solver
+is unverified. A normal run confirms input acceptance for that build and
+deck. Distinct internal branches, fallback behavior, compensation source
+locations, weights and self terms remain unidentified.
+
+### Published formulations
+
+- Takahashi, Wakao and Kameari (2006), section II.B, describe one surface
+  charge density per hexahedron face and evaluate the material relation
+  midway between the element's center of gravity and each face center.
+  Their formulation imposes zero total surface charge on each element,
+  with a vanishing element-interior divergence term. See
+  [the published paper](https://www.atlas.cuhk.edu.hk/itp/v3/links/mmm/pdfs/08H904_1.pdf).
+- Yano and Sugahara (2023), section 2.2, describe a six-face formulation
+  with the same placement of the evaluation points. In their model,
+  a face with integrated charge `Q_f` has a compensating point charge
+  `-Q_f` at the element center of gravity. The colocated contributions
+  sum to `-sum_f Q_f`. Each face influence includes its surface integral
+  and the corresponding point contribution. The paper reports
+  implementation in ELF/MAGIC. See
+  [the published paper](https://doi.org/10.3379/msjmag.2303R004).
+
+The papers give no mapping to EIEM values. The surface-neutral and
+point-compensated models yield the same source field for identical face
+charges when their sum vanishes. Equivalence of the discrete solvers
+would additionally require agreement in the admissible face charges,
+the material equations at the evaluation points, and the self terms.
+The available evidence leaves equivalence of `EIEM 0` to either published
+formulation unresolved.
 
 ## Eddy Current in MAGIC
 - Use MAB/MAT (non-magnetic) or MBB (magnetic) elements
