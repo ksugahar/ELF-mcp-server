@@ -934,7 +934,7 @@ USE  BEAM  3.50
 PRE
   FILE  MAGIC  problem_M   # Import magnetic field
   FILE  ELFIN  problem_E   # Import electric field (optional)
-  CHAR  1  1.602E-19       # Electron charge [C]
+  CHAR  1  -1.602E-19      # Electron charge [C], signed
   MASS  1  9.109E-31       # Electron mass [kg]
   VOLB  1  10000.0         # Acceleration voltage [V]
 END
@@ -2570,11 +2570,14 @@ _TOPICS = {
 
 def get_elf_documentation(topic: str = "all") -> str:
     """Return ELF documentation for the given topic."""
+    if topic == "local_definitions":
+        from .local_definitions import read_local_definitions
+        return read_local_definitions()
     if topic == "all":
         return "\n\n".join(_TOPICS.values())
 
     result = _TOPICS.get(topic)
     if result is None:
-        available = ", ".join(sorted(_TOPICS.keys()))
+        available = ", ".join(sorted([*_TOPICS, "local_definitions"]))
         return f"Unknown topic: '{topic}'. Available topics: {available}"
     return result

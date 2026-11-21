@@ -475,6 +475,14 @@ as `radia_export meg "output.meg" threed labels "1:MMB,2:MWL"` is documented in
 `elf_usage(topic="meg_export")`. The published examples keep the geometry
 deliberately inspectable and dependency-free.
 
+### User-local material and particle definitions
+
+`elf_usage("local_definitions")` reads imported material/excitation parameters,
+point pairs, and signed particle charge/mass from
+`~/.elf_mcp/definitions.json`. These product reference data are user-local and
+are not bundled in the package or included in `elf_usage("all")`.
+Point pairs retain their source conventions; verify unit flags before use.
+
 ### Public lint
 
 Before publishing, run:
