@@ -1082,6 +1082,7 @@ def elf_usage(topic: str = "all") -> str:
                                  end-to-end call sequence, key function table,
                                  _R return variants, common pitfalls
             "live_drive"       - Open MAGIC kernel live-drive note
+            "multiport_inductance_comparison" - ELF/MAGIC and NGSolve port-matrix checks
             "force_gap_contract" - PM force-gap observable contract for
                                  ELF/MAGIC force rows before open validation
     """
@@ -4569,6 +4570,7 @@ def main():
             "meshing", "convergence", "force_methods", "errors",
             "iemesh", "tools", "cln_extraction", "licensing", "python_api",
             "live_drive", "force_gap_contract",
+            "multiport_inductance_comparison",
         ]
         for t in topics:
             result = elf_usage(t)

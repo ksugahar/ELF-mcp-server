@@ -2531,6 +2531,64 @@ Public artifacts should retain only package metadata, tolerances, validation
 status, and the open gate name.
 """
 
+
+MULTIPORT_INDUCTANCE_COMPARISON = """\
+# Multiport inductance matrix comparison with ELF/MAGIC and NGSolve
+
+Start with linear, reciprocal magnetostatics and fixed geometry. Use terminal
+currents in amperes, flux linkage in weber-turns, and L in henries. Match
+turn counts, winding orientation, current distribution and material properties.
+When the solver uses ampere-turns, convert the excitation exactly once.
+Use the same physical winding definition for excitation and linkage extraction.
+
+1. Excite each port j in its positive direction with a known current I_j,
+   holding every other port at zero current. Compute signed flux linkage of
+   every port i. Assemble column j as L_ij = (lambda_i - lambda_i_at_zero) / I_j.
+   Store the raw matrix with labeled rows and columns. Repeat with the
+   opposite current to check the sign and linearity of the linkage.
+2. Compute L_12 and L_21 in separate excitations before forming any symmetric
+   representation. Report their signed values and absolute difference in
+   henries. Use a relative reciprocity error only above a predeclared scale
+   floor. Reversing a port convention changes both its row and its column sign.
+3. Check linear magnetic energy independently for single-port and mixed
+   current vectors using W = 0.5 * I^T * L * I. The energy integral must
+   include the relevant field region and use the same open-boundary
+   convention. Energy cannot expose an antisymmetric matrix error, so keep
+   the independent reciprocity check. Check nonnegative energy and report
+   each matrix component against the separately assembled reference.
+4. In finite-air-domain FEM, vary the exterior boundary and winding/air mesh
+   resolution in separate sweeps. Record the boundary condition, field and
+   linkage extraction conventions, and convergence of self and mutual terms.
+   Declare tolerances before running. A near-zero mutual term should be
+   assessed with an absolute tolerance.
+
+## ELF/MAGIC extraction
+
+The product documentation describes SOL FIXA / FLUM for linkage. Direct
+linkage extraction from an air coil has not been verified through the
+guarded MCP runner, which exposes mome and mome_fiel. For a filament
+receiver, a possible post-processing route is to sample total B over its
+spanning surface and integrate signed normal flux. For a finite winding,
+use the current-normalized, signed average over its oriented turns.
+Verify the available field output, its units and per-port source isolation
+before comparing either result.
+
+## Original example: two coaxial single-turn air coils
+
+Place a circular winding of mean radius 17 mm at z = 0 and a second one of
+mean radius 26 mm at z = 31 mm. Give both a circular conductor cross-section
+of radius 0.8 mm and prescribe the same normalized azimuthal current model in
+both solvers. Positive current is counterclockwise viewed from +z toward the
+origin. Use vacuum permeability and no magnetic material. Run port currents
+(1, 0) A and (0, 1) A for the two columns, and (1, 1) A and (1, -1) A for
+mixed-current energy checks. With the stated port orientations, both mutual
+entries are positive. An ideal filament mutual-inductance calculation can
+check sign and scale, with a finite-conductor model difference. Use the
+finite winding model for self-inductance, since a filament has no finite
+self-inductance. This is a proposed comparison procedure. No solver run or
+measured acceptance value is reported here.
+"""
+
 _TOPICS = {
     "overview": ELF_OVERVIEW,
     "mai_format": MAI_FORMAT,
@@ -2564,6 +2622,7 @@ _TOPICS = {
     "python_api": PYTHON_API_DOCS,
     "live_drive": LIVE_DRIVE_DOCS,
     "force_gap_contract": FORCE_GAP_OBSERVABLE_CONTRACT,
+    "multiport_inductance_comparison": MULTIPORT_INDUCTANCE_COMPARISON,
     "maxwell_stress_surface_package": MAXWELL_STRESS_SURFACE_PACKAGE_CONTRACT,
 }
 
