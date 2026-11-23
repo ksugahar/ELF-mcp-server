@@ -99,7 +99,9 @@ for item in results:
     print(item["case_name"], item["params"], "ok=", res.ok, "rows=", len(res.parse_numeric_table(".flx")))
 ```
 
-The sweep provides `{case_name}` from the generated case name. Use doubled braces
+Both `run_mai` and `sweep` write the .mai and copy a supplied .meg even when confirmation is false. Only solver execution requires confirmation.
+
+The sweep provides `{case_name}` from `case_prefix`. Omit `case_name` from each parameter mapping. Use doubled braces
 (`{{` and `}}`) for literal braces in the template.
 
 ## Troubleshooting

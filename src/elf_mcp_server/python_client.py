@@ -160,6 +160,7 @@ class ElfClient:
             reasons = [raw["status"]]
             if raw.get("required_confirmation"):
                 reasons.append(raw["required_confirmation"])
+            reasons.extend(raw.get("blocking_reasons", ()))
             if stage.get("timed_out"):
                 reasons.append("worker timed out")
             if stage.get("exit_code") not in (None, 0):
@@ -194,7 +195,11 @@ class ElfClient:
         timeout_s: int | None = None,
         confirm_product_execution: bool = False,
     ) -> ElfRunResult:
-        """Write ``mai_text`` (and optional ``meg_path``) into ``work_dir`` and run the solver."""
+        """Write the .mai and copy the optional .meg into the work directory.
+
+        These writes occur even when confirmation is false. Only solver execution
+        requires confirmation.
+        """
         resolved_dir = Path(work_dir).resolve()
         resolved_dir.mkdir(parents=True, exist_ok=True)
         (resolved_dir / f"{case_name}.mai").write_text(mai_text, encoding="utf-8", newline="\n")
@@ -223,14 +228,20 @@ class ElfClient:
         confirm_product_execution: bool = False,
         case_prefix: str = "case",
     ) -> list[dict[str, Any]]:
-        """Run a parametric sweep by formatting ``template_mai`` for each parameter dict."""
+        """Format and prepare one case per parameter mapping.
+
+        Each .mai is written and each supplied .meg is copied even when confirmation
+        is false. Only solver execution requires confirmation.
+        """
+        if any("case_name" in params for params in params_list):
+            raise ValueError("case_name is generated from case_prefix and cannot be supplied in sweep params")
         root = Path(base_dir).resolve()
         root.mkdir(parents=True, exist_ok=True)
         results: list[dict[str, Any]] = []
         for idx, params in enumerate(params_list):
             case_name = f"{case_prefix}_{idx:03d}"
             case_dir = root / case_name
-            mai_text = template_mai.format(**{**params, "case_name": case_name})
+            mai_text = template_mai.format(case_name=case_name, **params)
             run_res = self.run_mai(
                 mai_text,
                 case_dir,

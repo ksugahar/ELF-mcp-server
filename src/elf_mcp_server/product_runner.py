@@ -196,6 +196,7 @@ def check_product_case(
     workflow: str = "mome_fiel",
     product_home: str = "",
     include_paths: bool = False,
+    collect_input_errors: bool = False,
 ) -> dict[str, Any]:
     """Validate a local DLL-backed case without loading or executing the DLL."""
     solver_name = _normalize_solver(solver)
@@ -210,14 +211,27 @@ def check_product_case(
     if not directory.is_dir():
         raise ValueError("case_directory must be an existing directory")
 
-    inputs = [_safe_case_file(directory, case, suffix) for suffix in (".mai", ".meg")]
+    inputs = []
+    blocking_reasons = []
+    for suffix in (".mai", ".meg"):
+        try:
+            inputs.append(_safe_case_file(directory, case, suffix))
+        except ValueError as exc:
+            if not collect_input_errors:
+                raise
+            blocking_reasons.append(str(exc))
     discovery = discover_product(product_home, include_paths=include_paths)
     solver_row = discovery.get("solvers", {}).get(solver_name, {})
-    ready = bool(solver_row.get("available"))
+    if discovery["status"] == "not_found":
+        blocking_reasons.append("ELF product home not found")
+    elif not solver_row.get("available"):
+        blocking_reasons.append(f"{solver_name} solver DLL unavailable: {_SOLVER_DLLS[solver_name]}")
+    ready = not blocking_reasons
     response: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
         "status": "ready" if ready else "not_ready",
         "ready": ready,
+        "blocking_reasons": blocking_reasons,
         "solver": solver_name,
         "workflow": workflow_name,
         "case_name": case,
@@ -356,6 +370,7 @@ def run_product_case(
         workflow=workflow,
         product_home=product_home,
         include_paths=include_paths,
+        collect_input_errors=True,
     )
     if not confirm_product_execution:
         return {
@@ -371,10 +386,12 @@ def run_product_case(
     directory = Path(os.path.expandvars(os.path.expanduser(case_directory))).resolve(strict=True)
     home, _ = _find_home(product_home)
     if home is None:
-        return {**check, "status": "not_ready", "ok": False}
+        return {**check, "status": "not_ready", "ok": False, "ready": False,
+                "blocking_reasons": ["ELF product home not found"]}
     dll = _allowed_dll(home, _SOLVER_DLLS[check["solver"]])
     if dll is None:
-        return {**check, "status": "not_ready", "ok": False}
+        return {**check, "status": "not_ready", "ok": False, "ready": False,
+                "blocking_reasons": [f"Solver DLL unavailable: {_SOLVER_DLLS[check['solver']]}"]}
 
     input_before = {
         suffix: _input_fingerprint(_safe_case_file(directory, case, suffix))

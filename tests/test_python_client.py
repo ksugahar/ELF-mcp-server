@@ -3,6 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
+
 from elf_mcp_server import ElfClient, ElfRunResult, doctor
 
 
@@ -96,3 +98,38 @@ def test_elf_usage_python_client_topic() -> None:
     doc = get_elf_documentation("python_client")
     assert "ElfClient" in doc
     assert all(example in doc for example in ("doctor(", ".run_case(", ".run_mai(", ".sweep("))
+
+@pytest.mark.parametrize("confirm", [False, True])
+def test_elf_client_reports_case_blocking_reasons(tmp_path: Path, confirm: bool) -> None:
+    product_home = tmp_path / "product"
+    case_dir = tmp_path / "case"
+    case_dir.mkdir()
+    (case_dir / "demo.mai").touch()
+    client = ElfClient(product_home=str(product_home))
+    missing_home = client.run_case(case_dir, "demo", confirm_product_execution=confirm)
+    assert "ELF product home not found" in missing_home.error
+
+    (product_home / "bin").mkdir(parents=True)
+    result = client.run_case(case_dir, "demo", confirm_product_execution=confirm)
+    assert not result.ok
+    assert "demo.meg" in result.error
+    assert "magh1600.dll" in result.error
+    assert str(tmp_path) not in result.error
+
+
+def test_elf_client_sweep_rejects_case_name_before_writing(tmp_path: Path) -> None:
+    base_dir = tmp_path / "sweep"
+    with pytest.raises(ValueError, match="case_name is generated from case_prefix"):
+        ElfClient().sweep("{case_name}", [{}, {"case_name": "reserved"}], base_dir)
+    assert not base_dir.exists()
+
+
+def test_elf_client_run_mai_prepares_unconfirmed_case(tmp_path: Path) -> None:
+    mesh = tmp_path / "source.meg"
+    mesh.write_bytes(b"mesh")
+    work_dir = tmp_path / "case"
+    client = ElfClient(product_home=str(tmp_path / "missing"))
+    result = client.run_mai("PRE", work_dir, "demo", meg_path=mesh)
+    assert result.raw["status"] == "confirmation_required"
+    assert (work_dir / "demo.mai").read_text(encoding="utf-8") == "PRE"
+    assert (work_dir / "demo.meg").read_bytes() == b"mesh"
