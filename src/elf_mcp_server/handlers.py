@@ -1053,6 +1053,7 @@ def elf_usage(topic: str = "all") -> str:
                                  flux linkage/back-EMF, lamination, eddy
                                  currents) to ELF/MAGIC elements, SOL blocks,
                                  and extraction steps
+            "spm_back_emf_comparison" - Compare open-circuit SPM phase linkage and back-EMF
             "inductance"       - Lsc (JIS) and Ll (IEEJ) with 6 samples
             "magnetization"    - Magnetization (MAGNE2) and demagnetization
             "examples"         - Example file catalog
@@ -4564,7 +4565,7 @@ def main():
             "overview", "mai_format", "mei_format", "meg_format",
             "magic", "elfin", "beam", "element_types", "bh_curves",
             "sol_commands", "mei_commands", "ipm_motor", "motor_radia_bridge",
-            "inductance",
+            "inductance", "spm_back_emf_comparison",
             "magnetization", "examples", "meg_export",
             "treasure_box", "sinusoidal", "anisotropy", "sted",
             "meshing", "convergence", "force_methods", "errors",

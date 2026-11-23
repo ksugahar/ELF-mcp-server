@@ -2589,6 +2589,51 @@ self-inductance. This is a proposed comparison procedure. No solver run or
 measured acceptance value is reported here.
 """
 
+
+SPM_BACK_EMF_COMPARISON = """\
+# Open-circuit surface-PM motor comparison
+
+Compare phase flux linkage before comparing back-EMF. Use the same planar
+cross-section, effective stack length, pole pairs, magnet orientation and
+material law, air gap, boundary condition, rotor zero, rotation direction,
+phase winding signs, turns and parallel paths. Set all phase currents to zero.
+Record which effects are included, such as conducting-magnet eddy currents,
+skew and end leakage. A locked-angle magnetostatic sweep is comparable to
+a moving transient solution only when speed-dependent effects are negligible
+or disabled in the transient model.
+
+Export raw phase A/B/C flux linkage in Wb-turn and mechanical angle in
+radians. Apply sector and axial-length scaling exactly once and keep
+signed phase linkage separate from line-to-line voltage. Use a common
+periodic angle grid with no duplicated endpoint. Confirm physical angle
+zero and winding orientation before comparing phase. With pole-pair count
+p, electrical angle is p times mechanical angle, plus the declared phase
+reference offset.
+
+Derive phase back-EMF from both linkage traces with the same periodic
+differentiation method. Under the generator EMF convention use
+e = -omega_m * d(lambda)/d(theta_m), or use omega_e = p * omega_m with
+electrical angle. A terminal voltage drop convention uses the positive
+derivative. Record the polarity, and distinguish raw solver voltage from
+a voltage that has been differentiated, shifted in time, or made periodic.
+Line voltage e_AB = e_A - e_B requires both signed phase traces.
+Report flux-linkage amplitude and phase, phase EMF peak and RMS, and
+harmonics with the same normalization. Refine the angle step and air-gap
+mesh separately before drawing a conclusion.
+
+For ELF/MAGIC, verify the applicable workflow for signed phase linkage.
+SOL FIXA / FLUM is documented, but the guarded MCP product runner exposes
+mome and mome_fiel. Check the actual available outputs and record an
+unsupported extraction if phase linkage is unavailable through that route.
+
+## Independent waveform check
+
+For a synthetic phase trace lambda_A = 0.04 cos(theta_e) Wb-turn,
+p = 3 and 1200 rpm, the generator-convention phase EMF is a positive sine
+with peak 4.8*pi V and RMS 4.8*pi/sqrt(2) V. This checks speed, sign,
+angle units and phase normalization only. No motor solve is reported.
+"""
+
 _TOPICS = {
     "overview": ELF_OVERVIEW,
     "mai_format": MAI_FORMAT,
@@ -2603,6 +2648,7 @@ _TOPICS = {
     "mei_commands": MEI_COMMANDS,
     "ipm_motor": IPM_MOTOR,
     "motor_radia_bridge": MOTOR_RADIA_BRIDGE,
+    "spm_back_emf_comparison": SPM_BACK_EMF_COMPARISON,
     "inductance": INDUCTANCE_DOCS,
     "magnetization": MAGNETIZATION_DOCS,
     "examples": EXAMPLES_CATALOG,
