@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 import shutil
 import struct
-from typing import Any, Mapping, Sequence
+from typing import Any, Iterable, Mapping
 
 from .product_runner import check_product_case, discover_product, run_product_case
 
@@ -219,7 +219,7 @@ class ElfClient:
     def sweep(
         self,
         template_mai: str,
-        params_list: Sequence[Mapping[str, Any]],
+        params_list: Iterable[Mapping[str, Any]],
         base_dir: str | Path,
         *,
         meg_path: str | Path | None = None,
@@ -233,6 +233,7 @@ class ElfClient:
         Each .mai is written and each supplied .meg is copied even when confirmation
         is false. Only solver execution requires confirmation.
         """
+        params_list = list(params_list)
         if any("case_name" in params for params in params_list):
             raise ValueError("case_name is generated from case_prefix and cannot be supplied in sweep params")
         root = Path(base_dir).resolve()

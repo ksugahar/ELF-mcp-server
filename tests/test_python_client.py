@@ -117,6 +117,22 @@ def test_elf_client_reports_case_blocking_reasons(tmp_path: Path, confirm: bool)
     assert str(tmp_path) not in result.error
 
 
+def test_elf_client_sweep_runs_all_generator_cases(tmp_path: Path) -> None:
+    mesh = tmp_path / "source.meg"
+    mesh.write_bytes(b"mesh")
+    base_dir = tmp_path / "sweep"
+    client = ElfClient(product_home=str(tmp_path / "missing"))
+    params = ({"current": current} for current in (100, 200))
+
+    rows = client.sweep("CURR {current}", params, base_dir, meg_path=mesh)
+
+    assert [row["case_name"] for row in rows] == ["case_000", "case_001"]
+    assert [row["result"].raw["status"] for row in rows] == ["confirmation_required"] * 2
+    for row, current in zip(rows, (100, 200)):
+        name = row["case_name"]
+        assert (base_dir / name / f"{name}.mai").read_text(encoding="utf-8") == f"CURR {current}"
+
+
 def test_elf_client_sweep_rejects_case_name_before_writing(tmp_path: Path) -> None:
     base_dir = tmp_path / "sweep"
     with pytest.raises(ValueError, match="case_name is generated from case_prefix"):
