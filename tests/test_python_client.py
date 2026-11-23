@@ -59,3 +59,11 @@ def test_elf_client_run_mai_and_sweep(tmp_path: Path) -> None:
     assert (tmp_path / "sweep" / "case_000" / "case_000.meg").read_text(encoding="utf-8") == "MEG_DATA\n"
     assert rows[1]["params"] == {"current": 200}
     assert rows[1]["result"].ok is True
+
+
+def test_elf_usage_python_client_topic() -> None:
+    from elf_mcp_server.elf_knowledge import get_elf_documentation
+
+    doc = get_elf_documentation("python_client")
+    assert "ElfClient" in doc
+    assert "sweep" in doc
