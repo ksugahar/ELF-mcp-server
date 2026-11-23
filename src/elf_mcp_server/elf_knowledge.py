@@ -2593,17 +2593,26 @@ measured acceptance value is reported here.
 SPM_BACK_EMF_COMPARISON = """\
 # Open-circuit surface-PM motor comparison
 
-Compare phase flux linkage before comparing back-EMF. Use the same planar
-cross-section, effective stack length, pole pairs, magnet orientation and
-material law, air gap, boundary condition, rotor zero, rotation direction,
-phase winding signs, turns and parallel paths. Set all phase currents to zero.
+Compare phase flux linkage before comparing back-EMF. Match pole pairs,
+magnet orientation and material law, air gap, boundary conditions, rotor zero,
+rotation direction, phase winding signs, turns and parallel paths. Set all
+phase currents to zero.
+
+For two 2D models, use the same cross-section geometry and effective stack
+length. For a 3D model, such as the ELF/MAGIC integral formulation, compared
+with a 2D model using an effective stack length, align the cross-section and
+declare the dimensionality difference. End leakage and axial fringing in the
+3D model can contribute to the expected difference in linkage. Report them
+as model differences when interpreting agreement. Compare linkage on a common
+per-unit-length or total-linkage basis, and state the stack-length conversion
+once.
 Record which effects are included, such as conducting-magnet eddy currents,
 skew and end leakage. A locked-angle magnetostatic sweep is comparable to
 a moving transient solution only when speed-dependent effects are negligible
 or disabled in the transient model.
 
 Export raw phase A/B/C flux linkage in Wb-turn and mechanical angle in
-radians. Apply sector and axial-length scaling exactly once and keep
+radians. Apply sector scaling and any declared stack-length conversion exactly once and keep
 signed phase linkage separate from line-to-line voltage. Use a common
 periodic angle grid with no duplicated endpoint. Confirm physical angle
 zero and winding orientation before comparing phase. With pole-pair count
