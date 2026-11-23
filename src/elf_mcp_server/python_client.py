@@ -122,7 +122,7 @@ class ElfClient:
     ) -> dict[str, Any]:
         """Validate inputs and solver availability for an existing case directory."""
         return check_product_case(
-            case_dir=str(work_dir),
+            case_directory=str(work_dir),
             case_name=case_name,
             solver=solver or self.solver,
             product_home=self.product_home,
@@ -135,32 +135,52 @@ class ElfClient:
         *,
         solver: str | None = None,
         timeout_s: int | None = None,
+        confirm_product_execution: bool = False,
     ) -> ElfRunResult:
         """Execute an existing ``<case_name>.mai`` / ``.meg`` in ``work_dir``."""
         resolved_dir = Path(work_dir).resolve()
         chosen_solver = (solver or self.solver).strip().upper()
         raw = run_product_case(
-            case_dir=str(resolved_dir),
+            case_directory=str(resolved_dir),
             case_name=case_name,
             solver=chosen_solver,
             product_home=self.product_home,
-            timeout_s=self.timeout_s if timeout_s is None else timeout_s,
+            timeout_seconds=self.timeout_s if timeout_s is None else timeout_s,
+            confirm_product_execution=confirm_product_execution,
         )
         outputs = tuple(
             item["name"]
             for item in raw.get("fresh_outputs", [])
             if isinstance(item, Mapping) and "name" in item
         )
+        stage = raw.get("stage") or {}
+        worker = stage.get("worker_result") or {}
+        error = None
+        if not raw["ok"]:
+            reasons = [raw["status"]]
+            if raw.get("required_confirmation"):
+                reasons.append(raw["required_confirmation"])
+            if stage.get("timed_out"):
+                reasons.append("worker timed out")
+            if stage.get("exit_code") not in (None, 0):
+                reasons.append(f"worker exit code {stage['exit_code']}")
+            if worker.get("error_type"):
+                reasons.append(worker["error_type"])
+            if raw.get("inputs_unchanged") is False:
+                reasons.append("case inputs changed")
+            if stage and not outputs:
+                reasons.append("no fresh outputs")
+            error = "; ".join(reasons)
         return ElfRunResult(
             ok=bool(raw.get("ok")),
             solver=chosen_solver,
             case_name=case_name,
             work_dir=resolved_dir,
-            returncode=raw.get("returncode"),
-            elapsed_s=raw.get("elapsed_s"),
+            returncode=stage.get("exit_code"),
+            elapsed_s=stage.get("elapsed_seconds"),
             outputs=outputs,
             raw=raw,
-            error=raw.get("error"),
+            error=error,
         )
 
     def run_mai(
@@ -172,11 +192,12 @@ class ElfClient:
         meg_path: str | Path | None = None,
         solver: str | None = None,
         timeout_s: int | None = None,
+        confirm_product_execution: bool = False,
     ) -> ElfRunResult:
         """Write ``mai_text`` (and optional ``meg_path``) into ``work_dir`` and run the solver."""
         resolved_dir = Path(work_dir).resolve()
         resolved_dir.mkdir(parents=True, exist_ok=True)
-        (resolved_dir / f"{case_name}.mai").write_text(mai_text, encoding="utf-8")
+        (resolved_dir / f"{case_name}.mai").write_text(mai_text, encoding="utf-8", newline="\n")
         if meg_path is not None:
             src_meg = Path(meg_path).resolve(strict=True)
             dst_meg = resolved_dir / f"{case_name}.meg"
@@ -187,6 +208,7 @@ class ElfClient:
             case_name,
             solver=solver,
             timeout_s=timeout_s,
+            confirm_product_execution=confirm_product_execution,
         )
 
     def sweep(
@@ -198,6 +220,7 @@ class ElfClient:
         meg_path: str | Path | None = None,
         solver: str | None = None,
         timeout_s: int | None = None,
+        confirm_product_execution: bool = False,
         case_prefix: str = "case",
     ) -> list[dict[str, Any]]:
         """Run a parametric sweep by formatting ``template_mai`` for each parameter dict."""
@@ -207,7 +230,7 @@ class ElfClient:
         for idx, params in enumerate(params_list):
             case_name = f"{case_prefix}_{idx:03d}"
             case_dir = root / case_name
-            mai_text = template_mai.format(**params)
+            mai_text = template_mai.format(**{**params, "case_name": case_name})
             run_res = self.run_mai(
                 mai_text,
                 case_dir,
@@ -215,6 +238,7 @@ class ElfClient:
                 meg_path=meg_path,
                 solver=solver,
                 timeout_s=timeout_s,
+                confirm_product_execution=confirm_product_execution,
             )
             results.append(
                 {

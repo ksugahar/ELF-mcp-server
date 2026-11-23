@@ -2575,7 +2575,9 @@ def get_elf_documentation(topic: str = "all") -> str:
         return read_local_definitions()
     if topic == "python_client":
         from pathlib import Path
-        doc_path = Path(__file__).resolve().parents[2] / "docs" / "python_usage.md"
+        doc_path = Path(__file__).with_name("python_usage.md")
+        if not doc_path.is_file():
+            doc_path = Path(__file__).resolve().parents[2] / "docs" / "python_usage.md"
         if doc_path.is_file():
             return doc_path.read_text(encoding="utf-8")
         return "Use `from elf_mcp_server import ElfClient, doctor`."

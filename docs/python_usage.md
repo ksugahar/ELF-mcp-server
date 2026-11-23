@@ -20,16 +20,18 @@ if not report["ok"]:
 If `ELF_PRODUCT_HOME` is not set in your environment, you can pass it explicitly:
 
 ```python
-report = doctor(r"C:\ELF600")
+report = doctor("<path-to-product-installation>")
 ```
 
 ## 2. Run an existing `.mai` / `.meg` case
+
+Use `confirm_product_execution=True` to explicitly authorize local solver execution.
 
 ```python
 from elf_mcp_server import ElfClient
 
 client = ElfClient(solver="MAGIC", timeout_s=300)
-res = client.run_case(work_dir="cases/c_magnet", case_name="c_magnet")
+res = client.run_case(work_dir="cases/c_magnet", case_name="c_magnet", confirm_product_execution=True)
 
 if res.ok:
     print(f"Finished in {res.elapsed_s:.2f}s, outputs: {res.outputs}")
@@ -47,7 +49,7 @@ from elf_mcp_server import ElfClient
 mai_text = """\
 USE  MAGIC  3.50
 PRE
-  FILE  MESH  model.meg
+  FILE  MESH  demo01.meg
 END
 SOL  FIXA
 END
@@ -59,6 +61,7 @@ res = client.run_mai(
     work_dir="runs/demo01",
     case_name="demo01",
     meg_path="assets/model.meg",
+    confirm_product_execution=True,
 )
 print("ok:", res.ok, "outputs:", res.outputs)
 ```
@@ -82,18 +85,22 @@ client = ElfClient(solver="MAGIC")
 results = client.sweep(
     template_mai=template_mai,
     params_list=[
-        {"case_name": "case_000", "current": 100.0},
-        {"case_name": "case_001", "current": 200.0},
-        {"case_name": "case_002", "current": 300.0},
+        {"current": 100.0},
+        {"current": 200.0},
+        {"current": 300.0},
     ],
     base_dir="runs/current_sweep",
     meg_path="assets/model.meg",
+    confirm_product_execution=True,
 )
 
 for item in results:
     res = item["result"]
     print(item["case_name"], item["params"], "ok=", res.ok, "rows=", len(res.parse_numeric_table(".flx")))
 ```
+
+The sweep provides `{case_name}` from the generated case name. Use doubled braces
+(`{{` and `}}`) for literal braces in the template.
 
 ## Troubleshooting
 
