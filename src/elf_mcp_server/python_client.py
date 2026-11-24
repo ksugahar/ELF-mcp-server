@@ -400,3 +400,49 @@ class ElfClient:
             solver=solver,
             timeout_s=timeout_s,
         )
+
+    @staticmethod
+    def mei_box(
+        x0: float,
+        x1: float,
+        y0: float,
+        y1: float,
+        z0: float,
+        z1: float,
+        *,
+        nx: int = 4,
+        ny: int = 4,
+        nz: int = 4,
+        mat: int = 1,
+    ) -> str:
+        """Generate a .mei box-mesh snippet."""
+        return f"BOX  {x0}  {x1}  {y0}  {y1}  {z0}  {z1}  {nx}  {ny}  {nz}  {mat}\n"
+
+    @staticmethod
+    def mei_cylinder(
+        r: float,
+        z0: float,
+        z1: float,
+        *,
+        nr: int = 4,
+        ntheta: int = 16,
+        nz: int = 4,
+        mat: int = 1,
+    ) -> str:
+        """Generate a .mei cylinder-mesh snippet."""
+        return f"CYL  0.0  0.0  {r}  {z0}  {z1}  {nr}  {ntheta}  {nz}  {mat}\n"
+
+    @staticmethod
+    def mei_ring(
+        r_in: float,
+        r_out: float,
+        z0: float,
+        z1: float,
+        *,
+        nr: int = 4,
+        ntheta: int = 16,
+        nz: int = 4,
+        mat: int = 1,
+    ) -> str:
+        """Generate a .mei annular/ring-mesh snippet (useful for axial-flux motor cores/magnets)."""
+        return f"RING  0.0  0.0  {r_in}  {r_out}  {z0}  {z1}  {nr}  {ntheta}  {nz}  {mat}\n"

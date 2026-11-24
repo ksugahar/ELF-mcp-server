@@ -197,3 +197,12 @@ def test_elf_client_run_mei_and_mai_short_circuits_on_mesh_failure(tmp_path: Pat
     res = client.run_mei_and_mai("BOX 0 1 0 1 0 1\n", "USE MAGIC 3.50\nEND\n", tmp_path / "e2e")
     assert res.ok is False
     assert "mesh750.exe" in (res.error or "")
+
+
+def test_elf_client_mei_geometry_helpers() -> None:
+    box = ElfClient.mei_box(-1, 1, -1, 1, 0, 2, nx=2, ny=2, nz=2, mat=1)
+    cyl = ElfClient.mei_cylinder(0.05, 0.0, 0.01, nr=4, ntheta=24, nz=2, mat=2)
+    ring = ElfClient.mei_ring(0.02, 0.05, 0.0, 0.01, nr=4, ntheta=24, nz=2, mat=3)
+    assert box.startswith("BOX ")
+    assert cyl.startswith("CYL ")
+    assert ring.startswith("RING ")
