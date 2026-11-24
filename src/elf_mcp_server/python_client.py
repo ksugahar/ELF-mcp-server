@@ -96,6 +96,26 @@ class ElfRunResult:
                 continue
         return rows
 
+    def parse_summary(self) -> dict[str, Any]:
+        """Extract a compact structured summary from common ELF output files (.flx, .frc, .mag, .log)."""
+        flx_rows = self.parse_numeric_table(".flx")
+        frc_rows = self.parse_numeric_table(".frc")
+        mag_rows = self.parse_numeric_table(".mag")
+        log_text = self.read_output(".log") or ""
+        converged = (
+            "converg" in log_text.lower() and "not converg" not in log_text.lower()
+        ) if log_text else None
+        return {
+            "ok": self.ok,
+            "case_name": self.case_name,
+            "flx_rows": len(flx_rows),
+            "flx_last": flx_rows[-1] if flx_rows else None,
+            "frc_rows": len(frc_rows),
+            "frc_last": frc_rows[-1] if frc_rows else None,
+            "mag_rows": len(mag_rows),
+            "converged": converged,
+        }
+
 
 class ElfClient:
     """High-level Python client for running ELF/MAGIC cases and parametric sweeps."""
@@ -317,3 +337,29 @@ class ElfClient:
                 }
             )
         return results
+
+    @staticmethod
+    def build_axial_motor_mai(
+        *,
+        mesh_file: str = "axial_motor.meg",
+        voltage_v: float = 48.0,
+        rpm: float = 1500.0,
+        pole_pairs: int = 4,
+        steps: int = 36,
+        room_runner: bool = True,
+    ) -> str:
+        """Build a starter .mai deck for an axial-flux motor with voltage, RPM, and time-stepping."""
+        elec_freq_hz = (rpm / 60.0) * pole_pairs
+        dt_s = (60.0 / rpm) / steps if rpm > 0 and steps > 0 else 1e-4
+        rr_note = "  ! Room-Runner enabled: reuse matrix/LU across periodic steps\n" if room_runner else ""
+        return (
+            "USE  MAGIC  3.50\n"
+            "PRE\n"
+            f"  FILE  MESH  {mesh_file}\n"
+            f"  ! Axial-flux motor: V={voltage_v} V, N={rpm} rpm, p={pole_pairs}, f_e={elec_freq_hz:.2f} Hz\n"
+            f"  VOLT  1  {voltage_v}\n"
+            f"{rr_note}"
+            "END\n"
+            f"SOL  STEP  {steps}  {dt_s:.6e}\n"
+            "END\n"
+        )

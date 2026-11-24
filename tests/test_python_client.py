@@ -164,3 +164,29 @@ def test_elf_client_compile_iemesh_missing_home(tmp_path: Path) -> None:
     res = client.compile_iemesh("BOX 0 1 0 1 0 1\n", tmp_path / "mesh_run", case_name="motor")
     assert res["ok"] is False
     assert "mesh750.exe" in (res["error"] or "")
+
+
+def test_elf_run_result_parse_summary_and_axial_template(tmp_path: Path) -> None:
+    (tmp_path / "ax.flx").write_text("1 0.15\n2 0.30\n", encoding="utf-8")
+    (tmp_path / "ax.frc").write_text("1 12.5\n", encoding="utf-8")
+    (tmp_path / "ax.log").write_text("Solver converged in 5 iterations.\n", encoding="utf-8")
+
+    res = ElfRunResult(
+        ok=True,
+        solver="MAGIC",
+        case_name="ax",
+        work_dir=tmp_path,
+        returncode=0,
+        elapsed_s=0.2,
+        outputs=("ax.flx", "ax.frc", "ax.log"),
+    )
+    summary = res.parse_summary()
+    assert summary["flx_rows"] == 2
+    assert summary["flx_last"] == [2.0, 0.3]
+    assert summary["frc_last"] == [1.0, 12.5]
+    assert summary["converged"] is True
+
+    mai = ElfClient.build_axial_motor_mai(voltage_v=100.0, rpm=3000.0, pole_pairs=4, steps=36)
+    assert "VOLT  1  100.0" in mai
+    assert "N=3000.0 rpm" in mai
+    assert "Room-Runner" in mai
