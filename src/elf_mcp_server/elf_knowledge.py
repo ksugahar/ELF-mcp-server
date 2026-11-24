@@ -2695,11 +2695,33 @@ def get_elf_documentation(topic: str = "all") -> str:
         if doc_path.is_file():
             return doc_path.read_text(encoding="utf-8")
         return "Use `from elf_mcp_server import ElfClient, doctor`."
+    if topic == "room_runner":
+        return (
+            "# Room-Runner (ルームランナー機能) for Rotating Motor Time-Stepping\n\n"
+            "回転する物体（モータのロータ等）をタイムステップ解析する際、\n"
+            "タイムステップごとに一定角度だけ回転し、元のメッシュ形状に重なる場合に利用できます。\n\n"
+            "## 主な特徴とメリット\n"
+            "- **マトリックス再利用**: 係数マトリックスは 1 回作成するだけで、以降すべてのステップで再利用します。\n"
+            "- **LU 分解の再利用**: 線形解析であれば LU 分解も 1 回のみで全ステップに再利用できます。\n"
+            "- **渦電流解析への対応**: 要素の渦電流は前回ステップの磁束に影響されますが、\n"
+            "  前回ステップで同じ空間位置にあった要素の磁束が今回の要素へコピーされて利用されます。\n\n"
+            "## モータタイムステップ解析の例（`.mai` 構成イメージ）\n"
+            "```text\n"
+            "USE  MAGIC  3.50\n"
+            "PRE\n"
+            "  FILE  MESH  motor_periodic.meg\n"
+            "  ! タイムステップごとの回転角がメッシュの対称ピッチと一致するように設定\n"
+            "  ! 1ステップ目でマトリックス（および線形時はLU分解）を構築し、以降再利用\n"
+            "END\n"
+            "SOL  STEP  ...\n"
+            "END\n"
+            "```\n"
+        )
     if topic == "all":
         return "\n\n".join(_TOPICS.values())
 
     result = _TOPICS.get(topic)
     if result is None:
-        available = ", ".join(sorted([*_TOPICS, "local_definitions", "python_client"]))
+        available = ", ".join(sorted([*_TOPICS, "local_definitions", "python_client", "room_runner"]))
         return f"Unknown topic: '{topic}'. Available topics: {available}"
     return result

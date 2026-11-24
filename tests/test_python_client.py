@@ -149,3 +149,11 @@ def test_elf_client_run_mai_prepares_unconfirmed_case(tmp_path: Path) -> None:
     assert result.raw["status"] == "confirmation_required"
     assert (work_dir / "demo.mai").read_text(encoding="utf-8") == "PRE"
     assert (work_dir / "demo.meg").read_bytes() == b"mesh"
+
+
+def test_elf_usage_room_runner_topic() -> None:
+    from elf_mcp_server.elf_knowledge import get_elf_documentation
+
+    doc = get_elf_documentation("room_runner")
+    assert "ルームランナー" in doc
+    assert "LU" in doc
