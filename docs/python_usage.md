@@ -99,6 +99,31 @@ for item in results:
     print(item["case_name"], item["params"], "ok=", res.ok, "rows=", len(res.parse_numeric_table(".flx")))
 ```
 
+## 5. Motor angle / current-phase sweep
+
+```python
+from elf_mcp_server import ElfClient
+
+motor_template = """\
+USE  MAGIC  3.50
+PRE
+  FILE  MESH  {case_name}.meg
+  ! Rotate rotor / set phase current for angle = {theta_deg} deg
+  CURR  1  {id_amp}
+  CURR  2  {iq_amp}
+END
+SOL  FIXB
+END
+"""
+
+client = ElfClient(solver="MAGIC")
+sweep_params = [
+    {"case_name": f"case_{i:03d}", "theta_deg": deg, "id_amp": 0.0, "iq_amp": 10.0}
+    for i, deg in enumerate(range(0, 31, 5))
+]
+results = client.sweep(motor_template, sweep_params, base_dir="runs/motor_angle_sweep")
+```
+
 Both `run_mai` and `sweep` write the .mai and copy a supplied .meg even when confirmation is false. Only solver execution requires confirmation.
 
 The sweep provides `{case_name}` from `case_prefix`. Omit `case_name` from each parameter mapping. Use doubled braces
