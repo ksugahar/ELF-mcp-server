@@ -4180,7 +4180,7 @@ def elf_iemesh_compile(
     title="ELF Suggest .mei/.mai Example",
 )
 def elf_suggest_example(goal: str) -> str:
-    """Return a ready-to-run (.mei, .mai) example pair for a natural-language goal."""
+    """Return a starter (.mei, .mai) template pair for a natural-language goal."""
     from .python_client import suggest_mei_mai_example
 
     return json.dumps(suggest_mei_mai_example(goal), ensure_ascii=False)
