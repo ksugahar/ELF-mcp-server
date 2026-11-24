@@ -262,3 +262,16 @@ def test_mai_builder_fluent_api() -> None:
     assert "VOLT  1  48.0" in mai
     assert "SOL  STEP  36  1.000000e-04" in mai
     assert "FLUM" in mai
+
+
+def test_suggest_mei_mai_example() -> None:
+    from elf_mcp_server import suggest_mei_mai_example
+
+    ax = suggest_mei_mai_example("アキシャルモータを電圧と回転数を指定して解析したい")
+    assert ax["kind"] == "axial_motor"
+    assert "RING " in ax["mei_text"]
+    assert "VOLT  1" in ax["mai_text"]
+
+    es = suggest_mei_mai_example("ELFIN 静電場")
+    assert es["kind"] == "electrostatic"
+    assert "USE  ELFIN" in es["mai_text"]

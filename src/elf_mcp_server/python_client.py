@@ -597,3 +597,49 @@ class MaiBuilder:
         """Render the complete .mai deck."""
         lines = [f"USE  {self.solver}  {self.version}", "PRE", *self._pre_lines, "END", self._sol_header, *self._sol_lines, "END"]
         return "\n".join(lines) + "\n"
+
+
+def suggest_mei_mai_example(goal: str) -> dict[str, str]:
+    """Return a ready-to-run (.mei, .mai) example pair tailored to a natural-language goal."""
+    text = goal.lower()
+    if any(k in text for k in ("axial", "アキシャル", "motor", "モータ", "rpm", "回転")):
+        mei = (
+            IEmeshBuilder("axial_motor")
+            .ring(0.02, 0.05, 0.0, 0.01, nr=4, ntheta=24, nz=2, mat=1)
+            .ring(0.02, 0.05, 0.012, 0.022, nr=4, ntheta=24, nz=2, mat=2)
+            .build()
+        )
+        mai = ElfClient.build_axial_motor_mai(
+            mesh_file="axial_motor.meg",
+            voltage_v=48.0,
+            rpm=1500.0,
+            pole_pairs=4,
+            steps=36,
+            room_runner=True,
+        )
+        return {
+            "kind": "axial_motor",
+            "title": "Axial-flux motor (voltage + RPM + Room-Runner)",
+            "mei_text": mei,
+            "mai_text": mai,
+            "notes": "Compile .mei -> .meg with ElfClient.compile_iemesh, then run with ElfClient.run_mai.",
+        }
+    if any(k in text for k in ("elfin", "静電", "electrostatic", "volt")):
+        mei = IEmeshBuilder("electrostatic_gap").box(-0.02, 0.02, -0.02, 0.02, 0.0, 0.01, mat=1).build()
+        mai = MaiBuilder("ELFIN").mesh("electrostatic_gap.meg").voltage(1, 1000.0).sol("FIXA").output("FIEL").build()
+        return {
+            "kind": "electrostatic",
+            "title": "Electrostatic field (ELFIN)",
+            "mei_text": mei,
+            "mai_text": mai,
+            "notes": "Run with ElfClient(solver='ELFIN').run_mei_and_mai(...).",
+        }
+    mei = IEmeshBuilder("magnetostatic_box").box(-0.05, 0.05, -0.05, 0.05, -0.05, 0.05, mat=1).build()
+    mai = MaiBuilder("MAGIC").mesh("magnetostatic_box.meg").material(1, mu_r=1000.0).current(1, 100.0).sol("FIXA").output("FLUM", "FORC").build()
+    return {
+        "kind": "magnetostatic",
+        "title": "Magnetostatic benchmark (MAGIC)",
+        "mei_text": mei,
+        "mai_text": mai,
+        "notes": "Run with ElfClient(solver='MAGIC').run_mei_and_mai(...).",
+    }
