@@ -624,6 +624,27 @@ def suggest_mei_mai_example(goal: str) -> dict[str, str]:
             "mai_text": mai,
             "notes": "Compile .mei -> .meg with ElfClient.compile_iemesh, then run with ElfClient.run_mai.",
         }
+    if any(k in text for k in ("beam", "顕微鏡", "電子", "粒子", "microscope", "electron", "lens")):
+        mei = IEmeshBuilder("electron_lens").ring(0.005, 0.02, 0.0, 0.01, nr=4, ntheta=24, nz=2, mat=1).build()
+        mai = (
+            "USE  BEAM  3.50\n"
+            "PRE\n"
+            "  FILE  MAGIC  lens_M\n"
+            "  FILE  ELFIN  lens_E\n"
+            "  CHAR  1  -1.602E-19\n"
+            "  MASS  1  9.109E-31\n"
+            "  VOLB  1  10000.0\n"
+            "END\n"
+            "SOL  BEAM\n"
+            "END\n"
+        )
+        return {
+            "kind": "beam",
+            "title": "Electron microscope / charged-particle tracking (BEAM)",
+            "mei_text": mei,
+            "mai_text": mai,
+            "notes": "Import MAGIC magnetic field and optional ELFIN electric field; signed CHAR=-1.602E-19 for electrons.",
+        }
     if any(k in text for k in ("elfin", "静電", "electrostatic", "volt")):
         mei = IEmeshBuilder("electrostatic_gap").box(-0.02, 0.02, -0.02, 0.02, 0.0, 0.01, mat=1).build()
         mai = MaiBuilder("ELFIN").mesh("electrostatic_gap.meg").voltage(1, 1000.0).sol("FIXA").output("FIEL").build()

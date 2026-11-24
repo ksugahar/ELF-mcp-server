@@ -275,3 +275,8 @@ def test_suggest_mei_mai_example() -> None:
     es = suggest_mei_mai_example("ELFIN 静電場")
     assert es["kind"] == "electrostatic"
     assert "USE  ELFIN" in es["mai_text"]
+
+    bm = suggest_mei_mai_example("電子顕微鏡の電子線軌道解析")
+    assert bm["kind"] == "beam"
+    assert "USE  BEAM" in bm["mai_text"]
+    assert "-1.602E-19" in bm["mai_text"]
