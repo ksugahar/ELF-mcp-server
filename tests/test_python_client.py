@@ -283,6 +283,23 @@ def test_suggest_mei_mai_example() -> None:
 
     for g, kind in (("ヒステリシスモータ", "hysteresis_motor"), ("磁気センサー", "magnetic_sensor"), ("アクチュエータ", "actuator")):
         assert suggest_mei_mai_example(g)["kind"] == kind
-    assert suggest_mei_mai_example("motor shall run at 1500 rpm")["kind"] == "axial_motor"
-    assert suggest_mei_mai_example("ホールド力のある電磁石")["kind"] == "actuator"
-    assert suggest_mei_mai_example("ヒステリシス損の小さいアクチュエータ")["kind"] == "actuator"
+
+    for goal, kind in (
+        ("We shall design a PM motor at 3000 rpm", "axial_motor"),
+        ("ホールド力のある電磁石", "actuator"),
+        ("ヒステリシス損の小さいアクチュエータ", "actuator"),
+        ("hysteresis motor", "hysteresis_motor"),
+        ("Hall-effect sensor for a motor", "magnetic_sensor"),
+        ("motor with Hall probe", "axial_motor"),
+        ("磁気センサー付きモーター", "axial_motor"),
+        ("ホール素子", "magnetic_sensor"),
+        ("solenoids", "actuator"),
+        ("solenoidの吸引力", "actuator"),
+        ("actuatorを設計したい", "actuator"),
+        ("Hall sensorの出力", "magnetic_sensor"),
+        ("hysteresis motorの損失", "hysteresis_motor"),
+        ("axial motorを解析", "axial_motor"),
+    ):
+        example = suggest_mei_mai_example(goal)
+        assert example["kind"] == kind
+        assert "starter template" in example["title"]

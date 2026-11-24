@@ -40,6 +40,10 @@ async def _probe_stdio() -> dict:
             listed = await session.list_tools()
             tools = listed.tools
             called = await session.call_tool("elf_overview", {})
+            suggestion = await session.call_tool(
+                "elf_suggest_example", {"goal": "Hall-effect sensor"}
+            )
+            suggestion_tool = next(tool for tool in tools if tool.name == "elf_suggest_example")
             profiled = await session.call_tool("elf_agentic_profile", {})
             profile_payload = json.loads(profiled.content[0].text)
             searched = await session.call_tool(
@@ -76,6 +80,9 @@ async def _probe_stdio() -> dict:
                     if tool.annotations is None
                     or any(getattr(tool.annotations, hint) is None for hint in hints)
                 ],
+                "suggestion_is_error": bool(suggestion.isError),
+                "suggestion": json.loads(suggestion.content[0].text),
+                "suggestion_description": suggestion_tool.description,
                 "probe_is_error": bool(called.isError),
                 "probe_has_content": bool(called.content),
                 "client_connection": profile_payload["client_connection"],
@@ -101,6 +108,10 @@ def test_stdio_initialize_list_and_safe_call_contract() -> None:
     assert result["tool_count"] > 0
     assert result["missing_titles"] == []
     assert result["missing_annotations"] == []
+    assert result["suggestion_is_error"] is False
+    assert result["suggestion"]["kind"] == "magnetic_sensor"
+    assert "starter template" in result["suggestion"]["title"]
+    assert "before running" in result["suggestion_description"]
     assert result["probe_is_error"] is False
     assert result["probe_has_content"] is True
     assert result["client_connection"] == {

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
+import re
 import shutil
 import struct
 import subprocess
@@ -600,11 +601,36 @@ class MaiBuilder:
 
 
 def suggest_mei_mai_example(goal: str) -> dict[str, str]:
-    """Return a starter (.mei, .mai) template pair tailored to a natural-language goal."""
-    import re
-
+    """Return starter .mei/.mai templates that require case-specific setup before running."""
     text = goal.lower()
-    if any(k in text for k in ("actuator", "solenoid", "アクチュエータ", "ソレノイド", "電磁石")):
+    # English words can directly adjoin Japanese particles, as in Hall sensorの出力.
+    if re.search(r"(?a:\bhysteresis[\s-]+motors?\b)|ヒステリシス[\s・-]*モ[ー－]?タ", text):
+        mei = IEmeshBuilder("hysteresis_motor").ring(0.015, 0.04, 0.0, 0.01, nr=4, ntheta=24, nz=2, mat=1).build()
+        mai = MaiBuilder("MAGIC").mesh("hysteresis_motor.meg").sol_step(36, 1e-4).output("FLUM", "FORC").build()
+        return {
+            "kind": "hysteresis_motor",
+            "title": "Hysteresis motor starter template (MAGIC)",
+            "mei_text": mei,
+            "mai_text": mai,
+            "notes": "Add the hysteresis material table, excitation and moving-region setup before running.",
+        }
+    sensor_goal = re.search(
+        r"(?a:\b(?:magnetic[\s-]+sensors?|hall(?:[\s-]+effect)?[\s-]+(?:sensors?|probes?))\b)"
+        r"|磁気センサ|ホール\s*(?:効果\s*)?(?:素子|センサ|プローブ)",
+        text,
+    )
+    motor_with_sensor = re.search(r"(?a:\bmotors?\s+with\b)|センサ[ー]?\s*付き\s*モ[ー－]?タ", text)
+    if sensor_goal and not motor_with_sensor:
+        mei = IEmeshBuilder("magnetic_sensor").box(-0.01, 0.01, -0.01, 0.01, 0.0, 0.005, mat=1).build()
+        mai = MaiBuilder("MAGIC").mesh("magnetic_sensor.meg").material(1, mu_r=500.0).sol("FIXA").output("FIEL").build()
+        return {
+            "kind": "magnetic_sensor",
+            "title": "Magnetic sensor / Hall probe starter template (MAGIC)",
+            "mei_text": mei,
+            "mai_text": mai,
+            "notes": "Add a magnetic field source and probe coordinates before evaluating the field.",
+        }
+    if re.search(r"(?a:\b(?:actuators?|solenoids?)\b)|アクチュエ[ー－]?タ|ソレノイド|電磁石", text):
         mei = IEmeshBuilder("actuator").cylinder(0.02, 0.0, 0.03, nr=4, ntheta=16, nz=4, mat=1).build()
         mai = MaiBuilder("MAGIC").mesh("actuator.meg").material(1, mu_r=1000.0).current(1, 500.0).sol("FIXB").output("FORC", "FLUM").build()
         return {
@@ -612,29 +638,9 @@ def suggest_mei_mai_example(goal: str) -> dict[str, str]:
             "title": "Actuator / solenoid starter template (MAGIC)",
             "mei_text": mei,
             "mai_text": mai,
-            "notes": "Starter template: replace MATE 1 with BH curve for nonlinear force/flux with SOL FIXB + FORC.",
+            "notes": "Configure separate core and winding regions, assign the current to the winding, and add a B-H curve for nonlinear analysis.",
         }
-    if any(k in text for k in ("hysteresis", "ヒステリシス")):
-        mei = IEmeshBuilder("hysteresis_motor").ring(0.015, 0.04, 0.0, 0.01, nr=4, ntheta=24, nz=2, mat=1).build()
-        mai = MaiBuilder("MAGIC").mesh("hysteresis_motor.meg").material(1, mu_r=500.0).current(1, 100.0).sol_step(36, 1e-4).output("FLUM", "FORC").build()
-        return {
-            "kind": "hysteresis_motor",
-            "title": "Hysteresis motor starter template (MAGIC)",
-            "mei_text": mei,
-            "mai_text": mai,
-            "notes": "Starter template: replace MATE 1 with hysteresis material table and adjust Room-Runner time-stepping.",
-        }
-    if re.search(r"magnetic\s*sensor|磁気センサ|センサー|\bhall\b", text):
-        mei = IEmeshBuilder("magnetic_sensor").box(-0.01, 0.01, -0.01, 0.01, 0.0, 0.005, mat=1).build()
-        mai = MaiBuilder("MAGIC").mesh("magnetic_sensor.meg").material(1, mu_r=500.0).current(1, 100.0).sol("FIXA").output("FIEL").build()
-        return {
-            "kind": "magnetic_sensor",
-            "title": "Magnetic sensor / Hall probe starter template (MAGIC)",
-            "mei_text": mei,
-            "mai_text": mai,
-            "notes": "Starter template: add field source geometry and probe coordinates for SOL FIXA + FIEL.",
-        }
-    if any(k in text for k in ("axial", "アキシャル", "motor", "モータ", "rpm", "回転")):
+    if re.search(r"(?a:\b(?:axial|motors?|rpm)\b)|アキシャル|モ[ー－]?タ|回転", text):
         mei = (
             IEmeshBuilder("axial_motor")
             .ring(0.02, 0.05, 0.0, 0.01, nr=4, ntheta=24, nz=2, mat=1)
@@ -651,10 +657,10 @@ def suggest_mei_mai_example(goal: str) -> dict[str, str]:
         )
         return {
             "kind": "axial_motor",
-            "title": "Axial-flux motor (voltage + RPM + Room-Runner)",
+            "title": "Axial-flux motor starter template (MAGIC)",
             "mei_text": mei,
             "mai_text": mai,
-            "notes": "Compile .mei -> .meg with ElfClient.compile_iemesh, then run with ElfClient.run_mai.",
+            "notes": "Configure the motor regions, excitation and motion for the case before compiling the mesh and running the solver.",
         }
     if any(k in text for k in ("beam", "顕微鏡", "電子", "粒子", "microscope", "electron", "lens")):
         mei = IEmeshBuilder("electron_lens").ring(0.005, 0.02, 0.0, 0.01, nr=4, ntheta=24, nz=2, mat=1).build()
@@ -672,27 +678,27 @@ def suggest_mei_mai_example(goal: str) -> dict[str, str]:
         )
         return {
             "kind": "beam",
-            "title": "Electron microscope / charged-particle tracking (BEAM)",
+            "title": "Electron microscope / charged-particle starter template (BEAM)",
             "mei_text": mei,
             "mai_text": mai,
-            "notes": "Import MAGIC magnetic field and optional ELFIN electric field; signed CHAR=-1.602E-19 for electrons.",
+            "notes": "Supply the referenced MAGIC and ELFIN field data, or adjust the field imports for the case before running.",
         }
     if any(k in text for k in ("elfin", "静電", "electrostatic", "volt")):
         mei = IEmeshBuilder("electrostatic_gap").box(-0.02, 0.02, -0.02, 0.02, 0.0, 0.01, mat=1).build()
         mai = MaiBuilder("ELFIN").mesh("electrostatic_gap.meg").voltage(1, 1000.0).sol("FIXA").output("FIEL").build()
         return {
             "kind": "electrostatic",
-            "title": "Electrostatic field (ELFIN)",
+            "title": "Electrostatic field starter template (ELFIN)",
             "mei_text": mei,
             "mai_text": mai,
-            "notes": "Run with ElfClient(solver='ELFIN').run_mei_and_mai(...).",
+            "notes": "Configure electrodes, voltage assignments and boundary conditions before running.",
         }
     mei = IEmeshBuilder("magnetostatic_box").box(-0.05, 0.05, -0.05, 0.05, -0.05, 0.05, mat=1).build()
     mai = MaiBuilder("MAGIC").mesh("magnetostatic_box.meg").material(1, mu_r=1000.0).current(1, 100.0).sol("FIXA").output("FLUM", "FORC").build()
     return {
         "kind": "magnetostatic",
-        "title": "Magnetostatic benchmark (MAGIC)",
+        "title": "Magnetostatic field starter template (MAGIC)",
         "mei_text": mei,
         "mai_text": mai,
-        "notes": "Run with ElfClient(solver='MAGIC').run_mei_and_mai(...).",
+        "notes": "Configure the magnetic regions and current source before running.",
     }
