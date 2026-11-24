@@ -30,7 +30,7 @@ from elf_mcp_server.tool_definitions import TOOL_CONTRACTS
 def test_runtime_surface_is_explicit_and_safely_annotated() -> None:
     tools = asyncio.run(mcp.list_tools())
     assert {tool.name for tool in tools} == set(TOOL_CONTRACTS)
-    assert len(tools) == 115
+    assert len(tools) == 116
     for tool in tools:
         contract = TOOL_CONTRACTS[tool.name]
         assert tool.title == contract.title

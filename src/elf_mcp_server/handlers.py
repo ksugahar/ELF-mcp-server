@@ -4153,6 +4153,28 @@ def _use_utf8_stdout() -> None:
 
 
 register_resources(mcp)
+@mcp.tool(
+    name="elf_iemesh_compile",
+    title="ELF IEmesh Compile",
+)
+def elf_iemesh_compile(
+    mei_text: str,
+    work_dir: str,
+    case_name: str = "case",
+    product_home: str = "",
+) -> str:
+    """Write <case_name>.mei and compile <case_name>.meg via local mesh750.exe."""
+    from .python_client import ElfClient
+
+    res = ElfClient(product_home=product_home).compile_iemesh(
+        mei_text=mei_text,
+        work_dir=work_dir,
+        case_name=case_name,
+    )
+    payload = {**res, "meg_path": str(res["meg_path"]) if res.get("meg_path") else None}
+    return json.dumps(payload, ensure_ascii=False)
+
+
 apply_tool_contract(mcp, server_name="elf-mcp-server", version=__version__)
 
 

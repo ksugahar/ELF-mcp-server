@@ -165,6 +165,15 @@ TOOL_CONTRACTS["elf_product_run"] = ToolContract(
     open_world=True,
 )
 
+TOOL_CONTRACTS["elf_iemesh_compile"] = ToolContract(
+    name="elf_iemesh_compile",
+    title="ELF IEmesh Compile",
+    read_only=False,
+    destructive=False,
+    idempotent=True,
+    open_world=True,
+)
 
-if len(TOOL_CONTRACTS) != len(READ_ONLY_TOOL_NAMES) + 1:
+
+if len(TOOL_CONTRACTS) != len(READ_ONLY_TOOL_NAMES) + 2:
     raise RuntimeError("duplicate public tool name in explicit contract registry")
