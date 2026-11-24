@@ -467,3 +467,84 @@ class ElfClient:
         lines.extend(f"  {out}" for out in outputs)
         lines.append("END")
         return "\n".join(lines) + "\n"
+
+
+class IEmeshBuilder:
+    """Composable Python API for building .mei mesh scripts and compiling .meg files."""
+
+    def __init__(self, title: str = "model") -> None:
+        self.title = title
+        self._lines: list[str] = [f"! {title}"]
+
+    def box(
+        self,
+        x0: float,
+        x1: float,
+        y0: float,
+        y1: float,
+        z0: float,
+        z1: float,
+        *,
+        nx: int = 4,
+        ny: int = 4,
+        nz: int = 4,
+        mat: int = 1,
+    ) -> "IEmeshBuilder":
+        self._lines.append(ElfClient.mei_box(x0, x1, y0, y1, z0, z1, nx=nx, ny=ny, nz=nz, mat=mat).rstrip("\n"))
+        return self
+
+    def cylinder(
+        self,
+        r: float,
+        z0: float,
+        z1: float,
+        *,
+        nr: int = 4,
+        ntheta: int = 16,
+        nz: int = 4,
+        mat: int = 1,
+    ) -> "IEmeshBuilder":
+        self._lines.append(ElfClient.mei_cylinder(r, z0, z1, nr=nr, ntheta=ntheta, nz=nz, mat=mat).rstrip("\n"))
+        return self
+
+    def ring(
+        self,
+        r_in: float,
+        r_out: float,
+        z0: float,
+        z1: float,
+        *,
+        nr: int = 4,
+        ntheta: int = 16,
+        nz: int = 4,
+        mat: int = 1,
+    ) -> "IEmeshBuilder":
+        self._lines.append(ElfClient.mei_ring(r_in, r_out, z0, z1, nr=nr, ntheta=ntheta, nz=nz, mat=mat).rstrip("\n"))
+        return self
+
+    def rotate(self, angle_deg: float, *, axis: str = "z") -> "IEmeshBuilder":
+        self._lines.append(f"ROT  {axis.strip().upper()}  {angle_deg}")
+        return self
+
+    def translate(self, dx: float = 0.0, dy: float = 0.0, dz: float = 0.0) -> "IEmeshBuilder":
+        self._lines.append(f"MOV  {dx}  {dy}  {dz}")
+        return self
+
+    def raw(self, line: str) -> "IEmeshBuilder":
+        self._lines.append(line.rstrip("\n"))
+        return self
+
+    def build(self) -> str:
+        """Render the accumulated .mei script."""
+        return "\n".join(self._lines) + "\n"
+
+    def compile(
+        self,
+        client: ElfClient,
+        work_dir: str | Path,
+        case_name: str = "case",
+        *,
+        timeout_s: int | None = None,
+    ) -> dict[str, Any]:
+        """Compile this .mei script to .meg using ``client.compile_iemesh``."""
+        return client.compile_iemesh(self.build(), work_dir, case_name=case_name, timeout_s=timeout_s)

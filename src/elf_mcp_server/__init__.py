@@ -25,6 +25,6 @@ and release-readiness gates for MCP maintainers.
 
 __version__ = "1.64.0"
 
-from .python_client import ElfClient, ElfRunResult, doctor
+from .python_client import ElfClient, ElfRunResult, IEmeshBuilder, doctor
 
-__all__ = ["ElfClient", "ElfRunResult", "__version__", "doctor"]
+__all__ = ["ElfClient", "ElfRunResult", "IEmeshBuilder", "__version__", "doctor"]

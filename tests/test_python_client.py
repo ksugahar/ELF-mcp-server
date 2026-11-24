@@ -218,3 +218,19 @@ def test_elf_client_build_mai() -> None:
     assert "FILE  MESH  motor.meg" in mai
     assert "CURR  1  10.0" in mai
     assert "SOL  FIXB" in mai
+
+
+def test_iemesh_builder_fluent_api() -> None:
+    from elf_mcp_server import IEmeshBuilder
+
+    mei = (
+        IEmeshBuilder("axial_motor")
+        .ring(0.02, 0.05, 0.0, 0.01, nr=4, ntheta=24, nz=2, mat=1)
+        .translate(dz=0.002)
+        .rotate(15.0, axis="z")
+        .build()
+    )
+    assert "! axial_motor" in mei
+    assert "RING " in mei
+    assert "MOV  0.0  0.0  0.002" in mei
+    assert "ROT  Z  15.0" in mei
