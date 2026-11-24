@@ -11,6 +11,25 @@ server uses an isolated Python worker and `ctypes` with fixed DLL/function
 allow-lists. Product DLLs and licenses are never bundled, and raw output files
 remain in the user-selected local case directory.
 
+## Python Client Quickstart
+
+```bash
+pip install ELF-mcp-server
+```
+
+```python
+from elf_mcp_server import ElfClient, doctor
+
+print(doctor())  # Verify ELF_PRODUCT_HOME, 64-bit Python, and MAGIC/ELFIN DLLs
+
+client = ElfClient(solver="MAGIC")
+client.compile_iemesh("BOX 0 1 0 1 0 1\n", work_dir="runs/demo", case_name="demo")
+res = client.run_mai("USE  MAGIC  3.50\nPRE\n  FILE  MESH  demo.meg\nEND\nSOL  FIXA\nEND\n", work_dir="runs/demo", case_name="demo")
+print(res.ok, res.parse_numeric_table(".flx"))
+```
+
+See [docs/python_usage.md](docs/python_usage.md) (or call `elf_usage("python_client")` / `elf_usage("room_runner")`) for parametric sweeps, motor angle/current-phase sweeps, and time-stepping room-runner examples.
+
 ---
 
 ## Features
