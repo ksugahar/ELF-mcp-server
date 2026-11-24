@@ -446,3 +446,24 @@ class ElfClient:
     ) -> str:
         """Generate a .mei annular/ring-mesh snippet (useful for axial-flux motor cores/magnets)."""
         return f"RING  0.0  0.0  {r_in}  {r_out}  {z0}  {z1}  {nr}  {ntheta}  {nz}  {mat}\n"
+
+    @staticmethod
+    def build_mai(
+        *,
+        mesh_file: str = "case.meg",
+        solver: str = "MAGIC",
+        materials: Sequence[str] = (),
+        currents: Mapping[int, float] | None = None,
+        sol_command: str = "FIXA",
+        outputs: Sequence[str] = ("FLUM", "FORC"),
+    ) -> str:
+        """Build a clean .mai input deck from structured Python arguments."""
+        lines = [f"USE  {solver.strip().upper()}  3.50", "PRE", f"  FILE  MESH  {mesh_file}"]
+        lines.extend(f"  {m}" for m in materials)
+        if currents:
+            for idx, amp in currents.items():
+                lines.append(f"  CURR  {idx}  {amp}")
+        lines.extend(["END", f"SOL  {sol_command}"])
+        lines.extend(f"  {out}" for out in outputs)
+        lines.append("END")
+        return "\n".join(lines) + "\n"

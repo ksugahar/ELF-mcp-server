@@ -206,3 +206,15 @@ def test_elf_client_mei_geometry_helpers() -> None:
     assert box.startswith("BOX ")
     assert cyl.startswith("CYL ")
     assert ring.startswith("RING ")
+
+
+def test_elf_client_build_mai() -> None:
+    mai = ElfClient.build_mai(
+        mesh_file="motor.meg",
+        currents={1: 10.0, 2: -5.0},
+        sol_command="FIXB",
+        outputs=("FLUM", "FORC"),
+    )
+    assert "FILE  MESH  motor.meg" in mai
+    assert "CURR  1  10.0" in mai
+    assert "SOL  FIXB" in mai
