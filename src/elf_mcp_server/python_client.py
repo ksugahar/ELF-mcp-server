@@ -548,3 +548,52 @@ class IEmeshBuilder:
     ) -> dict[str, Any]:
         """Compile this .mei script to .meg using ``client.compile_iemesh``."""
         return client.compile_iemesh(self.build(), work_dir, case_name=case_name, timeout_s=timeout_s)
+
+
+class MaiBuilder:
+    """Composable Python API for building .mai solver input decks."""
+
+    def __init__(self, solver: str = "MAGIC", version: str = "3.50") -> None:
+        self.solver = solver.strip().upper()
+        self.version = version
+        self._pre_lines: list[str] = []
+        self._sol_header: str = "SOL  FIXA"
+        self._sol_lines: list[str] = []
+
+    def mesh(self, mesh_file: str) -> "MaiBuilder":
+        self._pre_lines.append(f"  FILE  MESH  {mesh_file}")
+        return self
+
+    def material(self, mat_id: int, *, mu_r: float = 1000.0) -> "MaiBuilder":
+        self._pre_lines.append(f"  MATE  {mat_id}  {mu_r}")
+        return self
+
+    def current(self, coil_id: int, amp: float) -> "MaiBuilder":
+        self._pre_lines.append(f"  CURR  {coil_id}  {amp}")
+        return self
+
+    def voltage(self, coil_id: int, volt: float) -> "MaiBuilder":
+        self._pre_lines.append(f"  VOLT  {coil_id}  {volt}")
+        return self
+
+    def pre_raw(self, line: str) -> "MaiBuilder":
+        self._pre_lines.append(f"  {line.strip()}")
+        return self
+
+    def sol(self, command: str = "FIXA") -> "MaiBuilder":
+        self._sol_header = f"SOL  {command.strip()}"
+        return self
+
+    def sol_step(self, steps: int, dt_s: float) -> "MaiBuilder":
+        self._sol_header = f"SOL  STEP  {steps}  {dt_s:.6e}"
+        return self
+
+    def output(self, *names: str) -> "MaiBuilder":
+        for name in names:
+            self._sol_lines.append(f"  {name.strip()}")
+        return self
+
+    def build(self) -> str:
+        """Render the complete .mai deck."""
+        lines = [f"USE  {self.solver}  {self.version}", "PRE", *self._pre_lines, "END", self._sol_header, *self._sol_lines, "END"]
+        return "\n".join(lines) + "\n"

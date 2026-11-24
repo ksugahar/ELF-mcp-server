@@ -242,3 +242,23 @@ def test_elf_usage_analysis_methods_topic() -> None:
     doc = get_elf_documentation("analysis_methods")
     assert "FIXA" in doc
     assert "STEP" in doc
+
+
+def test_mai_builder_fluent_api() -> None:
+    from elf_mcp_server import MaiBuilder
+
+    mai = (
+        MaiBuilder("MAGIC")
+        .mesh("motor.meg")
+        .material(1, mu_r=2000.0)
+        .voltage(1, 48.0)
+        .sol_step(36, 1e-4)
+        .output("FLUM", "FORC")
+        .build()
+    )
+    assert "USE  MAGIC  3.50" in mai
+    assert "FILE  MESH  motor.meg" in mai
+    assert "MATE  1  2000.0" in mai
+    assert "VOLT  1  48.0" in mai
+    assert "SOL  STEP  36  1.000000e-04" in mai
+    assert "FLUM" in mai
