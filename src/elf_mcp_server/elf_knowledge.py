@@ -2717,11 +2717,20 @@ def get_elf_documentation(topic: str = "all") -> str:
             "END\n"
             "```\n"
         )
+    if topic == "analysis_methods":
+        return (
+            "# ELF/MAGIC Analysis Methods Overview\n\n"
+            "- **静磁場解析（線形 / 非線形）**: `SOL FIXA`（一般）/ `SOL FIXB`（非線形・BH 曲線収束重視）。\n"
+            "- **周波数応答・渦電流解析**: `FREQ` + `OHM2` / 導体要素（MAB/MAT/MBB）で複素磁界・損失を評価。\n"
+            "- **タイムステップ過渡・回転解析**: `SOL STEP` + ルームランナー（周期回転メッシュ時の行列・LU 再利用）。\n"
+            "- **電圧源・回路連成**: `VOLT` / 回路要素を組み合わせ、回転数・印加電圧条件での電流・トルクを評価。\n"
+            "- **メッシュ生成（IEmesh）**: `IEmeshBuilder` または `elf_iemesh_compile` で `.mei` → `.meg` を自動生成。\n"
+        )
     if topic == "all":
         return "\n\n".join(_TOPICS.values())
 
     result = _TOPICS.get(topic)
     if result is None:
-        available = ", ".join(sorted([*_TOPICS, "local_definitions", "python_client", "room_runner"]))
+        available = ", ".join(sorted([*_TOPICS, "local_definitions", "python_client", "room_runner", "analysis_methods"]))
         return f"Unknown topic: '{topic}'. Available topics: {available}"
     return result

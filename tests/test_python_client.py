@@ -234,3 +234,11 @@ def test_iemesh_builder_fluent_api() -> None:
     assert "RING " in mei
     assert "MOV  0.0  0.0  0.002" in mei
     assert "ROT  Z  15.0" in mei
+
+
+def test_elf_usage_analysis_methods_topic() -> None:
+    from elf_mcp_server.elf_knowledge import get_elf_documentation
+
+    doc = get_elf_documentation("analysis_methods")
+    assert "FIXA" in doc
+    assert "STEP" in doc
