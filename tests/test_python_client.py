@@ -190,3 +190,10 @@ def test_elf_run_result_parse_summary_and_axial_template(tmp_path: Path) -> None
     assert "VOLT  1  100.0" in mai
     assert "N=3000.0 rpm" in mai
     assert "Room-Runner" in mai
+
+
+def test_elf_client_run_mei_and_mai_short_circuits_on_mesh_failure(tmp_path: Path) -> None:
+    client = ElfClient(product_home=str(tmp_path / "missing"))
+    res = client.run_mei_and_mai("BOX 0 1 0 1 0 1\n", "USE MAGIC 3.50\nEND\n", tmp_path / "e2e")
+    assert res.ok is False
+    assert "mesh750.exe" in (res.error or "")

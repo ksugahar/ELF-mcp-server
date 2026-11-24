@@ -363,3 +363,40 @@ class ElfClient:
             f"SOL  STEP  {steps}  {dt_s:.6e}\n"
             "END\n"
         )
+
+    def run_mei_and_mai(
+        self,
+        mei_text: str,
+        mai_text: str,
+        work_dir: str | Path,
+        case_name: str = "case",
+        *,
+        solver: str | None = None,
+        timeout_s: int | None = None,
+    ) -> ElfRunResult:
+        """End-to-end: compile ``mei_text`` -> ``.meg`` via IEmesh, then run ``mai_text``."""
+        mesh_res = self.compile_iemesh(
+            mei_text,
+            work_dir,
+            case_name=case_name,
+            timeout_s=timeout_s,
+        )
+        if not mesh_res["ok"]:
+            return ElfRunResult(
+                ok=False,
+                solver=(solver or self.solver).strip().upper(),
+                case_name=case_name,
+                work_dir=Path(work_dir).resolve(),
+                returncode=mesh_res["returncode"],
+                elapsed_s=None,
+                raw=mesh_res,
+                error=mesh_res["error"],
+            )
+        return self.run_mai(
+            mai_text,
+            work_dir,
+            case_name=case_name,
+            meg_path=mesh_res["meg_path"],
+            solver=solver,
+            timeout_s=timeout_s,
+        )
