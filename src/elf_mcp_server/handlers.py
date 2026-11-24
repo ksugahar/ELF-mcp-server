@@ -4187,8 +4187,6 @@ def elf_suggest_example(goal: str) -> str:
 
 
 apply_tool_contract(mcp, server_name="elf-mcp-server", version=__version__)
-from .case_dispatch import register_case_dispatch
-register_case_dispatch(mcp)
 
 
 def main():

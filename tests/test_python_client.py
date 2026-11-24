@@ -283,3 +283,6 @@ def test_suggest_mei_mai_example() -> None:
 
     for g, kind in (("ヒステリシスモータ", "hysteresis_motor"), ("磁気センサー", "magnetic_sensor"), ("アクチュエータ", "actuator")):
         assert suggest_mei_mai_example(g)["kind"] == kind
+    assert suggest_mei_mai_example("motor shall run at 1500 rpm")["kind"] == "axial_motor"
+    assert suggest_mei_mai_example("ホールド力のある電磁石")["kind"] == "actuator"
+    assert suggest_mei_mai_example("ヒステリシス損の小さいアクチュエータ")["kind"] == "actuator"

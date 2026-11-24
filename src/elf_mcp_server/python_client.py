@@ -600,37 +600,39 @@ class MaiBuilder:
 
 
 def suggest_mei_mai_example(goal: str) -> dict[str, str]:
-    """Return a ready-to-run (.mei, .mai) example pair tailored to a natural-language goal."""
+    """Return a starter (.mei, .mai) template pair tailored to a natural-language goal."""
+    import re
+
     text = goal.lower()
-    if any(k in text for k in ("hysteresis", "ヒステリシス")):
-        mei = IEmeshBuilder("hysteresis_motor").ring(0.015, 0.04, 0.0, 0.01, nr=4, ntheta=24, nz=2, mat=1).build()
-        mai = MaiBuilder("MAGIC").mesh("hysteresis_motor.meg").sol_step(36, 1e-4).output("FLUM", "FORC").build()
-        return {
-            "kind": "hysteresis_motor",
-            "title": "Hysteresis motor (vector hysteresis / time-stepping)",
-            "mei_text": mei,
-            "mai_text": mai,
-            "notes": "Combine with hysteresis material table and Room-Runner time-stepping.",
-        }
-    if any(k in text for k in ("sensor", "hall", "磁気センサ", "センサー", "ホール")):
-        mei = IEmeshBuilder("magnetic_sensor").box(-0.01, 0.01, -0.01, 0.01, 0.0, 0.005, mat=1).build()
-        mai = MaiBuilder("MAGIC").mesh("magnetic_sensor.meg").material(1, mu_r=500.0).sol("FIXA").output("FIEL").build()
-        return {
-            "kind": "magnetic_sensor",
-            "title": "Magnetic sensor / Hall probe field evaluation (MAGIC)",
-            "mei_text": mei,
-            "mai_text": mai,
-            "notes": "Evaluate B-field at probe points with SOL FIXA + FIEL.",
-        }
     if any(k in text for k in ("actuator", "solenoid", "アクチュエータ", "ソレノイド", "電磁石")):
         mei = IEmeshBuilder("actuator").cylinder(0.02, 0.0, 0.03, nr=4, ntheta=16, nz=4, mat=1).build()
         mai = MaiBuilder("MAGIC").mesh("actuator.meg").material(1, mu_r=1000.0).current(1, 500.0).sol("FIXB").output("FORC", "FLUM").build()
         return {
             "kind": "actuator",
-            "title": "Actuator / solenoid force & flux (MAGIC)",
+            "title": "Actuator / solenoid starter template (MAGIC)",
             "mei_text": mei,
             "mai_text": mai,
-            "notes": "Nonlinear force/flux evaluation with SOL FIXB + FORC.",
+            "notes": "Starter template: replace MATE 1 with BH curve for nonlinear force/flux with SOL FIXB + FORC.",
+        }
+    if any(k in text for k in ("hysteresis", "ヒステリシス")):
+        mei = IEmeshBuilder("hysteresis_motor").ring(0.015, 0.04, 0.0, 0.01, nr=4, ntheta=24, nz=2, mat=1).build()
+        mai = MaiBuilder("MAGIC").mesh("hysteresis_motor.meg").material(1, mu_r=500.0).current(1, 100.0).sol_step(36, 1e-4).output("FLUM", "FORC").build()
+        return {
+            "kind": "hysteresis_motor",
+            "title": "Hysteresis motor starter template (MAGIC)",
+            "mei_text": mei,
+            "mai_text": mai,
+            "notes": "Starter template: replace MATE 1 with hysteresis material table and adjust Room-Runner time-stepping.",
+        }
+    if re.search(r"magnetic\s*sensor|磁気センサ|センサー|\bhall\b", text):
+        mei = IEmeshBuilder("magnetic_sensor").box(-0.01, 0.01, -0.01, 0.01, 0.0, 0.005, mat=1).build()
+        mai = MaiBuilder("MAGIC").mesh("magnetic_sensor.meg").material(1, mu_r=500.0).current(1, 100.0).sol("FIXA").output("FIEL").build()
+        return {
+            "kind": "magnetic_sensor",
+            "title": "Magnetic sensor / Hall probe starter template (MAGIC)",
+            "mei_text": mei,
+            "mai_text": mai,
+            "notes": "Starter template: add field source geometry and probe coordinates for SOL FIXA + FIEL.",
         }
     if any(k in text for k in ("axial", "アキシャル", "motor", "モータ", "rpm", "回転")):
         mei = (
