@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 import shutil
 import struct
+import subprocess
 from typing import Any, Iterable, Mapping
 
 from .product_runner import check_product_case, discover_product, run_product_case
@@ -183,6 +184,61 @@ class ElfClient:
             raw=raw,
             error=error,
         )
+
+    def compile_iemesh(
+        self,
+        mei_text: str,
+        work_dir: str | Path,
+        case_name: str = "case",
+        *,
+        timeout_s: int | None = None,
+    ) -> dict[str, Any]:
+        """Write ``mei_text`` to ``<case_name>.mei`` and compile ``<case_name>.meg`` via ``mesh750.exe``."""
+        resolved_dir = Path(work_dir).resolve()
+        resolved_dir.mkdir(parents=True, exist_ok=True)
+        mei_path = resolved_dir / f"{case_name}.mei"
+        mei_path.write_text(mei_text, encoding="utf-8")
+
+        discovery = discover_product(self.product_home, include_paths=True)
+        home_str = discovery.get("home")
+        if not discovery.get("found") or not home_str:
+            return {
+                "ok": False,
+                "meg_path": None,
+                "returncode": None,
+                "stdout": "",
+                "stderr": "",
+                "error": "ELF product home not found; cannot locate bin/mesh750.exe.",
+            }
+        exe_path = Path(home_str) / "bin" / "mesh750.exe"
+        if not exe_path.is_file():
+            return {
+                "ok": False,
+                "meg_path": None,
+                "returncode": None,
+                "stdout": "",
+                "stderr": "",
+                "error": f"IEmesh executable not found: {exe_path}",
+            }
+
+        proc = subprocess.run(
+            [str(exe_path), mei_path.name],
+            cwd=str(resolved_dir),
+            capture_output=True,
+            text=True,
+            timeout=self.timeout_s if timeout_s is None else timeout_s,
+            check=False,
+        )
+        meg_path = resolved_dir / f"{case_name}.meg"
+        ok = proc.returncode == 0 and meg_path.is_file()
+        return {
+            "ok": ok,
+            "meg_path": meg_path if meg_path.is_file() else None,
+            "returncode": proc.returncode,
+            "stdout": proc.stdout,
+            "stderr": proc.stderr,
+            "error": None if ok else f"mesh750.exe failed (returncode={proc.returncode})",
+        }
 
     def run_mai(
         self,

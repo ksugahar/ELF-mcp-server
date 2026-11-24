@@ -157,3 +157,10 @@ def test_elf_usage_room_runner_topic() -> None:
     doc = get_elf_documentation("room_runner")
     assert "ルームランナー" in doc
     assert "LU" in doc
+
+
+def test_elf_client_compile_iemesh_missing_home(tmp_path: Path) -> None:
+    client = ElfClient(product_home=str(tmp_path / "missing"))
+    res = client.compile_iemesh("BOX 0 1 0 1 0 1\n", tmp_path / "mesh_run", case_name="motor")
+    assert res["ok"] is False
+    assert "mesh750.exe" in (res["error"] or "")
