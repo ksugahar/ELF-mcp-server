@@ -280,3 +280,6 @@ def test_suggest_mei_mai_example() -> None:
     assert bm["kind"] == "beam"
     assert "USE  BEAM" in bm["mai_text"]
     assert "-1.602E-19" in bm["mai_text"]
+
+    for g, kind in (("ヒステリシスモータ", "hysteresis_motor"), ("磁気センサー", "magnetic_sensor"), ("アクチュエータ", "actuator")):
+        assert suggest_mei_mai_example(g)["kind"] == kind

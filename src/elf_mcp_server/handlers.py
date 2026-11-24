@@ -4175,7 +4175,20 @@ def elf_iemesh_compile(
     return json.dumps(payload, ensure_ascii=False)
 
 
+@mcp.tool(
+    name="elf_suggest_example",
+    title="ELF Suggest .mei/.mai Example",
+)
+def elf_suggest_example(goal: str) -> str:
+    """Return a ready-to-run (.mei, .mai) example pair for a natural-language goal."""
+    from .python_client import suggest_mei_mai_example
+
+    return json.dumps(suggest_mei_mai_example(goal), ensure_ascii=False)
+
+
 apply_tool_contract(mcp, server_name="elf-mcp-server", version=__version__)
+from .case_dispatch import register_case_dispatch
+register_case_dispatch(mcp)
 
 
 def main():
