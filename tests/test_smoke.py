@@ -1866,7 +1866,8 @@ def test_public_sample_decks_are_runnable_inputs_only():
     assert 'ngsolve_usage("mtpa")' in hybrid_route["age_validation"]["calls"]
     hybrid_text = format_motor_hybrid_router(hybrid_route)
     assert "ELF/radia motor hybrid router" in hybrid_text
-    assert "hdiv" not in hybrid_text.lower()
+    assert "coupled_validation" not in hybrid_route
+    assert "coupled" not in hybrid_text.lower()
     assert "elf_local_simulation_handoff" in hybrid_text
     assert "S:" + "\\" not in hybrid_text
     wide_routes = {
