@@ -116,9 +116,8 @@ Representative routing:
 For these compact public examples, `.meg` files are generated as small ASCII
 ELF/MAGIC mesh decks directly by lab-authored Python generators. They are not
 generated through Cubit. The normal ELF authoring route remains `.mei` through
-IEmesh/mesh750.exe. Cubit also remains useful for larger CAD/mesh workflows:
-`cubit_mesh_export.export_meg(...)` and `cubit_mesh_export.export_3D_meg(...)`
-can emit ELF-compatible `.meg` meshes when that route is appropriate.
+IEmesh/mesh750.exe. For larger CAD/mesh workflows, `elf_mcp_server.cubit_to_meg` can write
+ELF-compatible `.meg` meshes from an external Python that imports Cubit.
 
 Current families:
 

@@ -486,13 +486,12 @@ writer emits `BOOK MEP 3.50`, `MGSC`, `MGR1` node records, and 8-node element
 connectivity records such as `MMB8T`, `MCL8T`, `MAB8T`, and `MWL8T`. Cubit is
 not used for these compact public examples.
 
-For larger CAD/mesh workflows, Cubit-side `cubit_mesh_export` also supports
-ELF-compatible `.meg` export through helper calls such as
-`cubit_mesh_export.export_meg(cubit, "model.meg", DIM="T")` and
-`cubit_mesh_export.export_3D_meg(cubit, "model")`. A command-style route such
-as `radia_export meg "output.meg" threed labels "1:MMB,2:MWL"` is documented in
-`elf_usage(topic="meg_export")`. The published examples keep the geometry
-deliberately inspectable and dependency-free.
+For larger CAD/mesh workflows, `elf_mcp_server.cubit_to_meg` writes `.meg`
+from an external Python that imports Cubit's `cubit` module (see
+`elf_usage(topic="meg_export")`); the `elf_meg_write` tool and
+`elf_mcp_server.meg_writer` write `.meg` from plain node/block data, and
+IEmesh remains the route when Cubit is unavailable. The published examples
+keep the geometry deliberately inspectable and dependency-free.
 
 ### User-local material and particle definitions
 
