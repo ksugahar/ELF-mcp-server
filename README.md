@@ -126,10 +126,10 @@ public MCP/Python layer may add typed schemas, deck builders, validators,
 routers, and result contracts above that boundary.
 The concrete facade tools add `MotorSpec` / `DeckBundle` / `RunRequest` /
 `RunResult` vocabulary, dry-run `.mai` lint for requested observables, and
-`.meg` generation routing. Recommended `.meg` paths are Cubit mesh export for
-3D or CAD-like geometry, Netgen for deterministic 2D motor cross-sections, and
-constrained LLM-authored 2D templates for simple prompt-to-deck prototypes
-that still must pass lint and validation gates.
+`.meg` generation routing. IEmesh is this repository's standard ELF meshing route. Use
+`elf_iemesh_compile` to compile a `.mei` script to `.meg`. The planner also
+offers Netgen for deterministic 2D motor cross-sections and constrained LLM
+templates for 2D drafting. Existing Cubit meshes can use `cubit_to_meg`.
 `elf_python_2d_motor_template()` returns a bounded radial-layer / angular-feature
 schema for LLM-assisted 2D drafting before deterministic remeshing.
 The motor-design tools add explicit design variables, objective-specific
@@ -490,7 +490,7 @@ For larger CAD/mesh workflows, `elf_mcp_server.cubit_to_meg` writes `.meg`
 from an external Python that imports Cubit's `cubit` module (see
 `elf_usage(topic="meg_export")`); the `elf_meg_write` tool and
 `elf_mcp_server.meg_writer` write `.meg` from plain node/block data, and
-IEmesh remains the route when Cubit is unavailable. The published examples
+IEmesh is the standard product meshing route in this repository. The published examples
 keep the geometry deliberately inspectable and dependency-free.
 
 ### User-local material and particle definitions

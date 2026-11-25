@@ -3563,9 +3563,9 @@ def elf_python_meg_generation_plan(
     """
     Plan a public-safe `.meg` generation backend for a Python/MCP workflow.
 
-    Recommended paths include Cubit mesh export for 3D or CAD-like geometry,
-    Netgen for deterministic 2D motor cross-sections, and constrained LLM 2D
-    templates for simple educational/prototyping decks. This tool only plans;
+    IEmesh is the standard ELF route, with Cubit export supported for existing
+    Cubit meshes. Netgen and constrained LLM templates serve specialized 2D
+    workflows. This tool only plans;
     it does not run a mesher or solver.
 
     Args:

@@ -518,8 +518,7 @@ coordinates and element connectivity.
 - Cubit route: an external Python that imports Cubit runs
   `elf_mcp_server.cubit_to_meg` (`export_meg_from_file`), which reads the
   meshed model through `import cubit` and writes the `.meg` with
-  `elf_mcp_server.meg_writer`; no compiled plugin is involved. Without Cubit,
-  use the IEMesh route above.
+  `elf_mcp_server.meg_writer`; no compiled plugin is involved.
 - Public sample corpus route: the bundled public `.mai`/`.meg` examples use
   small lab-authored ASCII `.meg` writers that emit `BOOK MEP 3.50`, `MGSC`,
   `MGR1` node records, and element connectivity directly. Cubit is not used
@@ -1706,8 +1705,8 @@ MEG_EXPORT = """\
 `.meg` decks are written by pure Python (`elf_mcp_server.meg_writer`). The
 Cubit side is read by `elf_mcp_server.cubit_to_meg` running in an **external**
 Python process that imports Cubit's `cubit` module; the elf-mcp server and
-Cubit's embedded Python never run it. Without Cubit, use IEMesh
-(`elf_iemesh_compile`).
+Cubit's embedded Python never run it. IEmesh (`elf_iemesh_compile`) is the
+standard ELF meshing route in this repository.
 
 ## Run
 ```python
@@ -2496,8 +2495,8 @@ ELFIN does not have `GET_FORT`, `GET_FLUM`, or `GET_EMFM`.
   external Python that imports Cubit itself (`export_meg_from_file(model,
   out, dim, labels)`, or `python -I -B cubit_to_meg.py model.cub5 out.meg
   --dim T --labels 1:MMB,2:none`); not through Exodus or Nastran files and not
-  from Cubit's embedded Python. Without Cubit use IEMesh (`elf_iemesh_compile`,
-  `IEmeshBuilder` in `python_client`).
+  from Cubit's embedded Python. For the standard ELF route, use IEmesh
+  (`elf_iemesh_compile`, `IEmeshBuilder` in `python_client`).
   `read_meg` returns the same structure for a round-trip check.
 
 ## See also

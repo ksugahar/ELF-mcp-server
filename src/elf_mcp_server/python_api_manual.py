@@ -759,7 +759,8 @@ def build_python_api_manual(topic: str = "quickstart") -> dict[str, Any]:
         ]
     if key in {"quickstart", "meg_generation", "all"}:
         data["meg_generation_rules"] = [
-            "Use Cubit mesh export for 3D, CAD-like, curved, or high-order geometry.",
+            "Use IEmesh as the standard ELF route: compile a .mei script with elf_iemesh_compile.",
+            "Cubit mesh export is supported via cubit_to_meg for existing first-order Cubit meshes.",
             "Use Netgen 2D for deterministic motor cross-sections and polygonal regions.",
             "Use constrained LLM 2D templates only as drafts before deterministic remeshing.",
             "A .meg path is not publish-quality until geometry lint, .mai/.meg pairing, observable lint, and physics checks pass.",
