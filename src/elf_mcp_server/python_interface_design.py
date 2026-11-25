@@ -541,7 +541,7 @@ MEG_GENERATION_STRATEGIES: list[dict[str, Any]] = [
     {
         "strategy": "cubit_to_meg",
         "best_for": [
-            "CAD-driven or high-order meshes made in Cubit",
+            "first-order Cubit meshes of CAD-driven or curved geometry",
             "meshes that already exist as a Cubit session",
         ],
         "contract": (

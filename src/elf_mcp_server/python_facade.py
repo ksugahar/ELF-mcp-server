@@ -2358,7 +2358,7 @@ def build_meg_generation_plan(
             ],
         },
         "cubit_to_meg": {
-            "strength": "supported route for CAD-driven, curved and high-order geometry meshed in Cubit",
+            "strength": "supported route for existing first-order Cubit meshes of CAD-driven or curved geometry",
             "minimum_contract": [
                 "Cubit mesh (external Python that imports cubit)",
                 "block ids mapped to ELF labels (elf_mcp_server.cubit_to_meg)",
