@@ -1796,8 +1796,8 @@ Solid elements in MAGIC (what is observed, what is documented, what is inferred)
 
 Plates (3D surface elements): `MMT` quads and tris export as `MMT4T`/`MMT3T`
 (allowed in DIM T for `MMT` only; other labels still refuse shells). The plate
-thickness is not geometry: put `THIN <MID> <thickness in model units after MGSC>`
-in the `.mai`. Verified live: a quad plate, a quad+tri plate and the same plate
+thickness is not geometry: put `THIN <MID> <thickness in metres>` in the `.mai`
+(reference 3.2.5: unit m, independent of MGSC; 5 mm is `5.0E-03`). Verified live: a quad plate, a quad+tri plate and the same plate
 added with `add face`/`add tri` all solved in magh1600 (the last two agree to every
 printed digit). `MMP` plates were not run.
 
