@@ -1672,10 +1672,12 @@ raises instead of dropping it. Direct and geometry members are united; a failing
 per-volume/surface query raises (no partial block), and an element listed under
 two blocks is rejected. Verified live: one-element hex and quad cases and
 volume-defined blocks; verified live too: a block over two surfaces (8 quads, shared nodes once).
-Not supported: 2D blocks with elements added one by one (`block N add face F`;
-Cubit 2026.8 has no `get_block_quads`, only `get_block_faces`), which are
-refused instead of exported incomplete; define 2D blocks from surfaces. Not yet
-verified: tri/quad mixes, DIM R.
+2D blocks with elements added one by one (`block N add face F`, `add tri T`):
+Cubit 2026.8 has no `get_block_quads`; `get_block_faces` lists the explicit
+quads and `get_block_tris` the tris (live probe: face 5 gave quad connectivity,
+and tri 5 is a different element). The exporter therefore keys elements by
+(kind, id) and unions these with the surface members. Not yet verified through
+MAGIC: tri/quad mixes in a solve, DIM R.
 
 From plain node/block data (no Cubit), call the `elf_meg_write` MCP tool or
 `meg_writer.blocks_to_mesh` + `write_meg`.
