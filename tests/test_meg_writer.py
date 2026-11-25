@@ -270,3 +270,29 @@ def test_cubit_coil_axis_preserves_connectivity_and_rejects_wrong_direction(tmp_
     assert not target.exists()
     with pytest.raises(mw.MegError, match="signed coil axis"):
         c2m.mesh_from_cubit(_StubCubit(), labels=labels, coil_axes={1: "up"})
+
+
+class _VolumeBlockCubit(_StubCubit):
+    """Blocks made from volumes: get_block_hexes is empty, the volume holds them."""
+
+    def get_block_hexes(self, b): return []
+    def get_block_volumes(self, b): return [5] if b == 1 else []
+    def get_volume_hexes(self, v): return [1] if v == 5 else []
+
+
+def test_volume_defined_block_falls_back_to_volume_elements():
+    from elf_mcp_server import cubit_to_meg as c2m
+
+    mesh = c2m.mesh_from_cubit(_VolumeBlockCubit(), labels={2: None, 3: None})
+    assert [e.label for e in mesh.elements] == ["MMB8T"] and mesh.elements[0].mid == 1
+
+
+def test_labeled_block_without_elements_is_an_error_not_a_silent_drop():
+    from elf_mcp_server import cubit_to_meg as c2m
+
+    with pytest.raises(mw.MegError, match="block 1 .*returned no elements"):
+        c2m.mesh_from_cubit(_VolumeBlockCubit_NoOwner(), labels={2: None, 3: None})
+
+
+class _VolumeBlockCubit_NoOwner(_StubCubit):
+    def get_block_hexes(self, b): return []

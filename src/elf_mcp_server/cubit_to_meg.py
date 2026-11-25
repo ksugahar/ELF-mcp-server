@@ -38,6 +38,35 @@ _ELEMENTS = (
 )
 
 
+# Cubit entity that owns a block's elements when the block was made from
+# geometry ("block N add volume V"): (getter listing the entities, per-entity getter prefix)
+_OWNERS = (("get_block_volumes", "get_volume_"), ("get_block_surfaces", "get_surface_"))
+
+
+def _block_element_ids(cubit, bid, suffix: str) -> list[int]:
+    """Element ids of one type in a block.
+
+    ``get_block_<type>`` is used first.  Real Cubit 2026.8 returned nothing for
+    blocks defined from volumes, so fall back to the block's volumes/surfaces
+    (``get_volume_<type>``).  Calls that do not exist on the session are skipped.
+    """
+    getter = getattr(cubit, f"get_block_{suffix}", None)
+    ids = list(getter(bid)) if getter else []
+    if ids:
+        return ids
+    for owners, per in _OWNERS:
+        lister = getattr(cubit, owners, None)
+        get = getattr(cubit, f"{per}{suffix}", None)
+        if lister is None or get is None:
+            continue
+        try:
+            for ent in lister(bid):
+                ids.extend(get(ent))
+        except Exception:      # entity kind not valid for this block/session
+            continue
+    return sorted(set(int(i) for i in ids))
+
+
 def mesh_from_cubit(
     cubit,
     dim: str = "T",
@@ -78,17 +107,24 @@ def mesh_from_cubit(
                 continue
         if prefix is None:
             continue
+        found = 0
         for suffix, ctype, shape, dims in _ELEMENTS:
-            getter = getattr(cubit, f"get_block_{suffix}", None)
-            ids = list(getter(bid)) if getter else []
+            ids = _block_element_ids(cubit, bid, suffix)
             if not ids:
                 continue
+            found += len(ids)
             if dim not in dims:
                 raise MegError(
                     f"block {bid} has {ctype} elements, not allowed in DIM {dim}")
             conn = [tuple(cubit.get_connectivity(ctype, i)) for i in ids]
             used.extend(n for c in conn for n in c)
             blocks.append(MegBlock(prefix.upper(), shape, conn, int(bid)))
+        if not found:
+            raise MegError(
+                f"block {bid} ({prefix}) returned no elements; a block made with "
+                f"'block {bid} add volume ...' may not report its mesh through "
+                f"get_block_<type>: mesh the model first, or add the elements "
+                f"explicitly ('block {bid} add hex <ids>')")
     if unlabeled:
         raise MegError(
             "blocks without an ELF label (pass labels={id: prefix or None}): "

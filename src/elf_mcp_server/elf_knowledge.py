@@ -1665,6 +1665,11 @@ Set `CUBIT_BIN` if Cubit's `bin` directory is not the default. The model must
 be meshed with first-order elements. Blocks with no label and no ELF name
 prefix raise an error; nothing is defaulted silently. Nodesets whose name
 contains `SPACE` become `MGR2` nodes. Sideset faces are not exported.
+Cubit 2026.8 returned no elements from `get_block_hexes()` for a block made with
+`block N add volume V` (observed live); the exporter then asks the block's
+volumes/surfaces (`get_volume_hexes` ...) and, if the block is still empty,
+raises instead of dropping it. That fallback is tested on a stub only; explicit
+`block N add hex <ids>` membership is the form verified on a real session.
 
 From plain node/block data (no Cubit), call the `elf_meg_write` MCP tool or
 `meg_writer.blocks_to_mesh` + `write_meg`.
