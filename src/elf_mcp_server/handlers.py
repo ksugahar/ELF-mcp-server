@@ -71,10 +71,17 @@ from .source_off_relaxation_contract import source_off_relaxation_contract_gate
 from .material_force_contrast_contract import material_force_contrast_contract_gate
 from .force_method_profile_contract import force_method_profile_contract_gate
 from .v44_identity import validate_source_identity
+from .v62_identity import validate_source_v62_identity
 from .rotating_conductor_contract import rotating_conductor_periodic_contract_gate
 from .magnetization_group_contract import magnetization_group_handoff_contract_gate
 from .two_winding_frequency_contract import two_winding_frequency_contract_gate
 from .conductive_shield_frequency_contract import conductive_shield_frequency_contract_gate
+from .beam_trajectory_contract import beam_trajectory_run_contract_gate
+from .charged_particle_replay_contract import charged_particle_replay_contract_gate
+from .corpus_replay_contract import corpus_replay_contract_gate
+from .electrostatic_replay_contract import electrostatic_replay_contract_gate
+from .age_torque_replay_contract import age_torque_replay_contract_gate
+from .hysteresis_harmonic_replay_contract import hysteresis_harmonic_replay_contract_gate
 from .project_feature_inventory_contract import project_feature_inventory_contract_gate
 from .nonlinear_magnetic_conductor_contract import (
     nonlinear_magnetic_conductor_validation_gate,
@@ -3730,6 +3737,61 @@ def elf_complex_field_run_contract_gate(summary_json: str) -> str:
 
 
 @mcp.tool()
+def elf_beam_trajectory_run_contract_gate(summary_json: str) -> str:
+    """Gate GUI-free BEAM trajectory metadata without opening local files."""
+    return json.dumps(
+        beam_trajectory_run_contract_gate(summary_json), indent=2, sort_keys=True
+    )
+
+
+@mcp.tool()
+def elf_charged_particle_replay_contract_gate(summary_json: str) -> str:
+    """Gate public-safe same-identity charged-particle replay metadata."""
+    return json.dumps(
+        charged_particle_replay_contract_gate(summary_json), indent=2, sort_keys=True
+    )
+
+
+@mcp.tool()
+def elf_product_corpus_replay_contract_gate(summary_json: str) -> str:
+    """Gate metadata for a complete GUI-free example-corpus replay."""
+    return json.dumps(
+        corpus_replay_contract_gate(summary_json), indent=2, sort_keys=True
+    )
+
+
+@mcp.tool()
+def elf_electrostatic_replay_contract_gate(summary_json: str) -> str:
+    """Gate metadata for a converged electrostatic replacement replay."""
+    return json.dumps(
+        electrostatic_replay_contract_gate(summary_json), indent=2, sort_keys=True
+    )
+
+
+@mcp.tool()
+def elf_age_torque_replay_contract_gate(summary_json: str) -> str:
+    """Gate metadata for a same-identity NGSolve+AGE torque replay."""
+    return json.dumps(
+        age_torque_replay_contract_gate(summary_json), indent=2, sort_keys=True
+    )
+
+
+@mcp.tool()
+def elf_history_harmonic_replay_contract_gate(summary_json: str) -> str:
+    """Gate imported history and ELF harmonic metadata without claiming hysteresis support."""
+
+    return json.dumps(
+        hysteresis_harmonic_replay_contract_gate(summary_json), indent=2, sort_keys=True
+    )
+
+
+def elf_hysteresis_harmonic_replay_contract_gate(summary_json: str) -> str:
+    """Deprecated direct-call alias; it is intentionally not exposed as an MCP tool."""
+
+    return elf_history_harmonic_replay_contract_gate(summary_json)
+
+
+@mcp.tool()
 def elf_force_pair_run_contract_gate(summary_json: str) -> str:
     """Gate a GUI-free attraction/repulsion force-pair result package.
 
@@ -3774,6 +3836,12 @@ def elf_force_method_profile_contract_gate(summary_json: str) -> str:
         result.setdefault("checks", {}).update(v44_checks)
         result["force_v44_identity_checks"] = v44_checks
         if not all(v44_checks.values()):
+            result["status"] = "needs_attention"
+    v62_checks = validate_source_v62_identity(identities)
+    if v62_checks:
+        result.setdefault("checks", {}).update(v62_checks)
+        result["force_v62_identity_checks"] = v62_checks
+        if not all(v62_checks.values()):
             result["status"] = "needs_attention"
     return json.dumps(result, indent=2, sort_keys=True)
 
