@@ -16,6 +16,16 @@ from mcp.types import Implementation
 from pydantic import AnyUrl
 
 
+_REPLAY_GATE_SCHEMAS = {
+    "elf_beam_trajectory_run_contract_gate": "elf-beam-trajectory-run-contract/v1",
+    "elf_charged_particle_replay_contract_gate": "elf-charged-particle-replay-contract/v1",
+    "elf_product_corpus_replay_contract_gate": "elf-product-corpus-replay-contract/v1",
+    "elf_electrostatic_replay_contract_gate": "elf-electrostatic-replay-contract/v1",
+    "elf_age_torque_replay_contract_gate": "elf-age-torque-replay-contract/v1",
+    "elf_history_harmonic_replay_contract_gate": "elf-history-harmonic-replay-contract/v2",
+}
+
+
 async def _probe_stdio(legacy_tools: str | None) -> dict:
     repo = Path(__file__).resolve().parents[1]
     env = os.environ.copy()
@@ -46,6 +56,20 @@ async def _probe_stdio(legacy_tools: str | None) -> dict:
             initialized = await session.initialize()
             listed = await session.list_tools()
             tools = listed.tools
+            replay_gates = {
+                tool.name: tool for tool in tools if tool.name in _REPLAY_GATE_SCHEMAS
+            }
+            assert replay_gates.keys() == _REPLAY_GATE_SCHEMAS.keys()
+            for name, schema in _REPLAY_GATE_SCHEMAS.items():
+                tool = replay_gates[name]
+                assert tool.annotations is not None, name
+                assert tool.annotations.readOnlyHint is True, name
+                assert tool.inputSchema["required"] == ["summary_json"], name
+                result = await session.call_tool(name, {"summary_json": "{}"})
+                assert not result.isError, (name, result.content)
+                payload = json.loads(result.content[0].text)
+                assert payload["schema"] == schema, name
+                assert payload["status"] == "needs_attention", name
             called = await session.call_tool("elf_overview", {})
             suggestion = await session.call_tool(
                 "elf_suggest_example", {"goal": "Hall-effect sensor"}
