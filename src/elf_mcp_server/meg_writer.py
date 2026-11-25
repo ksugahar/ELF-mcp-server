@@ -49,7 +49,7 @@ _COORD_TOL = 1.0e-12
 # rejected too (ELF-Q(692) "element shape is inappropriate").  A pyramid written
 # as a degenerate hex (apex repeated, six orientations/encodings, plus wedge
 # collapses) is rejected the same way, so pyramids are refused for these labels.
-_NO_TET_PREFIXES = frozenset({"MMB", "EMB", "MCL", "MBB", "MWL", "MWV", "MMS"})
+_NO_TET_PREFIXES = frozenset({"MMB", "MCL", "MBB", "MWL", "MWV", "MMS"})
 
 
 class MegError(ValueError):

@@ -54,6 +54,15 @@ def test_tetrahedra_are_refused_for_hex_wedge_only_labels():
         mw.blocks_to_mesh(pyr, [mw.MegBlock("MMB", "pyramid5", [(1, 2, 3, 4, 5)])], "T")
 
 
+@pytest.mark.parametrize("prefix", ["MMB", "MCL", "MBB", "MWL", "MWV", "MMS"])
+@pytest.mark.parametrize("shape,nodes,kind", [
+    ("tet4", (1, 2, 3, 4), "tetrahedral"), ("pyramid5", (1, 2, 3, 4, 5), "pyramid")])
+def test_guarded_solid_labels_refuse_tets_and_pyramids(prefix, shape, nodes, kind):
+    pts = {i: (float(i), float(i * i % 5), float(i % 3)) for i in range(1, 6)}
+    with pytest.raises(mw.MegError, match=f"{prefix} has no {kind} element"):
+        mw.blocks_to_mesh(pts, [mw.MegBlock(prefix, shape, [nodes])], "T")
+
+
 def test_plane_noise_is_snapped_to_exact_zero():
     """MAGIC refuses axisymmetric elements off X-Z by even 3e-16 (ELF-Q(661)); write exact zeros."""
     rz = {1: (1.0, 3.06e-16, 0.0), 2: (-1e-14, -3e-16, 1.0), 3: (2.0, 0.0, 1.0)}

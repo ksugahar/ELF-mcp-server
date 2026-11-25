@@ -1774,15 +1774,25 @@ the reference page yourself.
 
 ## Element Name = PREFIX(3) + NODE_COUNT(1) + DIM(1)
 Node count comes from the element (hex 8, tet 4, wedge 6, quad 4, tri 3,
-line 2); a 3D pyramid becomes a degenerate 8-node hex.
-MAGIC has no tetrahedral solid element: `MMB4T` is rejected (ELF-Q(540)) and a
-tetrahedron written as a degenerate `MMB8T`/`MMB6T` is rejected too (ELF-Q(692),
-checked live); solid blocks (MMB, EMB, MCL, MBB, MWL, MWV, MMS) accept hex (8T) and
-wedge (6T) only, so the exporter refuses tets for them. Hex plus wedge (a swept
-triangle mesh) solved cleanly. A pyramid written as a degenerate hex (or as a
-collapsed wedge, six encodings tried) is rejected as well (ELF-Q(692)), so pyramids
-are refused for these labels too. A Cubit hex+tet interface mesh (which inserts
-pyramids and tets) therefore cannot be solved by MAGIC.
+line 2); the writer encodes a 3D pyramid as a degenerate 8-node hex (apex repeated).
+
+Solid elements in MAGIC (what is observed, what is documented, what is inferred):
+- Observed live with `MMB` only (magh1600 16.0): `MMB4T` is rejected (ELF-Q(540)); a
+  tetrahedron or a pyramid written as a degenerate `MMB8T`, or as a collapsed
+  `MMB6T`, is rejected (ELF-Q(692) "element shape is inappropriate"; 10 tet and
+  7 pyramid encodings tried). Hex (`MMB8T`) and wedge (`MMB6T`, from a swept
+  triangle mesh) solved cleanly.
+- Documented, not observed: the reference (2.4, 2.5.1) lists only 8-node hex and
+  6-node wedge solids, and no `MMB4T`/`MCL4T`/`MBB4T`/`MWL4T`/`MWV4T`/`MMS4T`
+  occurs in the shipped examples. `blocks_to_mesh` and the Cubit route therefore
+  also refuse tets and pyramids for these five other labels (MCL, MBB, MWL, MWV,
+  MMS); that part is a precaution, not a solver result. (`EMB` is not a valid DIM T
+  label here, so it needs no guard.) Labels such as `MCO` (a space-drawing element,
+  not a solid) are not guarded, and an `MCO` pyramid is only serialized, never
+  solved here. Raw MEG text that bypasses the writer is not checked.
+- Not run: a complete Cubit hex+tet interface mesh (which inserts pyramids and tets)
+  through MAGIC. It is expected to fail because its tets are rejected, but that is
+  inferred from the tet result, not observed on that mesh.
 
 ## Available Labels by DIM
 
