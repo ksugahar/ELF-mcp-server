@@ -44,27 +44,35 @@ _OWNERS = (("get_block_volumes", "get_volume_"), ("get_block_surfaces", "get_sur
 
 
 def _block_element_ids(cubit, bid, suffix: str) -> list[int]:
-    """Element ids of one type in a block.
+    """Element ids of one type in a block: direct members plus geometry members.
 
-    ``get_block_<type>`` is used first.  Real Cubit 2026.8 returned nothing for
-    blocks defined from volumes, so fall back to the block's volumes/surfaces
-    (``get_volume_<type>``).  Calls that do not exist on the session are skipped.
+    ``get_block_<type>`` lists elements added one by one.  Real Cubit 2026.8
+    returned nothing for blocks defined from volumes or surfaces, so the
+    block's volumes/surfaces are asked as well (``get_volume_<type>``,
+    ``get_surface_<type>``) and the two sets are united.  A session without a
+    call is skipped, and so is an owner kind that cannot be listed for this
+    block; but a failing per-entity query raises ``MegError`` (block, owner,
+    element type) so a block is never exported partially.
     """
     getter = getattr(cubit, f"get_block_{suffix}", None)
-    ids = list(getter(bid)) if getter else []
-    if ids:
-        return ids
+    ids = {int(i) for i in (getter(bid) if getter else ())}
     for owners, per in _OWNERS:
         lister = getattr(cubit, owners, None)
         get = getattr(cubit, f"{per}{suffix}", None)
         if lister is None or get is None:
             continue
         try:
-            for ent in lister(bid):
-                ids.extend(get(ent))
-        except Exception:      # entity kind not valid for this block/session
+            entities = list(lister(bid))
+        except Exception:      # owner kind not applicable to this block/session
             continue
-    return sorted(set(int(i) for i in ids))
+        for ent in entities:
+            try:
+                ids.update(int(i) for i in get(ent))
+            except Exception as exc:
+                raise MegError(
+                    f"block {bid}: {per}{suffix}({ent}) failed "
+                    f"({type(exc).__name__}: {exc}); refusing a partial block") from exc
+    return sorted(ids)
 
 
 def _nodeset_name(cubit, nsid) -> str:
@@ -112,6 +120,7 @@ def mesh_from_cubit(
     elements always raise.  ``coil_report(mesh)`` shows the resulting directions.
     """
     labels = dict(labels or {})
+    owner: dict[tuple[str, int], int] = {}
     blocks: list[MegBlock] = []
     used: list[int] = []
     unlabeled: list[str] = []
@@ -131,6 +140,12 @@ def mesh_from_cubit(
             if not ids:
                 continue
             found += len(ids)
+            for i in ids:
+                other = owner.setdefault((ctype, i), bid)
+                if other != bid:
+                    raise MegError(
+                        f"{ctype} element {i} belongs to blocks {other} and {bid}; "
+                        f"an element can be exported under one block only")
             if dim not in dims:
                 raise MegError(
                     f"block {bid} has {ctype} elements, not allowed in DIM {dim}")

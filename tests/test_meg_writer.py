@@ -323,3 +323,50 @@ def test_space_nodeset_uses_exodus_entity_name_on_cubit_2026():
     assert not hasattr(stub, "get_nodeset_name")
     mesh = c2m.mesh_from_cubit(stub, labels={2: None})
     assert mesh.space_nodes == {1: (5.0, 5.0, 5.0)}    # only SPACE_PROBE; CONTROL and the empty set excluded
+
+
+class _SurfBlocks(_StubCubit):
+    """Block 1 owns surfaces 1..3 (one quad each); block 2/3 skipped."""
+
+    def __init__(self, fail_on=None, direct=()):
+        super().__init__()
+        self.fail_on, self.direct = fail_on, direct
+
+    def get_nodeset_id_list(self): return []
+    def get_block_hexes(self, b): return []
+    def get_block_pyramids(self, b): return []
+    def get_block_quads(self, b): return list(self.direct) if b == 1 else []
+    def get_block_surfaces(self, b): return [1, 2, 3] if b == 1 else []
+    def get_surface_quads(self, s):
+        if s == self.fail_on:
+            raise RuntimeError("surface query failed")
+        return [s]
+    def get_connectivity(self, t, i): return (1, 2, 3, 4)
+    def get_nodal_coordinates(self, n): return (float(n), 0.0, 0.0)
+
+
+def test_failing_per_surface_query_refuses_a_partial_block():
+    from elf_mcp_server import cubit_to_meg as c2m
+
+    ok = c2m.mesh_from_cubit(_SurfBlocks(), "K", labels={2: None, 3: None})
+    assert len(ok.elements) == 3
+    with pytest.raises(mw.MegError, match=r"block 1: get_surface_quads\(2\) failed"):
+        c2m.mesh_from_cubit(_SurfBlocks(fail_on=2), "K", labels={2: None, 3: None})
+
+
+def test_direct_and_geometry_members_are_united():
+    from elf_mcp_server import cubit_to_meg as c2m
+
+    mesh = c2m.mesh_from_cubit(_SurfBlocks(direct=(1, 9)), "K", labels={2: None, 3: None})
+    assert len(mesh.elements) == 4          # direct 1 and 9, surface 1 deduplicated, 2, 3
+
+
+def test_element_shared_by_two_blocks_is_rejected():
+    from elf_mcp_server import cubit_to_meg as c2m
+
+    class Shared(_SurfBlocks):
+        def get_block_id_list(self): return [1, 2]
+        def get_block_surfaces(self, b): return [1] if b in (1, 2) else []
+
+    with pytest.raises(mw.MegError, match="belongs to blocks 1 and 2"):
+        c2m.mesh_from_cubit(Shared(), "K", labels={1: "MMB", 2: "MMB"})
