@@ -94,6 +94,14 @@ def _plane_point(dim: str, p: Sequence[float], where: str) -> tuple[float, float
         raise MegError(f"{where}: axisymmetric (R) deck needs y = 0, got y = {y!r}")
     if dim == "R" and x < -_COORD_TOL:
         raise MegError(f"{where}: axisymmetric (R) deck needs x >= 0, got x = {x!r}")
+    # Snap rounding noise onto the plane: MAGIC rejects an axisymmetric element
+    # whose nodes are not exactly on X-Z (ELF-Q(661), seen live with y = 3e-16
+    # from a Cubit yplane surface), so tolerance-level offsets are written as 0.
+    if dim == "K":
+        z = 0.0
+    elif dim == "R":
+        y = 0.0
+        x = max(x, 0.0)
     return (x, y, z)
 
 

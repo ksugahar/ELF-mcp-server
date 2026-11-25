@@ -41,12 +41,23 @@ def test_2d_and_axisymmetric_planes():
         mw.blocks_to_mesh(plane | {4: (0, 1, 0)}, [], "R")
 
 
+def test_plane_noise_is_snapped_to_exact_zero():
+    """MAGIC refuses axisymmetric elements off X-Z by even 3e-16 (ELF-Q(661)); write exact zeros."""
+    rz = {1: (1.0, 3.06e-16, 0.0), 2: (-1e-14, -3e-16, 1.0), 3: (2.0, 0.0, 1.0)}
+    mesh = mw.blocks_to_mesh(rz, [mw.MegBlock("MMB", "tri3", [(1, 2, 3)])], "R")
+    assert all(p[1] == 0.0 and p[0] >= 0.0 for p in mesh.nodes.values())
+    flat = {1: (0.0, 0.0, 1e-15), 2: (1.0, 0.0, -1e-15), 3: (0.0, 1.0, 0.0)}
+    mesh = mw.blocks_to_mesh(flat, [mw.MegBlock("MMB", "tri3", [(1, 2, 3)])], "K")
+    assert all(p[2] == 0.0 for p in mesh.nodes.values())
+
+
 @pytest.mark.parametrize("blocks,dim,msg", [
     ([mw.MegBlock("XYZ", "hex8", [(1, 2, 3, 4, 5, 6, 7, 8)])], "T", "not valid"),
     ([mw.MegBlock("MMS", "tri3", [(1, 2, 3)])], "K", "not valid"),
     ([mw.MegBlock("MMB", "hex8", [(1, 2, 3)])], "T", "needs 8"),
     ([mw.MegBlock("MMB", "tri3", [(1, 2, 99)])], "T", "missing nodes"),
 ])
+
 def test_rejects_bad_input(blocks, dim, msg):
     nodes = CUBE if dim == "T" else {1: (0, 0, 0), 2: (1, 0, 0), 3: (0, 1, 0)}
     with pytest.raises(mw.MegError, match=msg):
