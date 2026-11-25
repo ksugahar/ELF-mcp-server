@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ELF-mcp-server"
-version = "1.64.0"
+version = "1.64.1"
 description = "MCP server for ELF600 docs, public sample decks, guarded local product-DLL execution through Python ctypes, and motor-design Python facade contracts."
 readme = "README.md"
 license = {text = "BSD-3-Clause"}
