@@ -422,3 +422,17 @@ def test_explicit_faces_are_quads_and_tris_keep_their_own_id_space():
     mesh = c2m.mesh_from_cubit(Mixed(), "K", labels={2: None, 3: None})
     kinds = sorted(len(e.nodes) for e in mesh.elements)
     assert kinds == [3, 4, 4, 4, 4]          # surfaces 1..3 quads + explicit quad 5 + tri 5 (same number, two elements)
+
+
+def test_plate_labels_accept_quads_and_tris_in_3d_only_for_mmt():
+    """MMT4T/MMT3T are MAGIC plate elements (live: MAGIC solved a mixed MMT plate); MMB shells stay refused."""
+    from elf_mcp_server import cubit_to_meg as c2m
+
+    class Plate(_SurfBlocks):
+        def get_block_tris(self, b): return [9] if b == 1 else []
+        def get_connectivity(self, t, i): return (1, 2, 3, 4) if t == "quad" else (1, 2, 3)
+
+    mesh = c2m.mesh_from_cubit(Plate(), "T", labels={1: "MMT", 2: None, 3: None})
+    assert sorted(e.label for e in mesh.elements) == ["MMT3T", "MMT4T", "MMT4T", "MMT4T"]
+    with pytest.raises(mw.MegError, match="not allowed in DIM T"):
+        c2m.mesh_from_cubit(Plate(), "T", labels={1: "MMB", 2: None, 3: None})

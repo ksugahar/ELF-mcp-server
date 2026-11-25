@@ -38,6 +38,10 @@ _ELEMENTS = (
 )
 
 
+# 3D labels that are surface (plate) elements in MAGIC: MMT4T quad / MMT3T tri
+# (reference 2.5.1; the plate thickness comes from THIN in the .mai).
+_PLATE_LABELS_T = frozenset({"MMT"})
+
 # Cubit entity that owns a block's elements when the block was made from
 # geometry ("block N add volume V"): (getter listing the entities, per-entity getter prefix)
 _OWNERS = (("get_block_volumes", "get_volume_"), ("get_block_surfaces", "get_surface_"))
@@ -156,7 +160,9 @@ def mesh_from_cubit(
                     raise MegError(
                         f"{ctype} element {i} belongs to blocks {other} and {bid}; "
                         f"an element can be exported under one block only")
-            if dim not in dims:
+            plate = (dim == "T" and suffix in ("quads", "tris")
+                     and prefix.upper() in _PLATE_LABELS_T)
+            if dim not in dims and not plate:
                 raise MegError(
                     f"block {bid} has {ctype} elements, not allowed in DIM {dim}")
             conn = [tuple(cubit.get_connectivity(ctype, i)) for i in ids]
