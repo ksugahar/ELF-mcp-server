@@ -253,11 +253,7 @@ _TOOL_CATALOG = [
     ("elf_search(query, source, top_k)", "Canonical typed search response"),
     ("elf_read(identifier, source, max_chars)", "Canonical typed read response"),
     ("elf_contract_gate(gate, summary_json)", "Canonical typed metadata-gate response"),
-    ("elf_usage(topic)", "Curated documentation across 31 topics: "
-                          ".mai/.mei/.meg formats, MAGIC/ELFIN/BEAM "
-                          "solvers, element conventions, B-H, IPM motor, "
-                          "radia motor bridge, SOL MOMC AC, "
-                          "licensing (dongle)"),
+    ("elf_usage(topic)", "Curated documentation by topic; see elf://guides/topics"),
     ("elf_help_index / search / get", "Compatibility access to original public summaries"),
     ("elf_examples_index / search / get / playbook", "Compatibility access to original public patterns"),
     ("elf_sample_decks_index / search / route / handoff / validation / readiness / "
@@ -1037,62 +1033,12 @@ def elf_contract_gate(gate: str, summary_json: str) -> GateResponse:
 
 @mcp.tool()
 def elf_usage(topic: str = "all") -> str:
-    """
-    Get ELF600 electromagnetic field analysis documentation.
-
-    ELF600 is a BEM-based electromagnetic analysis suite with three solvers:
-    MAGIC (magnetostatic), ELFIN (electrostatic), BEAM (particle tracking).
-    Input consists of .mai (analysis control), .mei (mesh script), and
-    .meg (compiled mesh) files.
+    """Read ELF guidance by topic. Browse elf://guides/topics for topic IDs.
 
     Args:
-        topic: Documentation topic. Options:
-            "all"              - Complete documentation (~60k chars)
-            "overview"         - ELF600 suite overview, solver modules, tools
-            "mai_format"       - .mai file format (PRE keywords, all solvers)
-            "mei_format"       - .mei file format (mesh scripting structure)
-            "meg_format"       - .meg file format (symmetry, nodes, elements)
-            "magic"            - MAGIC magnetostatic solver details
-            "elfin"            - ELFIN electrostatic solver (D-E curves)
-            "beam"             - BEAM particle tracking (RELA, BINT, GRAV)
-            "element_types"    - All element types (MAGIC/ELFIN/BEAM, DOF)
-            "bh_curves"        - B-H curves, recoil, extrapolation
-            "sol_commands"     - SOL blocks, NONL strategy, PASS optimization
-            "mei_commands"     - IEmesh commands (AA/AN/AE/ME/BE/TE/NB/...)
-            "ipm_motor"        - IPM motor Ld/Lq calculation workflow
-            "motor_radia_bridge" - Translate radia-mcp/open motor-FEA
-                                 quantities (air-gap field, torque,
-                                 flux linkage/back-EMF, lamination, eddy
-                                 currents) to ELF/MAGIC elements, SOL blocks,
-                                 and extraction steps
-            "spm_back_emf_comparison" - Compare open-circuit SPM phase linkage and back-EMF
-            "inductance"       - Lsc (JIS) and Ll (IEEJ) with 6 samples
-            "magnetization"    - Magnetization (MAGNE2) and demagnetization
-            "examples"         - Example file catalog
-            "meg_export"       - MEG export from Cubit (labels, DIM)
-            "treasure_box"     - Quick-reference tables (element-PRE map, etc.)
-            "sinusoidal"       - SOL MOMC, complex permeability, AC force
-            "anisotropy"       - HBA1/HBA2, VEC1/VEC3, lamination
-            "sted"             - Steady-state eddy current motion
-            "meshing"          - Element quality, gaps, connectivity rules
-            "convergence"      - Nonlinear convergence troubleshooting
-            "force_methods"    - FORC vs FORT vs FIXB comparison
-            "errors"           - Error messages (ELF-Q/E/W, 160+ codes)
-            "iemesh"           - IEmesh tool overview and command families
-            "tools"            - Wmap3, MagFilter2, MaiEditor3, ELF/Bench
-            "licensing"        - Sentinel HL USB dongle (HASP): run-time,
-                                 Admin Control Center (localhost:1947), and
-                                 "dongle not recognized" troubleshooting
-                                 (Code 43 / descriptor-request-failed on USB 3.x
-                                 -> move to a USB 2.0 port)
-            "python_api"       - Python ctypes API: DLL wrappers (magtypes /
-                                 elftypes), Fortran-ABI calling convention,
-                                 end-to-end call sequence, key function table,
-                                 _R return variants, common pitfalls
-            "live_drive"       - Open MAGIC kernel live-drive note
-            "multiport_inductance_comparison" - ELF/MAGIC and NGSolve port-matrix checks
-            "force_gap_contract" - PM force-gap observable contract for
-                                 ELF/MAGIC force rows before open validation
+        topic: Topic ID, such as "iemesh" or "meg_export". "all" returns the
+            curated documentation bundle. Use "local_definitions" for
+            user-local material and particle definitions.
     """
     return get_elf_documentation(topic)
 

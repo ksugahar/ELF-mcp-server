@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .elf_knowledge import get_elf_documentation
+from .elf_knowledge import get_elf_documentation, list_curated_topics
 from .public_corpus import HELP, PYTHON, WIKI
 
 
@@ -64,6 +64,20 @@ def register_resources(mcp: Any) -> None:
     )
     def python_resource() -> str:
         return _index_text("Public Python facade contracts", PYTHON)
+
+    @mcp.resource(
+        "elf://guides/topics",
+        name="elf_curated_topic_index",
+        title="ELF Curated Topic Index",
+        description="Topic IDs and resource URIs for curated ELF engineering guidance.",
+        mime_type="text/markdown",
+    )
+    def topics_resource() -> str:
+        return "\n".join([
+            "# ELF curated topics",
+            "",
+            *(f"- `{topic}` — `elf://topics/{topic}`" for topic in list_curated_topics()),
+        ])
 
     @mcp.resource(
         "elf://topics/{topic}",

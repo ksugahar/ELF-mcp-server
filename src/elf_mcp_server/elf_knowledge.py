@@ -2636,6 +2636,11 @@ _TOPICS = {
 }
 
 
+def list_curated_topics() -> list[str]:
+    """Return the IDs included in the curated documentation bundle."""
+    return sorted(_TOPICS)
+
+
 def get_elf_documentation(topic: str = "all") -> str:
     """Return ELF documentation for the given topic."""
     if topic == "local_definitions":

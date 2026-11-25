@@ -192,7 +192,7 @@ def test_stdio_initialize_list_and_safe_call_contract(legacy_tools: str | None) 
     assert result["connection_count_after_calls"] == 1
     assert result["structured_is_error"] is False
     assert result["structured_schema"] == "elf.search.v1"
-    assert result["resource_count"] == 4
+    assert result["resource_count"] == 5
     assert result["template_count"] == 1
     assert "Python/ctypes bridge" in result["resource_read"]
     assert result["product_detect_is_error"] is False

@@ -79,6 +79,7 @@ def test_resources_templates_and_prompt_are_first_class() -> None:
     assert {str(resource.uri) for resource in resources} == {
         "elf://guides/overview",
         "elf://guides/public-boundary",
+        "elf://guides/topics",
         "elf://corpus/help",
         "elf://corpus/python",
     }
@@ -88,6 +89,11 @@ def test_resources_templates_and_prompt_are_first_class() -> None:
     ]
     content = asyncio.run(mcp.read_resource("elf://guides/overview"))
     assert "Python/ctypes bridge" in content[0].content
+    topic_index = asyncio.run(mcp.read_resource("elf://guides/topics"))[0].content
+    assert "`iemesh` — `elf://topics/iemesh`" in topic_index
+    assert "local_definitions" not in topic_index
+    topic = asyncio.run(mcp.read_resource("elf://topics/meg_export"))[0].content
+    assert "Default route in this repository: IEmesh" in topic
     prompt = asyncio.run(
         mcp.get_prompt(
             "new_elf_analysis", {"geometry": "parallel-plate capacitor", "solver": "ELFIN"}
@@ -129,7 +135,7 @@ def test_legacy_deck_index_is_paginated_and_readiness_is_cached() -> None:
     assert len(text.splitlines()) == 8
     assert build_mcp_readiness.cache_parameters() == {"maxsize": 1, "typed": False}
     overview = elf_overview()
-    assert overview["n_resources"] == 4
+    assert overview["n_resources"] == 5
     assert overview["n_resource_templates"] == 1
 
 
