@@ -107,3 +107,36 @@ def test_mcp_tool_writes_and_reports_errors(tmp_path):
                                             "connectivity": []}]))
     assert not bad["ok"]
     assert not json.loads(elf_meg_write(nodes, blocks, out_path=str(tmp_path / "x.txt")))["ok"]
+
+
+class _StubCubit:
+    """Minimal stand-in for the cubit module (no licensed Cubit needed)."""
+
+    def __init__(self):
+        self.names = {1: "MMB_core", 2: "air", 3: "MCO_coil"}
+        self.xyz = {k: tuple(map(float, v)) for k, v in CUBE.items()}
+        self.xyz[10] = (5.0, 5.0, 5.0)
+
+    def get_block_id_list(self): return [1, 2, 3]
+    def get_block_name(self, b): return self.names[b]
+    def get_block_hexes(self, b): return [1] if b == 1 else []
+    def get_block_pyramids(self, b): return [7] if b == 3 else []
+    def get_connectivity(self, t, i):
+        return (1, 2, 3, 4, 5, 6, 7, 8) if t == "hex" else (5, 6, 7, 8, 9)
+    def get_nodal_coordinates(self, n): return self.xyz[n]
+    def get_nodeset_id_list(self): return [1]
+    def get_nodeset_name(self, n): return "space_pts"
+    def get_nodeset_nodes_inclusive(self, n): return [10]
+
+
+def test_cubit_adapter_with_stub(tmp_path):
+    from elf_mcp_server import cubit_to_meg as c2m
+
+    with pytest.raises(mw.MegError, match="2:'air'"):
+        c2m.mesh_from_cubit(_StubCubit())
+    mesh = c2m.mesh_from_cubit(_StubCubit(), labels={2: None})
+    assert [e.label for e in mesh.elements] == ["MMB8T", "MCO8T"]
+    assert [e.mid for e in mesh.elements] == [1, 3]
+    assert mesh.space_nodes == {1: (5.0, 5.0, 5.0)}
+    out = c2m.export_meg_from_cubit(_StubCubit(), tmp_path / "c.meg", labels={2: None})
+    assert mw.read_meg(out) == mesh
