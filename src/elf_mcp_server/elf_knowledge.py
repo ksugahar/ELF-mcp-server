@@ -1775,6 +1775,12 @@ the reference page yourself.
 ## Element Name = PREFIX(3) + NODE_COUNT(1) + DIM(1)
 Node count comes from the element (hex 8, tet 4, wedge 6, quad 4, tri 3,
 line 2); a 3D pyramid becomes a degenerate 8-node hex.
+MAGIC has no tetrahedral solid element: `MMB4T` is rejected (ELF-Q(540)) and a
+tetrahedron written as a degenerate `MMB8T`/`MMB6T` is rejected too (ELF-Q(692),
+checked live); solid blocks (MMB, EMB, MCL, MBB, MWL, MWV, MMS) accept hex (8T) and
+wedge (6T) only, so the exporter refuses tets for them. Hex plus wedge (a swept
+triangle mesh) solved cleanly. Whether a pyramid, written as a degenerate hex,
+is accepted has not been run.
 
 ## Available Labels by DIM
 

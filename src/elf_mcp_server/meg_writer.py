@@ -42,6 +42,13 @@ _SHAPE_NODES = {
 }
 _COORD_TOL = 1.0e-12
 
+# 3D solid labels that MAGIC defines only as 8-node hex (xxx8T) or 6-node wedge
+# (xxx6T); the reference lists no tetrahedron for them, and no 4T label of these
+# prefixes occurs in the shipped examples.  Checked live: MMB4T is rejected
+# (ELF-Q(540)), and a tetrahedron written as a degenerate MMB8T or MMB6T is
+# rejected too (ELF-Q(692) "element shape is inappropriate").
+_NO_TET_PREFIXES = frozenset({"MMB", "EMB", "MCL", "MBB", "MWL", "MWV", "MMS"})
+
 
 class MegError(ValueError):
     """Raised when a mesh cannot be written as a faithful MEG deck."""
@@ -160,6 +167,11 @@ def blocks_to_mesh(
             if len(conn) != n:
                 raise MegError(
                     f"{blk.shape} element needs {n} nodes, got {len(conn)}")
+            if dim == "T" and blk.shape == "tet4" and blk.prefix in _NO_TET_PREFIXES:
+                raise MegError(
+                    f"{blk.prefix} has no tetrahedral element in MAGIC (only "
+                    f"{blk.prefix}8T hex and {blk.prefix}6T wedge); mesh this block "
+                    f"with hexes or wedges")
             if blk.shape == "pyramid5":
                 if dim != "T":
                     raise MegError("pyramid elements exist only in 3D (T)")

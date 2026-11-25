@@ -41,6 +41,16 @@ def test_2d_and_axisymmetric_planes():
         mw.blocks_to_mesh(plane | {4: (0, 1, 0)}, [], "R")
 
 
+def test_tetrahedra_are_refused_for_hex_wedge_only_labels():
+    """MAGIC rejects MMB4T (ELF-Q(540)) and degenerate-hex tets (ELF-Q(692)); MMB6T wedges are fine."""
+    tet = {1: (0, 0, 0), 2: (1, 0, 0), 3: (0, 1, 0), 4: (0, 0, 1)}
+    with pytest.raises(mw.MegError, match="MMB has no tetrahedral element"):
+        mw.blocks_to_mesh(tet, [mw.MegBlock("MMB", "tet4", [(1, 2, 3, 4)])], "T")
+    mw.blocks_to_mesh(tet, [mw.MegBlock("MCO", "tet4", [(1, 2, 3, 4)])], "T")   # MCO4T exists
+    wedge = dict(tet) | {5: (1, 0, 1), 6: (0, 1, 1)}
+    mw.blocks_to_mesh(wedge, [mw.MegBlock("MMB", "wedge6", [(1, 2, 3, 4, 5, 6)])], "T")
+
+
 def test_plane_noise_is_snapped_to_exact_zero():
     """MAGIC refuses axisymmetric elements off X-Z by even 3e-16 (ELF-Q(661)); write exact zeros."""
     rz = {1: (1.0, 3.06e-16, 0.0), 2: (-1e-14, -3e-16, 1.0), 3: (2.0, 0.0, 1.0)}
