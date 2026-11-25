@@ -1799,7 +1799,22 @@ Plates (3D surface elements): `MMT` quads and tris export as `MMT4T`/`MMT3T`
 thickness is not geometry: put `THIN <MID> <thickness in metres>` in the `.mai`
 (reference 3.2.5: unit m, independent of MGSC; 5 mm is `5.0E-03`). Verified live: a quad plate, a quad+tri plate and the same plate
 added with `add face`/`add tri` all solved in magh1600 (the last two agree to every
-printed digit). `MMP` plates were not run.
+printed digit).
+
+`MMP` is not a plate: it is the poly element (reference 2.5.1), an arbitrary closed
+polyhedron described only by its surface pieces (`MMP4T` quads, `MMP3T` tris). The
+pieces of one poly element share the material id and the poly number, which sits in
+the 2nd integer field of the MEG row (`MMP4T eid PID mid nodes`; the writer always
+writes 0 there, so this exporter cannot emit poly elements yet). A poly number must
+not be reused for another poly element; neighbouring poly elements each need their own
+pieces on the shared boundary; the element centre must lie inside it (split
+otherwise); the ideal shape is a sphere. Hand-built decks solved in magh1600: an iron
+sphere of MMP3T pieces in a uniform field (`UNI1`) reproduces the analytic outer
+surface field to 2.8 % RMS (112 pieces) and 1.2 % RMS (498 pieces). The B printed on
+the pieces (and `SOL FIEL`/`ELEM`, written to the .mag) is the surface field on the
+outside, which in high-permeability iron is almost purely the normal component; it
+is not comparable with the interior B of a solid MMB element. FLUM does not include
+the poly element's contribution (checked: flux equal to the iron-free value).
 
 ## Available Labels by DIM
 
