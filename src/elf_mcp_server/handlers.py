@@ -4193,6 +4193,8 @@ def elf_meg_write(
     symmetry: list[str] | None = None,
     space_nodes: list[list[float]] | None = None,
     overwrite: bool = False,
+    coil_axes: dict[str, list[float]] | None = None,
+    orient_coils: bool = False,
 ) -> str:
     """Write an ELF/MAGIC .meg deck from a neutral mesh (pure Python, no Cubit).
 
@@ -4202,6 +4204,10 @@ def elf_meg_write(
     dim: T (3D), K (2D, z=0), R (axisymmetric, y=0, XZ plane). Without
     out_path nothing is written and only a summary is returned. An existing
     file is never replaced unless overwrite is true.
+    MCL8T coils: the positive current flows node 1 -> node 5, so the node
+    order is the current direction. coil_axes {"<MID>": [x, y, z]} states the
+    required direction (a mismatch is an error, or with orient_coils the nodes
+    are rotated to it); the result lists each coil MID's actual direction.
     """
     from . import meg_writer as mw
 
@@ -4222,6 +4228,10 @@ def elf_meg_write(
             symmetry=symmetry or (),
             space_nodes=space_nodes or (),
         )
+        axes = {int(k): tuple(v) for k, v in (coil_axes or {}).items()}
+        if axes and orient_coils:
+            mesh = mw.orient_coil_current(mesh, axes)
+        coils = mw.check_coil_directions(mesh, axes)
         written = None
         if out_path:
             if not out_path.lower().endswith(".meg"):
@@ -4237,6 +4247,7 @@ def elf_meg_write(
         "elements": len(mesh.elements),
         "space_nodes": len(mesh.space_nodes),
         "labels": sorted({e.label for e in mesh.elements}),
+        "coil_directions": {str(m): r for m, r in coils.items()},
         "written": written,
     }, ensure_ascii=False)
 

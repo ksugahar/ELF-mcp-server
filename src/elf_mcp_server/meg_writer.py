@@ -193,6 +193,166 @@ def validate(mesh: MegMesh) -> None:
 
 
 # ----------------------------------------------------------------------
+# Coil current direction (MCL8T)
+# ----------------------------------------------------------------------
+# ELF/MAGIC reference 2.7.1: the positive current of an MCL8T element flows
+# from node 1 to node 5 ("the element direction is fixed by the node order").
+# Nothing else in the deck carries the direction, so the node order IS the
+# current direction.  A mesher's connectivity order is arbitrary, so check it
+# (``coil_directions`` / ``check_coil_directions``) or set it
+# (``orient_coil_current``).  MCL6T and the 2D coils are not examined here.
+_HEX_SIGNS = ((-1, -1, -1), (1, -1, -1), (1, 1, -1), (-1, 1, -1),
+              (-1, -1, 1), (1, -1, 1), (1, 1, 1), (-1, 1, 1))
+
+
+def _sub(a, b):
+    return tuple(x - y for x, y in zip(a, b))
+
+
+def _norm(v):
+    return sum(x * x for x in v) ** 0.5
+
+
+def _unit(v, what="vector"):
+    n = _norm(v)
+    if n <= 0.0:
+        raise MegError(f"{what} has zero length")
+    return tuple(x / n for x in v)
+
+
+def _dot(a, b):
+    return sum(x * y for x, y in zip(a, b))
+
+
+def _angle_deg(a, b) -> float:
+    import math
+    c = max(-1.0, min(1.0, _dot(_unit(a), _unit(b))))
+    return math.degrees(math.acos(c))
+
+
+def _hex_axes(mesh: MegMesh, e: MegElement):
+    """Mean edge vectors of the hex along its three local axes."""
+    p = [mesh.nodes[n] for n in e.nodes]
+    def mean(pairs):
+        vs = [_sub(p[j], p[i]) for i, j in pairs]
+        return tuple(sum(v[k] for v in vs) / len(vs) for k in range(3))
+    return (mean(((0, 1), (3, 2), (4, 5), (7, 6))),
+            mean(((0, 3), (1, 2), (4, 7), (5, 6))),
+            mean(((0, 4), (1, 5), (2, 6), (3, 7))))
+
+
+def coil_directions(mesh: MegMesh) -> list[dict]:
+    """Current direction (node 1 -> node 5) of every MCL8T element.
+
+    Returns one dict per element: ``id``, ``mid``, ``direction`` (unit vector,
+    mean of the four edges 1-5, 2-6, 3-7, 4-8) and ``spread_deg`` (largest
+    angle between one of those edges and the mean; large means twisted).
+    """
+    out = []
+    for e in mesh.elements:
+        if e.label[:4] != "MCL8" or len(e.nodes) != 8:
+            continue
+        p = [mesh.nodes[n] for n in e.nodes]
+        edges = [_sub(p[j], p[i]) for i, j in ((0, 4), (1, 5), (2, 6), (3, 7))]
+        mean = tuple(sum(v[k] for v in edges) / 4 for k in range(3))
+        d = _unit(mean, f"MCL8T element {e.id} current direction")
+        out.append({"id": e.id, "mid": e.mid, "direction": d,
+                    "spread_deg": max(_angle_deg(v, mean) for v in edges)})
+    return out
+
+
+def coil_report(mesh: MegMesh) -> dict[int, dict]:
+    """Per material id: element count, mean direction, worst element angle."""
+    by: dict[int, list[dict]] = {}
+    for c in coil_directions(mesh):
+        by.setdefault(c["mid"], []).append(c)
+    rep = {}
+    for mid, items in by.items():
+        mean = _unit(tuple(sum(c["direction"][k] for c in items) for k in range(3)),
+                     f"coil MID {mid} mean direction")
+        rep[mid] = {"elements": len(items), "direction": mean,
+                    "max_angle_to_mean_deg": max(_angle_deg(c["direction"], mean)
+                                                 for c in items),
+                    "max_spread_deg": max(c["spread_deg"] for c in items)}
+    return rep
+
+
+def _as_axes(expected) -> dict[int, tuple[float, float, float]]:
+    if expected is None:
+        return {}
+    if isinstance(expected, Mapping):
+        return {int(k): tuple(float(x) for x in v) for k, v in expected.items()}
+    raise MegError("coil axes must be a {mid: (x, y, z)} mapping")
+
+
+def check_coil_directions(mesh: MegMesh, expected=None, *, tol_deg: float = 5.0,
+                          max_spread_deg: float = 20.0) -> dict[int, dict]:
+    """Verify MCL8T current directions; returns ``coil_report``.
+
+    ``expected`` is ``{mid: (x, y, z)}``: the direction the positive current
+    must have for that coil material.  Raises ``MegError`` when an element is
+    off that axis by more than ``tol_deg`` (reversed ones are named as such),
+    or when an element's four 1-5 edges disagree by more than
+    ``max_spread_deg`` (twisted or mis-ordered element).  Without ``expected``
+    only the twist check runs; read the report to see what direction you got.
+    """
+    axes = _as_axes(expected)
+    for c in coil_directions(mesh):
+        if c["spread_deg"] > max_spread_deg:
+            raise MegError(
+                f"MCL8T element {c['id']} (MID {c['mid']}): edges 1-5/2-6/3-7/4-8 "
+                f"differ by {c['spread_deg']:.1f} deg; the node order looks twisted")
+        want = axes.get(c["mid"])
+        if want is None:
+            continue
+        ang = _angle_deg(c["direction"], want)
+        if ang > tol_deg:
+            kind = "reversed" if ang > 180.0 - tol_deg else "not along the requested axis"
+            raise MegError(
+                f"MCL8T element {c['id']} (MID {c['mid']}): current (node 1 -> 5) is "
+                f"{kind}, {ang:.1f} deg from {tuple(want)}; reorder the nodes with "
+                f"orient_coil_current")
+    unknown = sorted(set(axes) - {c["mid"] for c in coil_directions(mesh)})
+    if unknown:
+        raise MegError(f"no MCL8T elements with MID {unknown}")
+    return coil_report(mesh)
+
+
+def orient_coil_current(mesh: MegMesh, axes, *, mids=None) -> MegMesh:
+    """Return a copy whose MCL8T elements carry current along ``axes``.
+
+    ``axes`` is ``{mid: (x, y, z)}``.  Each element's nodes are re-listed as a
+    proper rotation of its own local frame (no mirroring, so the element is not
+    turned inside out) whose node 1 -> 5 edge is the one closest to the axis.
+    Only the node order changes; coordinates are untouched.
+    """
+    import copy
+    want = _as_axes(axes)
+    if mids is not None:
+        want = {m: v for m, v in want.items() if m in set(mids)}
+    new = copy.deepcopy(mesh)
+    for e in new.elements:
+        d = want.get(e.mid)
+        if d is None or e.label[:4] != "MCL8" or len(e.nodes) != 8:
+            continue
+        frame = _hex_axes(mesh, e)
+        best = max(((abs(_dot(_unit(frame[k]), _unit(d))), k,
+                     1 if _dot(frame[k], d) >= 0 else -1) for k in range(3)))
+        _, k, sgn = best
+        unit = [(1, 0, 0), (0, 1, 0), (0, 0, 1)]
+        e_c = tuple(sgn * x for x in unit[k])
+        e_a = unit[(k + 1) % 3]
+        e_b = tuple(sgn * x for x in unit[(k + 2) % 3])
+        old_index = {s: i for i, s in enumerate(_HEX_SIGNS)}
+        order = []
+        for t in _HEX_SIGNS:
+            s = tuple(t[0] * e_a[j] + t[1] * e_b[j] + t[2] * e_c[j] for j in range(3))
+            order.append(e.nodes[old_index[s]])
+        e.nodes = tuple(order)
+    return new
+
+
+# ----------------------------------------------------------------------
 # Writer
 # ----------------------------------------------------------------------
 def _fmt_node(tag: str, nid: int, p: Sequence[float]) -> str:

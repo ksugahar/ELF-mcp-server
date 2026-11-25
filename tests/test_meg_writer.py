@@ -153,3 +153,102 @@ def test_export_from_file_uses_injected_cubit(tmp_path):
     assert c2m._parse_labels("1:mmb,2:none") == {1: "MMB", 2: None}
     with pytest.raises(mw.MegError, match="not found"):
         c2m.load_cubit(str(tmp_path / "nope"))
+
+
+# ----------------------------------------------------------------------
+# MCL8T current direction = node 1 -> node 5
+# ----------------------------------------------------------------------
+_PUBLIC_ORDER = (1, 2, 3, 4, 5, 6, 7, 8)      # nft001: node 1 -> 5 is +z
+_CUBIT_ORDER = (4, 7, 8, 3, 1, 6, 5, 2)       # Cubit export of the same cube: 1 -> 5 is +x
+
+
+# Node numbering as exported by Cubit for the same cube (mm, centred).
+_CUBIT_NODES = {1: (1, -1, 1), 2: (1, 1, 1), 3: (-1, 1, 1), 4: (-1, -1, 1),
+                5: (1, 1, -1), 6: (1, -1, -1), 7: (-1, -1, -1), 8: (-1, 1, -1)}
+_PUBLIC_NODES = {k: tuple(2.0 * (float(x) - 0.5) for x in v) for k, v in CUBE.items() if k <= 8}
+
+
+def _coil_mesh(order, mid=10):
+    nodes = _CUBIT_NODES if tuple(order) == _CUBIT_ORDER else _PUBLIC_NODES
+    blk = mw.MegBlock("MCL", "hex8", [list(order)], mid)
+    return mw.blocks_to_mesh({k: tuple(map(float, v)) for k, v in nodes.items()}, [blk], "T")
+
+
+def _corners(mesh):
+    return [mesh.nodes[n] for n in mesh.elements[0].nodes]
+
+
+def _triple(mesh):
+    e = mesh.elements[0]
+    a, b, c = mw._hex_axes(mesh, e)
+    return mw._dot(mw._cross(a, b), c) if hasattr(mw, "_cross") else (
+        a[0] * (b[1] * c[2] - b[2] * c[1]) - a[1] * (b[0] * c[2] - b[2] * c[0])
+        + a[2] * (b[0] * c[1] - b[1] * c[0]))
+
+
+def test_public_nft001_coils_run_along_z():
+    rep = mw.coil_report(mw.read_meg(
+        SAMPLES / "application" / "numeric_force_torque_100" / "nft001" / "nft001.meg"))
+    for mid in (10, 11):
+        assert rep[mid]["direction"] == pytest.approx((0, 0, 1), abs=1e-12)
+
+
+def test_coil_direction_follows_node_order():
+    z = mw.coil_report(_coil_mesh(_PUBLIC_ORDER))[10]["direction"]
+    x = mw.coil_report(_coil_mesh(_CUBIT_ORDER))[10]["direction"]
+    assert z == pytest.approx((0, 0, 1)) and x == pytest.approx((1, 0, 0))
+
+
+def test_check_coil_directions_names_the_mismatch():
+    m = _coil_mesh(_CUBIT_ORDER)
+    mw.check_coil_directions(m, {10: (1, 0, 0)})
+    with pytest.raises(mw.MegError, match="not along the requested axis"):
+        mw.check_coil_directions(m, {10: (0, 0, 1)})
+    with pytest.raises(mw.MegError, match="reversed"):
+        mw.check_coil_directions(m, {10: (-1, 0, 0)})
+    with pytest.raises(mw.MegError, match="no MCL8T elements with MID"):
+        mw.check_coil_directions(m, {99: (1, 0, 0)})
+
+
+def test_twisted_coil_is_rejected():
+    nodes = {k: tuple(float(x) for x in v) for k, v in CUBE.items() if k <= 8}
+    mesh = mw.blocks_to_mesh(nodes, [mw.MegBlock("MCL", "hex8", [[1, 2, 3, 4, 7, 8, 5, 6]], 1)], "T")
+    with pytest.raises(mw.MegError, match="twisted"):
+        mw.check_coil_directions(mesh)
+
+
+@pytest.mark.parametrize("order", [_PUBLIC_ORDER, _CUBIT_ORDER])
+@pytest.mark.parametrize("axis", [(0, 0, 1), (1, 0, 0), (0, 1, 0), (0, 0, -1), (-1, 0, 0), (0, -1, 0)])
+def test_orient_coil_current_reaches_every_axis_without_mirroring(order, axis):
+    src = _coil_mesh(order)
+    out = mw.orient_coil_current(src, {10: axis})
+    mw.check_coil_directions(out, {10: axis})
+    assert sorted(out.elements[0].nodes) == sorted(src.elements[0].nodes)
+    assert out.nodes == src.nodes
+    assert _triple(out) * _triple(src) > 0          # same handedness, element not inside out
+    assert src.elements[0].nodes == tuple(order)    # input untouched
+
+
+def test_orient_to_z_matches_public_direction_and_corners():
+    # The spin about the current axis is free (square cross-section); only
+    # node 1 -> 5 and the corner set are fixed.
+    out = mw.orient_coil_current(_coil_mesh(_CUBIT_ORDER), {10: (0, 0, 1)})
+    assert sorted(_corners(out)) == sorted(_corners(_coil_mesh(_PUBLIC_ORDER)))
+    assert _corners(out)[4][2] > _corners(out)[0][2]
+
+
+def test_mcp_tool_reports_and_orients_coils(tmp_path):
+    import json
+    from elf_mcp_server.handlers import elf_meg_write
+
+    nodes = {str(k): list(map(float, v)) for k, v in _CUBIT_NODES.items()}
+    blocks = [{"prefix": "MCL", "shape": "hex8", "connectivity": [list(_CUBIT_ORDER)], "group_id": 10}]
+    r = json.loads(elf_meg_write(nodes, blocks))
+    assert r["ok"] and r["coil_directions"]["10"]["direction"] == pytest.approx([1, 0, 0])
+    bad = json.loads(elf_meg_write(nodes, blocks, coil_axes={"10": [0, 0, 1]}))
+    assert not bad["ok"] and "not along the requested axis" in bad["error"]
+    out = tmp_path / "c.meg"
+    ok = json.loads(elf_meg_write(nodes, blocks, out_path=str(out),
+                                  coil_axes={"10": [0, 0, 1]}, orient_coils=True))
+    assert ok["ok"] and ok["coil_directions"]["10"]["direction"] == pytest.approx([0, 0, 1])
+    assert sorted(_corners(mw.read_meg(out))) == sorted(_corners(_coil_mesh(_PUBLIC_ORDER)))

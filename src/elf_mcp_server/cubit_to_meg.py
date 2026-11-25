@@ -23,7 +23,9 @@ import sys
 from typing import Mapping, Sequence
 
 from .meg_writer import (MegBlock, MegError, MegMesh, blocks_to_mesh,
-                         prefix_from_block_name, write_meg)
+                         check_coil_directions, coil_report,
+                         orient_coil_current, prefix_from_block_name,
+                         write_meg)
 
 # (cubit getter suffix, connectivity type, neutral shape, dims it may appear in)
 _ELEMENTS = (
@@ -44,6 +46,8 @@ def mesh_from_cubit(
     scale: float = 0.001,
     symmetry: Sequence[str] = (),
     space_nodeset_marker: str = "SPACE",
+    coil_axes: Mapping[int, Sequence[float]] | None = None,
+    orient_coils: bool = False,
 ) -> MegMesh:
     """Build a ``MegMesh`` from the current Cubit mesh.
 
@@ -52,6 +56,13 @@ def mesh_from_cubit(
     if that fails the call raises, so nothing is silently dropped or defaulted.
     Mesh order must be 1; connectivity uses corner nodes.  Nodes of nodesets
     whose name contains ``space_nodeset_marker`` become ``MGR2`` nodes.
+
+    Coil current direction: the positive current of an ``MCL8T`` element flows
+    from its node 1 to node 5, and Cubit's connectivity order is arbitrary.
+    ``coil_axes`` maps block id (= ELF material id) -> required current
+    direction ``(x, y, z)``.  With ``orient_coils`` the node order is rotated to
+    that direction; otherwise a mismatch raises ``MegError``.  Twisted coil
+    elements always raise.  ``coil_report(mesh)`` shows the resulting directions.
     """
     labels = dict(labels or {})
     blocks: list[MegBlock] = []
@@ -90,8 +101,12 @@ def mesh_from_cubit(
         if marker in (cubit.get_nodeset_name(nsid) or "").upper():
             space += [tuple(cubit.get_nodal_coordinates(int(n)))
                       for n in cubit.get_nodeset_nodes_inclusive(nsid)]
-    return blocks_to_mesh(nodes, blocks, dim, scale=scale,
+    mesh = blocks_to_mesh(nodes, blocks, dim, scale=scale,
                           symmetry=symmetry, space_nodes=space)
+    if coil_axes and orient_coils:
+        mesh = orient_coil_current(mesh, coil_axes)
+    check_coil_directions(mesh, coil_axes)
+    return mesh
 
 
 def export_meg_from_cubit(cubit, path, dim: str = "T", labels=None, *,
@@ -146,10 +161,23 @@ def main(argv=None) -> int:
     ap.add_argument("out")
     ap.add_argument("--dim", default="T", choices=("T", "K", "R"))
     ap.add_argument("--labels", default="", help="1:MMB,2:none,...")
+    ap.add_argument("--coil-axis", action="append", default=[],
+                    help="MID:x,y,z required MCL8T current direction (node 1->5)")
+    ap.add_argument("--orient-coils", action="store_true",
+                    help="reorder MCL8T nodes to the --coil-axis directions")
     ap.add_argument("--overwrite", action="store_true")
     a = ap.parse_args(argv)
+    axes = {}
+    for item in a.coil_axis:
+        mid, _, vec = item.partition(":")
+        axes[int(mid)] = tuple(float(x) for x in vec.split(","))
     path = export_meg_from_file(a.model, a.out, a.dim, _parse_labels(a.labels),
-                                overwrite=a.overwrite)
+                                overwrite=a.overwrite, coil_axes=axes or None,
+                                orient_coils=a.orient_coils)
+    from .meg_writer import read_meg
+    for mid, r in sorted(coil_report(read_meg(path)).items()):
+        print("coil MID %d: %d elements, current (node 1->5) %s" % (
+            mid, r["elements"], tuple(round(x, 6) for x in r["direction"])))
     print(path)
     return 0
 

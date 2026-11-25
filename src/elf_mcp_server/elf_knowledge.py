@@ -1669,6 +1669,32 @@ contains `SPACE` become `MGR2` nodes. Sideset faces are not exported.
 From plain node/block data (no Cubit), call the `elf_meg_write` MCP tool or
 `meg_writer.blocks_to_mesh` + `write_meg`.
 
+## Coil current direction (MCL8T)
+The positive current of an `MCL8T` element flows from **node 1 to node 5**
+(ELF/MAGIC reference 2.7.1: "the element direction is fixed by the node
+order"; the sign of `AMP1` reverses it). Nothing else in the deck holds the
+direction, and a mesher's connectivity order is arbitrary, so the exported
+node order silently decides which way the coil current runs. Verified with
+`magh1600.exe` on the `nft001` pair: the same two bricks with the same `.mai`
+gave FLUM 2.487737e-05 with current along +z and 2.486722e-05 along +x
+(0.041 % apart), and the value followed only the local axes, not the
+coordinates.
+
+State the direction you need and let the exporter check or set it:
+```python
+export_meg_from_file("coil.cub5", "coil.meg", dim="T",
+                     labels={1: "MCL", 2: None},
+                     coil_axes={1: (0, 0, 1)},   # block id (= MID) -> current direction
+                     orient_coils=True)          # rotate node order to it; False = error on mismatch
+```
+CLI: `--coil-axis 1:0,0,1 [--orient-coils]` (prints each coil MID's direction).
+Without `coil_axes` only a twist check runs (the four 1-5/2-6/3-7/4-8 edges
+must agree within 20 deg) and `coil_report(mesh)` / the `elf_meg_write`
+result `coil_directions` show the direction you got. Orientation only
+rotates a hex's own local frame (no mirroring), coordinates are untouched.
+`MCL6T` and the 2D coils are not checked yet; check their node order against
+the reference page yourself.
+
 ## DIM Selection
 | Argument | DIM suffix | Symmetry |
 |----------|-----------|----------|
