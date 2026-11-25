@@ -2599,46 +2599,46 @@ angle units and phase normalization only. No motor solve is reported.
 """
 
 _TOPICS = {
-    "overview": ELF_OVERVIEW,
-    "mai_format": MAI_FORMAT,
-    "mei_format": MEI_FORMAT,
-    "meg_format": MEG_FORMAT,
-    "magic": MAGIC_DOCS,
-    "elfin": ELFIN_DOCS,
-    "beam": BEAM_DOCS,
-    "element_types": ELEMENT_TYPES,
-    "bh_curves": BH_CURVES,
-    "sol_commands": SOL_COMMANDS,
-    "mei_commands": MEI_COMMANDS,
-    "ipm_motor": IPM_MOTOR,
-    "motor_radia_bridge": MOTOR_RADIA_BRIDGE,
-    "spm_back_emf_comparison": SPM_BACK_EMF_COMPARISON,
-    "inductance": INDUCTANCE_DOCS,
-    "magnetization": MAGNETIZATION_DOCS,
-    "examples": EXAMPLES_CATALOG,
-    "meg_export": MEG_EXPORT,
-    "treasure_box": TREASURE_BOX,
-    "sinusoidal": SINUSOIDAL_RESPONSE,
-    "anisotropy": ANISOTROPY_LAMINATION,
-    "sted": STEADY_STATE_EDDY,
-    "meshing": MESHING_GUIDELINES,
-    "convergence": NONLINEAR_CONVERGENCE,
-    "force_methods": FORCE_METHODS,
-    "errors": ERROR_MESSAGES,
-    "iemesh": IEMESH_TOOL,
-    "tools": TOOLS_DOCS,
-    "licensing": LICENSING_DOCS,
-    "python_api": PYTHON_API_DOCS,
-    "live_drive": LIVE_DRIVE_DOCS,
-    "force_gap_contract": FORCE_GAP_OBSERVABLE_CONTRACT,
-    "multiport_inductance_comparison": MULTIPORT_INDUCTANCE_COMPARISON,
-    "maxwell_stress_surface_package": MAXWELL_STRESS_SURFACE_PACKAGE_CONTRACT,
+    "overview": ("ELF600 solvers, workflows, and supporting utilities.", ELF_OVERVIEW),
+    "mai_format": ("Analysis-control deck structure and PRE keywords.", MAI_FORMAT),
+    "mei_format": ("Mesh script structure and syntax.", MEI_FORMAT),
+    "meg_format": ("Compiled mesh format, symmetry, nodes, and connectivity.", MEG_FORMAT),
+    "magic": ("Magnetic analysis, solver stages, and output requests.", MAGIC_DOCS),
+    "elfin": ("Electrostatic analysis and dielectric material inputs.", ELFIN_DOCS),
+    "beam": ("Charged-particle tracking, field coupling, and integration controls.", BEAM_DOCS),
+    "element_types": ("Element labels, connectivity, and degrees of freedom.", ELEMENT_TYPES),
+    "bh_curves": ("B-H curves, recoil, and extrapolation.", BH_CURVES),
+    "sol_commands": ("SOL blocks, nonlinear iteration, and PASS settings.", SOL_COMMANDS),
+    "mei_commands": ("IEmesh commands for geometry and mesh construction.", MEI_COMMANDS),
+    "ipm_motor": ("IPM motor flux linkage and Ld/Lq workflow.", IPM_MOTOR),
+    "motor_radia_bridge": ("Mapping motor observables and inputs to ELF/MAGIC.", MOTOR_RADIA_BRIDGE),
+    "spm_back_emf_comparison": ("Compare open-circuit phase linkage and back-EMF.", SPM_BACK_EMF_COMPARISON),
+    "inductance": ("Lsc and leakage inductance definitions and examples.", INDUCTANCE_DOCS),
+    "magnetization": ("Magnetization, operating points, and demagnetization.", MAGNETIZATION_DOCS),
+    "examples": ("Example-deck catalog and analysis starting points.", EXAMPLES_CATALOG),
+    "meg_export": ("Generate MEG with IEmesh or convert a first-order Cubit mesh.", MEG_EXPORT),
+    "treasure_box": ("Quick-reference tables for element labels and deck keywords.", TREASURE_BOX),
+    "sinusoidal": ("Sinusoidal eddy currents, permeability, and AC force.", SINUSOIDAL_RESPONSE),
+    "anisotropy": ("Anisotropic material directions and lamination settings.", ANISOTROPY_LAMINATION),
+    "sted": ("Steady-state eddy currents in moving conductors.", STEADY_STATE_EDDY),
+    "meshing": ("Mesh quality, air gaps, and connectivity rules.", MESHING_GUIDELINES),
+    "convergence": ("Troubleshoot nonlinear convergence and iteration settings.", NONLINEAR_CONVERGENCE),
+    "force_methods": ("Compare FORC, FORT, FIXB, and torque evaluation methods.", FORCE_METHODS),
+    "errors": ("ELF errors and warnings with diagnostic guidance.", ERROR_MESSAGES),
+    "iemesh": ("Compile mesh scripts with IEmesh and understand its command families.", IEMESH_TOOL),
+    "tools": ("Supporting utilities for editing and inspecting ELF decks and results.", TOOLS_DOCS),
+    "licensing": ("Sentinel HL runtime and dongle troubleshooting.", LICENSING_DOCS),
+    "python_api": ("Python/ctypes interfaces, calling conventions, and common pitfalls.", PYTHON_API_DOCS),
+    "live_drive": ("Notes on the open MAGIC live-drive route.", LIVE_DRIVE_DOCS),
+    "force_gap_contract": ("Define and validate observables for PM force-gap sweeps.", FORCE_GAP_OBSERVABLE_CONTRACT),
+    "multiport_inductance_comparison": ("Compare port inductance matrices across ELF/MAGIC and NGSolve.", MULTIPORT_INDUCTANCE_COMPARISON),
+    "maxwell_stress_surface_package": ("Package Maxwell-stress surface and force or torque evidence.", MAXWELL_STRESS_SURFACE_PACKAGE_CONTRACT),
 }
 
 
-def list_curated_topics() -> list[str]:
-    """Return the IDs included in the curated documentation bundle."""
-    return sorted(_TOPICS)
+def list_curated_topics() -> list[tuple[str, str]]:
+    """Return sorted topic IDs and their short descriptions."""
+    return [(topic, _TOPICS[topic][0]) for topic in sorted(_TOPICS)]
 
 
 def get_elf_documentation(topic: str = "all") -> str:
@@ -2686,10 +2686,10 @@ def get_elf_documentation(topic: str = "all") -> str:
             "- **メッシュ生成（IEmesh）**: `IEmeshBuilder` または `elf_iemesh_compile` で `.mei` → `.meg` を自動生成。\n"
         )
     if topic == "all":
-        return "\n\n".join(_TOPICS.values())
+        return "\n\n".join(document for _, document in _TOPICS.values())
 
     result = _TOPICS.get(topic)
     if result is None:
         available = ", ".join(sorted([*_TOPICS, "local_definitions", "python_client", "room_runner", "analysis_methods"]))
         return f"Unknown topic: '{topic}'. Available topics: {available}"
-    return result
+    return result[1]

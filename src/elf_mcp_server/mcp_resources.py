@@ -69,14 +69,17 @@ def register_resources(mcp: Any) -> None:
         "elf://guides/topics",
         name="elf_curated_topic_index",
         title="ELF Curated Topic Index",
-        description="Topic IDs and resource URIs for curated ELF engineering guidance.",
+        description="Topic IDs, summaries, and resource URIs for curated ELF engineering guidance.",
         mime_type="text/markdown",
     )
     def topics_resource() -> str:
         return "\n".join([
             "# ELF curated topics",
             "",
-            *(f"- `{topic}` — `elf://topics/{topic}`" for topic in list_curated_topics()),
+            *(
+                f"- `{topic}` — `elf://topics/{topic}` — {description}"
+                for topic, description in list_curated_topics()
+            ),
         ])
 
     @mcp.resource(

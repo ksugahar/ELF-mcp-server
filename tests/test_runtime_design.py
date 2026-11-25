@@ -90,7 +90,13 @@ def test_resources_templates_and_prompt_are_first_class() -> None:
     content = asyncio.run(mcp.read_resource("elf://guides/overview"))
     assert "Python/ctypes bridge" in content[0].content
     topic_index = asyncio.run(mcp.read_resource("elf://guides/topics"))[0].content
-    assert "`iemesh` — `elf://topics/iemesh`" in topic_index
+    topic_entries = [line.split(" — ", 2) for line in topic_index.splitlines()
+                     if line.startswith("- ")]
+    assert topic_entries
+    assert all(len(entry) == 3 and entry[2].strip() for entry in topic_entries)
+    assert (
+        "`iemesh` — `elf://topics/iemesh` — Compile mesh scripts" in topic_index
+    )
     assert "local_definitions" not in topic_index
     topic = asyncio.run(mcp.read_resource("elf://topics/meg_export"))[0].content
     assert "Default route in this repository: IEmesh" in topic
