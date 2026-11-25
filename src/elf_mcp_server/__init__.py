@@ -23,7 +23,7 @@ authoring ELF input files, a guarded user-local Python/ctypes product runner,
 and release-readiness gates for MCP maintainers.
 """
 
-__version__ = "1.64.1"
+__version__ = "1.64.2"
 
 from .python_client import ElfClient, ElfRunResult, IEmeshBuilder, MaiBuilder, doctor, suggest_mei_mai_example
 
