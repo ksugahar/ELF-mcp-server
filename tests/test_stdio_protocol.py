@@ -65,7 +65,19 @@ async def _probe_stdio(legacy_tools: str | None) -> dict:
                 assert tool.annotations is not None, name
                 assert tool.annotations.readOnlyHint is True, name
                 assert tool.inputSchema["required"] == ["summary_json"], name
-                result = await session.call_tool(name, {"summary_json": "{}"})
+                summary = {}
+                if name == "elf_beam_trajectory_run_contract_gate":
+                    summary = {
+                        "interaction_mode": "transit",
+                        "field_mode": "magnetic_only",
+                        "source_current_a": 0.0,
+                        "terminal_current_a": 0.0,
+                        "collision_power_w": 0.0,
+                        "maximum_relative_energy_drift": 0.0,
+                    }
+                result = await session.call_tool(
+                    name, {"summary_json": json.dumps(summary)}
+                )
                 assert not result.isError, (name, result.content)
                 payload = json.loads(result.content[0].text)
                 assert payload["schema"] == schema, name
