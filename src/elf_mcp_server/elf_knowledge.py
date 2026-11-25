@@ -1706,8 +1706,8 @@ MEG_EXPORT = """\
 compile it with `elf_iemesh_compile` (mesh750) to `.meg`. Use it first for new
 work; it needs no Cubit.
 
-**Cubit is supported as an alternative** for CAD-driven, curved or high-order
-meshes that already exist as a Cubit model. `.meg` decks are written by pure
+**Cubit is supported as an alternative** for existing first-order Cubit
+meshes, including meshes of CAD-driven or curved geometry. `.meg` decks are written by pure
 Python (`elf_mcp_server.meg_writer`); the Cubit side is read by
 `elf_mcp_server.cubit_to_meg` running in an **external** Python process that
 imports Cubit's `cubit` module; the elf-mcp server and Cubit's embedded Python

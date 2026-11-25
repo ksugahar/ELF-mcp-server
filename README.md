@@ -130,7 +130,7 @@ The concrete facade tools add `MotorSpec` / `DeckBundle` / `RunRequest` /
 `elf_iemesh_compile` to compile a `.mei` script to `.meg`; the planner picks it
 first for 3D and complex geometry. It also offers Netgen for deterministic 2D
 motor cross-sections, constrained LLM templates for 2D drafting, and
-`cubit_to_meg` (supported) for existing Cubit meshes.
+`cubit_to_meg` as a supported alternative for existing first-order Cubit meshes.
 `elf_python_2d_motor_template()` returns a bounded radial-layer / angular-feature
 schema for LLM-assisted 2D drafting before deterministic remeshing.
 The motor-design tools add explicit design variables, objective-specific
