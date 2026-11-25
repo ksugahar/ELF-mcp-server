@@ -1,7 +1,8 @@
+import asyncio
 import json
 
 from elf_mcp_server.force_pair_contract import force_pair_run_contract_gate
-from elf_mcp_server.server import elf_force_pair_run_contract_gate
+from elf_mcp_server.server import elf_force_pair_run_contract_gate, mcp
 
 
 def _summary():
@@ -32,6 +33,18 @@ def test_force_pair_contract_accepts_fresh_direct_cli_outputs():
     result = force_pair_run_contract_gate(json.dumps(_summary()))
     assert result["status"] == "ok"
     assert json.loads(elf_force_pair_run_contract_gate(json.dumps(_summary())))["status"] == "ok"
+    dispatcher = mcp._tool_manager.get_tool("elf_case_check")
+    dispatched = asyncio.run(dispatcher.run({
+        "case_id": "force_pair_run_contract_gate",
+        "inputs": {"summary_json": json.dumps(_summary())},
+    }))
+    assert dispatched == {
+        "ok": True,
+        "case_id": "force_pair_run_contract_gate",
+        "legacy_tool": "elf_force_pair_run_contract_gate",
+        "result": result,
+        "error": None,
+    }
 
 
 def test_force_pair_contract_rejects_stale_or_missing_total_output():

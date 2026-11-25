@@ -29,6 +29,7 @@ import sys
 from typing import Literal
 
 from . import __version__
+from .case_dispatch import add_case_dispatch_tools, hide_legacy_case_tools
 from .guards import (
     MaxChars,
     LocalDirectoryPath,
@@ -378,6 +379,10 @@ def elf_overview() -> dict:
             {
                 "goal": "Inspect the server surface",
                 "call": "elf_overview()",
+            },
+            {
+                "goal": "Discover consolidated read-only gates and plans",
+                "call": "elf_case_list()",
             },
             {
                 "goal": "Detect a user-local product DLL without loading it",
@@ -4186,7 +4191,9 @@ def elf_suggest_example(goal: str) -> str:
     return json.dumps(suggest_mei_mai_example(goal), ensure_ascii=False)
 
 
+_hidden_case_tools = add_case_dispatch_tools(mcp)
 apply_tool_contract(mcp, server_name="elf-mcp-server", version=__version__)
+hide_legacy_case_tools(mcp, _hidden_case_tools)
 
 
 def main():

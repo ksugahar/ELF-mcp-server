@@ -6,15 +6,22 @@ import os
 import sys
 from pathlib import Path
 
+import pytest
+
+from elf_mcp_server.case_dispatch import CASE_TOOL_NAMES
+from elf_mcp_server.tool_definitions import TOOL_CONTRACTS
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from mcp.types import Implementation
 from pydantic import AnyUrl
 
 
-async def _probe_stdio() -> dict:
+async def _probe_stdio(legacy_tools: str | None) -> dict:
     repo = Path(__file__).resolve().parents[1]
     env = os.environ.copy()
+    env.pop("ELF_MCP_LEGACY_TOOLS", None)
+    if legacy_tools is not None:
+        env["ELF_MCP_LEGACY_TOOLS"] = legacy_tools
     source_root = repo / "src"
     if source_root.is_dir():
         env["PYTHONPATH"] = os.pathsep.join(
@@ -44,6 +51,13 @@ async def _probe_stdio() -> dict:
                 "elf_suggest_example", {"goal": "Hall-effect sensor"}
             )
             suggestion_tool = next(tool for tool in tools if tool.name == "elf_suggest_example")
+            case_list = await session.call_tool("elf_case_list", {"group": "gate"})
+            case_check = await session.call_tool(
+                "elf_case_check", {"case_id": "mtpa_search_plan", "inputs": {"pole_pairs": "4"}}
+            )
+            bad_case = await session.call_tool(
+                "elf_case_check", {"case_id": "mtpa_search_plan", "inputs": {"pole_pairs": "invalid"}}
+            )
             profiled = await session.call_tool("elf_agentic_profile", {})
             profile_payload = json.loads(profiled.content[0].text)
             searched = await session.call_tool(
@@ -72,7 +86,10 @@ async def _probe_stdio() -> dict:
                 "server_version": initialized.serverInfo.version,
                 "protocol_version": initialized.protocolVersion,
                 "instructions": initialized.instructions,
-                "tool_count": len(tools),
+                "tool_names": {tool.name for tool in tools},
+                "case_list": case_list.structuredContent,
+                "case_check": case_check.structuredContent,
+                "bad_case": bad_case.structuredContent,
                 "missing_titles": [tool.name for tool in tools if not tool.title],
                 "missing_annotations": [
                     tool.name
@@ -99,13 +116,22 @@ async def _probe_stdio() -> dict:
             }
 
 
-def test_stdio_initialize_list_and_safe_call_contract() -> None:
-    result = asyncio.run(asyncio.wait_for(_probe_stdio(), timeout=45))
+@pytest.mark.parametrize("legacy_tools", [None, "0"])
+def test_stdio_initialize_list_and_safe_call_contract(legacy_tools: str | None) -> None:
+    result = asyncio.run(asyncio.wait_for(_probe_stdio(legacy_tools), timeout=45))
     assert result["server_name"] == "elf-mcp-server"
     assert result["server_version"]
     assert result["protocol_version"]
     assert result["instructions"]
-    assert result["tool_count"] > 0
+    hidden = set(CASE_TOOL_NAMES) if legacy_tools == "0" else set()
+    assert result["tool_names"] == set(TOOL_CONTRACTS) - hidden
+    assert result["case_list"]["legacy_tools_listed"] is (legacy_tools is None)
+    assert result["case_list"]["cases"]
+    assert all(case["group"] == "gate" for case in result["case_list"]["cases"])
+    assert result["case_check"]["ok"] is True
+    assert result["case_check"]["case_id"] == "mtpa_search_plan"
+    assert result["case_check"]["result"].startswith("# ELF Python Motor MTPA Search Plan")
+    assert result["bad_case"]["error"]["code"] == "case_check_failed"
     assert result["missing_titles"] == []
     assert result["missing_annotations"] == []
     assert result["suggestion_is_error"] is False

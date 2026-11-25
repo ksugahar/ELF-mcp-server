@@ -29,6 +29,8 @@ READ_ONLY_TOOL_NAMES = (
     "elf_contract_gate",
     "elf_usage",
     "elf_suggest_example",
+    "elf_case_list",
+    "elf_case_check",
     "elf_mcp_readiness",
     "elf_motor_readiness",
     "elf_motor_hybrid_router",

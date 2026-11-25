@@ -7,6 +7,7 @@ import pytest
 from pydantic import TypeAdapter, ValidationError
 
 from elf_mcp_server.handlers import (
+    _hidden_case_tools,
     elf_catalog_page,
     elf_overview,
     elf_sample_decks_index,
@@ -29,8 +30,7 @@ from elf_mcp_server.tool_definitions import TOOL_CONTRACTS
 
 def test_runtime_surface_is_explicit_and_safely_annotated() -> None:
     tools = asyncio.run(mcp.list_tools())
-    assert {tool.name for tool in tools} == set(TOOL_CONTRACTS)
-    assert len(tools) == 117
+    assert {tool.name for tool in tools} == set(TOOL_CONTRACTS) - set(_hidden_case_tools)
     for tool in tools:
         contract = TOOL_CONTRACTS[tool.name]
         assert tool.title == contract.title
