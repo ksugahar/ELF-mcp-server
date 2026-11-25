@@ -296,3 +296,30 @@ def test_labeled_block_without_elements_is_an_error_not_a_silent_drop():
 
 class _VolumeBlockCubit_NoOwner(_StubCubit):
     def get_block_hexes(self, b): return []
+
+
+class _Cubit2026Names:
+    """Cubit 2026.8 view of the stub: no get_nodeset_name; names via get_exodus_entity_name."""
+
+    def __init__(self):
+        self._base = _StubCubit()
+
+    def __getattr__(self, name):
+        if name == "get_nodeset_name":
+            raise AttributeError(name)
+        return getattr(self._base, name)
+
+    def get_nodeset_id_list(self): return [20, 21, 22]
+    def get_exodus_entity_name(self, kind, i):
+        assert kind == "nodeset"
+        return {20: "SPACE_PROBE", 21: "CONTROL", 22: "space_empty"}[i]
+    def get_nodeset_nodes_inclusive(self, n): return {20: (10,), 21: (3,), 22: ()}[n]
+
+
+def test_space_nodeset_uses_exodus_entity_name_on_cubit_2026():
+    from elf_mcp_server import cubit_to_meg as c2m
+
+    stub = _Cubit2026Names()
+    assert not hasattr(stub, "get_nodeset_name")
+    mesh = c2m.mesh_from_cubit(stub, labels={2: None})
+    assert mesh.space_nodes == {1: (5.0, 5.0, 5.0)}    # only SPACE_PROBE; CONTROL and the empty set excluded

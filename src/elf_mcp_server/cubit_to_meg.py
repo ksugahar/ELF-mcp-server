@@ -67,6 +67,24 @@ def _block_element_ids(cubit, bid, suffix: str) -> list[int]:
     return sorted(set(int(i) for i in ids))
 
 
+def _nodeset_name(cubit, nsid) -> str:
+    """Name of a nodeset.
+
+    Cubit 2026.8 has no ``get_nodeset_name``; ``get_exodus_entity_name("nodeset",
+    id)`` returns it (observed live; ``get_entity_name`` returned empty).  Older
+    sessions and the test stub may provide ``get_nodeset_name`` instead.
+    """
+    for call in (lambda: cubit.get_exodus_entity_name("nodeset", nsid),
+                 lambda: cubit.get_nodeset_name(nsid)):
+        try:
+            name = call()
+        except AttributeError:
+            continue
+        if name:
+            return str(name)
+    return ""
+
+
 def mesh_from_cubit(
     cubit,
     dim: str = "T",
@@ -134,7 +152,7 @@ def mesh_from_cubit(
     space: list[tuple[float, float, float]] = []
     marker = space_nodeset_marker.upper()
     for nsid in cubit.get_nodeset_id_list():
-        if marker in (cubit.get_nodeset_name(nsid) or "").upper():
+        if marker in _nodeset_name(cubit, nsid).upper():
             space += [tuple(cubit.get_nodal_coordinates(int(n)))
                       for n in cubit.get_nodeset_nodes_inclusive(nsid)]
     mesh = blocks_to_mesh(nodes, blocks, dim, scale=scale,
