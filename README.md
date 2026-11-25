@@ -127,9 +127,10 @@ routers, and result contracts above that boundary.
 The concrete facade tools add `MotorSpec` / `DeckBundle` / `RunRequest` /
 `RunResult` vocabulary, dry-run `.mai` lint for requested observables, and
 `.meg` generation routing. IEmesh is this repository's standard ELF meshing route. Use
-`elf_iemesh_compile` to compile a `.mei` script to `.meg`. The planner also
-offers Netgen for deterministic 2D motor cross-sections and constrained LLM
-templates for 2D drafting. Existing Cubit meshes can use `cubit_to_meg`.
+`elf_iemesh_compile` to compile a `.mei` script to `.meg`; the planner picks it
+first for 3D and complex geometry. It also offers Netgen for deterministic 2D
+motor cross-sections, constrained LLM templates for 2D drafting, and
+`cubit_to_meg` (supported) for existing Cubit meshes.
 `elf_python_2d_motor_template()` returns a bounded radial-layer / angular-feature
 schema for LLM-assisted 2D drafting before deterministic remeshing.
 The motor-design tools add explicit design variables, objective-specific
