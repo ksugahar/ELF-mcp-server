@@ -511,11 +511,11 @@ coordinates and element connectivity.
 
 - Standard ELF route: author `.mei`, then compile it with IEmesh/mesh750.exe
   to produce `.meg`.
-- Cubit route: `cubit_mesh_export` can emit ELF-compatible `.meg` meshes when a
-  larger CAD/mesh workflow is useful. Common helper calls are
-  `cubit_mesh_export.export_meg(cubit, "model.meg", DIM="T")` and
-  `cubit_mesh_export.export_3D_meg(cubit, "model")`; command-style
-  `radia_export meg ...` workflows may wrap the same idea.
+- Cubit route: an external Python that imports Cubit runs
+  `elf_mcp_server.cubit_to_meg` (`export_meg_from_file`), which reads the
+  meshed model through `import cubit` and writes the `.meg` with
+  `elf_mcp_server.meg_writer`; no compiled plugin is involved. Without Cubit,
+  use the IEMesh route above.
 - Public sample corpus route: the bundled public `.mai`/`.meg` examples use
   small lab-authored ASCII `.meg` writers that emit `BOOK MEP 3.50`, `MGSC`,
   `MGR1` node records, and element connectivity directly. Cubit is not used
@@ -1646,52 +1646,47 @@ ERROR_MESSAGES = """\
 # ============================================================
 
 MEG_EXPORT = """\
-# MEG Export from Cubit / cubit_mesh_export
+# MEG Export from Cubit (external Python)
 
-Cubit-side `cubit_mesh_export` supports ELF-compatible `.meg` export for larger
-CAD/mesh workflows. The command-style `radia_export meg` route is also useful
-when labels and DIM selection should be specified from a shell or script.
+`.meg` decks are written by pure Python (`elf_mcp_server.meg_writer`). The
+Cubit side is read by `elf_mcp_server.cubit_to_meg` running in an **external**
+Python process that imports Cubit's `cubit` module; the elf-mcp server and
+Cubit's embedded Python never run it. Without Cubit, use IEMesh
+(`elf_iemesh_compile`).
 
-## Python helpers
+## Run
 ```python
-import cubit_mesh_export
-
-cubit_mesh_export.export_meg(cubit, "model.meg", DIM="T")
-cubit_mesh_export.export_3D_meg(cubit, "model")
+from elf_mcp_server.cubit_to_meg import export_meg_from_file
+export_meg_from_file("model.cub5", "model.meg", dim="T",
+                     labels={1: "MMB", 2: None, 3: "MCO"})   # None = skip block
 ```
+or `python -I -B cubit_to_meg.py model.cub5 model.meg --dim T --labels 1:MMB,2:none`.
+Set `CUBIT_BIN` if Cubit's `bin` directory is not the default. The model must
+be meshed with first-order elements. Blocks with no label and no ELF name
+prefix raise an error; nothing is defaulted silently. Nodesets whose name
+contains `SPACE` become `MGR2` nodes. Sideset faces are not exported.
 
-`DIM="T"` is the usual full-3D MAGIC route. Use Cubit headless/batch execution
-for automated workflows, then inspect the resulting `.meg` as an ELF input
-deck.
-
-## Command
-```
-radia_export meg "output.meg" [threed|twod|axisymmetric] [labels "1:MMB,2:MWL,..."] [overwrite]
-```
+From plain node/block data (no Cubit), call the `elf_meg_write` MCP tool or
+`meg_writer.blocks_to_mesh` + `write_meg`.
 
 ## DIM Selection
-| Keyword | DIM suffix | Symmetry |
-|---------|-----------|----------|
-| `threed` | T | Full 3D |
-| `twod` | R | 2D cross-section |
-| `axisymmetric` | K | Axisymmetric |
-
-## Label Assignment
-Each Cubit block gets an ELF element label:
-```
-labels "1:MMB,2:MWL,3:MCL,4:MCO"
-```
+| Argument | DIM suffix | Symmetry |
+|----------|-----------|----------|
+| `T` | T | Full 3D |
+| `K` | K | 2D planar, XY plane, z = 0 |
+| `R` | R | Axisymmetric, XZ plane, y = 0 |
 
 ## Element Name = PREFIX(3) + NODE_COUNT(1) + DIM(1)
-Node count from mesh type (quad=4, tri=3, line=2), DIM from symmetry selection.
+Node count comes from the element (hex 8, tet 4, wedge 6, quad 4, tri 3,
+line 2); a 3D pyramid becomes a degenerate 8-node hex.
 
 ## Available Labels by DIM
 
 ### T (3D)
-MMB, MMS, MMT, MMP, MWL, MWV, MCL, MCO, MAB, MAT, MBB
+MMB, MMS, MMT, MMP, MWL, MWV, MCL, MCO, MAB, MAT, MBB, MCM, MSH, MJH, MCB
 
-### K (Axisymmetric) / R (2D)
-MMB, MMT, MMP, MWL, MWV, MCL, MCO, MAB, MAT, MBB
+### K (2D) / R (axisymmetric)
+MMB, MMT, MMP, MWL, MWV, MCL, MCO, MAB, MAT, MBB, MCM, MSH (K also MJH)
 """
 
 # ============================================================
@@ -2374,8 +2369,12 @@ ELFIN does not have `GET_FORT`, `GET_FLUM`, or `GET_EMFM`.
   `T` (3D), `K` (2D planar, z = 0) or `R` (axisymmetric, y = 0). Coordinates
   are written as `%.13E`; unknown labels, missing nodes, off-plane 2D points
   and unlabeled blocks raise `MegError`, and an existing file is not replaced
-  unless `overwrite=True`. Converting a mesher's output (for example Exodus)
-  into nodes and blocks is the caller's job; do not route through Nastran.
+  unless `overwrite=True`. From Cubit, run `elf_mcp_server.cubit_to_meg` in an
+  external Python that imports Cubit itself (`export_meg_from_file(model,
+  out, dim, labels)`, or `python -I -B cubit_to_meg.py model.cub5 out.meg
+  --dim T --labels 1:MMB,2:none`); not through Exodus or Nastran files and not
+  from Cubit's embedded Python. Without Cubit use IEMesh (`elf_iemesh_compile`,
+  `IEmeshBuilder` in `python_client`).
   `read_meg` returns the same structure for a round-trip check.
 
 ## See also

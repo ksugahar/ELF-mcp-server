@@ -3,7 +3,7 @@
 The writer takes a neutral mesh (node coordinates plus element blocks that
 already carry an ELF label prefix).  It does not need Cubit, a compiled
 plugin or any other solver software.  Producing the neutral mesh (for example
-from an Exodus or Nastran file) is the caller's job.
+from a live Cubit session through ``import cubit``) is the caller's job.
 
 Format facts used here were read from real ELF decks:
 
