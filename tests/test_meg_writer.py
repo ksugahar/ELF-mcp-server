@@ -140,3 +140,16 @@ def test_cubit_adapter_with_stub(tmp_path):
     assert mesh.space_nodes == {1: (5.0, 5.0, 5.0)}
     out = c2m.export_meg_from_cubit(_StubCubit(), tmp_path / "c.meg", labels={2: None})
     assert mw.read_meg(out) == mesh
+
+
+def test_export_from_file_uses_injected_cubit(tmp_path):
+    from elf_mcp_server import cubit_to_meg as c2m
+
+    stub = _StubCubit()
+    cmds = []
+    stub.cmd = cmds.append
+    out = c2m.export_meg_from_file("m.cub5", tmp_path / "f.meg", labels={2: None}, cubit=stub)
+    assert cmds == ['open "m.cub5"'] and out.is_file()
+    assert c2m._parse_labels("1:mmb,2:none") == {1: "MMB", 2: None}
+    with pytest.raises(mw.MegError, match="not found"):
+        c2m.load_cubit(str(tmp_path / "nope"))

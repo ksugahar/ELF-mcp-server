@@ -1,9 +1,12 @@
 """Read a Cubit mesh through ``import cubit`` and write an ELF/MAGIC ``.meg``.
 
-Runs only where Cubit's Python module is importable (Cubit's own Python or a
-standalone ``import cubit`` environment); the elf-mcp server never imports
-it.  Pass the ``cubit`` module in.  Elsewhere use the IEMesh route
+The supported route is an *external* Python process that imports Cubit's
+``cubit`` module itself (``load_cubit``); the elf-mcp server and Cubit's
+embedded Python never run this.  Run it as a script or call
+``export_meg_from_file``.  Where Cubit is unavailable use the IEMesh route
 (``elf_iemesh_compile``).  Pure Python, no compiled plugin.
+
+    python -I -B cubit_to_meg.py model.cub5 out.meg --dim T --labels 1:MMB,2:none
 
 The Cubit calls (``get_block_id_list``, ``get_block_name``,
 ``get_block_<type>``, ``get_connectivity``, ``get_nodal_coordinates``,
@@ -13,6 +16,10 @@ yet been run against a licensed Cubit session.
 
 from __future__ import annotations
 
+import argparse
+import importlib
+import os
+import sys
 from typing import Mapping, Sequence
 
 from .meg_writer import (MegBlock, MegError, MegMesh, blocks_to_mesh,
@@ -92,3 +99,60 @@ def export_meg_from_cubit(cubit, path, dim: str = "T", labels=None, *,
     """Convenience: ``mesh_from_cubit`` then ``write_meg``; returns the path."""
     return write_meg(mesh_from_cubit(cubit, dim, labels, **kwargs), path,
                      overwrite=overwrite)
+
+
+DEFAULT_CUBIT_BIN = r"C:\Program Files\Coreform Cubit 2026.8\bin"
+
+
+def load_cubit(bin_dir: str | None = None):
+    """Import Cubit's Python module in this external interpreter and init it.
+
+    ``bin_dir`` defaults to ``$CUBIT_BIN`` then ``DEFAULT_CUBIT_BIN``.
+    """
+    bin_dir = bin_dir or os.environ.get("CUBIT_BIN") or DEFAULT_CUBIT_BIN
+    if not os.path.isdir(bin_dir):
+        raise MegError(f"Cubit bin directory not found: {bin_dir}")
+    if bin_dir not in sys.path:
+        sys.path.append(bin_dir)
+    cubit = importlib.import_module("cubit")
+    cubit.init(["cubit", "-noecho", "-nojournal", "-nographics"])
+    return cubit
+
+
+def export_meg_from_file(model_path, out_path, dim: str = "T", labels=None, *,
+                         cubit=None, overwrite: bool = False, **kwargs):
+    """Open a Cubit model (.cub5 etc.) in this process and write ``.meg``.
+
+    ``cubit`` may be injected (tests); otherwise ``load_cubit()`` is used.
+    The model must already be meshed with first-order elements.
+    """
+    cubit = cubit or load_cubit()
+    cubit.cmd(f'open "{model_path}"')
+    return export_meg_from_cubit(cubit, out_path, dim, labels,
+                                 overwrite=overwrite, **kwargs)
+
+
+def _parse_labels(text: str) -> dict:
+    out: dict = {}
+    for item in filter(None, (t.strip() for t in text.split(","))):
+        bid, _, pre = item.partition(":")
+        out[int(bid)] = None if pre.lower() in ("none", "skip", "") else pre.upper()
+    return out
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser(description="Cubit mesh -> ELF/MAGIC .meg")
+    ap.add_argument("model")
+    ap.add_argument("out")
+    ap.add_argument("--dim", default="T", choices=("T", "K", "R"))
+    ap.add_argument("--labels", default="", help="1:MMB,2:none,...")
+    ap.add_argument("--overwrite", action="store_true")
+    a = ap.parse_args(argv)
+    path = export_meg_from_file(a.model, a.out, a.dim, _parse_labels(a.labels),
+                                overwrite=a.overwrite)
+    print(path)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
