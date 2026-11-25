@@ -486,12 +486,13 @@ writer emits `BOOK MEP 3.50`, `MGSC`, `MGR1` node records, and 8-node element
 connectivity records such as `MMB8T`, `MCL8T`, `MAB8T`, and `MWL8T`. Cubit is
 not used for these compact public examples.
 
-For larger CAD/mesh workflows, `elf_mcp_server.cubit_to_meg` writes `.meg`
-from an external Python that imports Cubit's `cubit` module (see
-`elf_usage(topic="meg_export")`); the `elf_meg_write` tool and
-`elf_mcp_server.meg_writer` write `.meg` from plain node/block data, and
-IEmesh is the standard product meshing route in this repository. The published examples
-keep the geometry deliberately inspectable and dependency-free.
+IEmesh (`elf_iemesh_compile`) is the default route in this repository. Cubit
+is supported as an alternative for CAD-driven meshes: `elf_mcp_server.cubit_to_meg`
+writes `.meg` from an external Python that imports Cubit's `cubit` module (see
+`elf_usage(topic="meg_export")`). The `elf_meg_write` tool and
+`elf_mcp_server.meg_writer` write `.meg` from plain node/block data. The
+published examples keep the geometry deliberately inspectable and
+dependency-free.
 
 ### User-local material and particle definitions
 

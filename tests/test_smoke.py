@@ -1403,7 +1403,7 @@ def test_python_facade_schema_lint_and_generation_plan(tmp_path, monkeypatch):
     assert plan_2d["primary_strategy"] == "netgen_2d"
     assert "llm_2d_template" in plan_2d["alternative_strategies"]
     plan_3d = build_meg_generation_plan("3D WPT shielded coils", dimension="3d")
-    assert plan_3d["primary_strategy"] == "cubit_mesh_export"
+    assert plan_3d["primary_strategy"] == "iemesh"
 
     template_2d = build_2d_motor_template("spm", pole_pairs=4, stator_slots=48)
     assert template_2d["schema_version"] == "elf-python-2d-motor-template/v1"

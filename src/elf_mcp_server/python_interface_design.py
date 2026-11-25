@@ -525,18 +525,29 @@ VALIDATION_GATES: list[dict[str, Any]] = [
 
 MEG_GENERATION_STRATEGIES: list[dict[str, Any]] = [
     {
-        "strategy": "cubit_mesh_export",
+        "strategy": "iemesh",
         "best_for": [
             "3D product-like geometry",
-            "curved solids",
-            "high-order or CAD-driven meshes",
-            "repeatable mesh export pipelines",
+            "curved solids described in the IEmesh script language",
+            "repeatable mesh scripts that stay inside the product tool chain",
         ],
         "contract": (
-            "Use a headless mesh-export backend to produce `.meg` input data "
-            "from an explicit geometry script. The public API records the "
-            "backend choice and checks the `.mai/.meg` pair, but does not "
-            "start GUI sessions or bundle proprietary outputs."
+            "Default route in this repository: write a `.mei` mesh script and "
+            "compile it with IEmesh/mesh750 (`elf_iemesh_compile`) to `.meg`. "
+            "The public API records the choice and checks the `.mai/.meg` pair, "
+            "but does not start GUI sessions or bundle proprietary outputs."
+        ),
+    },
+    {
+        "strategy": "cubit_to_meg",
+        "best_for": [
+            "CAD-driven or high-order meshes made in Cubit",
+            "meshes that already exist as a Cubit session",
+        ],
+        "contract": (
+            "Supported route: an external Python that imports Cubit's `cubit` "
+            "module writes `.meg` through `elf_mcp_server.cubit_to_meg`. The "
+            "Cubit mesh-export package itself no longer writes `.meg`."
         ),
     },
     {

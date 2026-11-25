@@ -1700,13 +1700,18 @@ ERROR_MESSAGES = """\
 # ============================================================
 
 MEG_EXPORT = """\
-# MEG Export from Cubit (external Python)
+# MEG generation: IEmesh (default) and Cubit (supported)
 
-`.meg` decks are written by pure Python (`elf_mcp_server.meg_writer`). The
-Cubit side is read by `elf_mcp_server.cubit_to_meg` running in an **external**
-Python process that imports Cubit's `cubit` module; the elf-mcp server and
-Cubit's embedded Python never run it. IEmesh (`elf_iemesh_compile`) is the
-standard ELF meshing route in this repository.
+**Default route in this repository: IEmesh.** Write a `.mei` mesh script and
+compile it with `elf_iemesh_compile` (mesh750) to `.meg`. Use it first for new
+work; it needs no Cubit.
+
+**Cubit is supported as an alternative** for CAD-driven, curved or high-order
+meshes that already exist as a Cubit model. `.meg` decks are written by pure
+Python (`elf_mcp_server.meg_writer`); the Cubit side is read by
+`elf_mcp_server.cubit_to_meg` running in an **external** Python process that
+imports Cubit's `cubit` module; the elf-mcp server and Cubit's embedded Python
+never run it. The rest of this topic describes that Cubit route.
 
 ## Run
 ```python

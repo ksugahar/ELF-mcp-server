@@ -2334,26 +2334,36 @@ def build_meg_generation_plan(
         )
     )
     if complexity == "high" or wants_3d:
-        primary = "cubit_mesh_export"
-        alternatives = ["netgen_2d", "llm_2d_template"] if wants_simple_2d else ["netgen_2d"]
+        primary = "iemesh"
+        alternatives = (["cubit_to_meg", "netgen_2d", "llm_2d_template"] if wants_simple_2d
+                        else ["cubit_to_meg", "netgen_2d"])
     elif wants_simple_2d and complexity in {"low", "template", "simple"}:
         primary = "llm_2d_template"
-        alternatives = ["netgen_2d", "cubit_mesh_export"]
+        alternatives = ["netgen_2d", "iemesh", "cubit_to_meg"]
     elif wants_simple_2d:
         primary = "netgen_2d"
-        alternatives = ["llm_2d_template", "cubit_mesh_export"]
+        alternatives = ["llm_2d_template", "iemesh", "cubit_to_meg"]
     else:
         primary = "netgen_2d"
-        alternatives = ["cubit_mesh_export", "llm_2d_template"]
+        alternatives = ["iemesh", "cubit_to_meg", "llm_2d_template"]
 
     strategy_details = {
-        "cubit_mesh_export": {
-            "strength": "robust for 3D, curved, CAD-like, and high-order geometry",
+        "iemesh": {
+            "strength": "the product's own mesh-script route; the default for 3D and complex geometry in this repository",
             "minimum_contract": [
-                "geometry script",
+                ".mei mesh script (IEmesh / mesh750.exe, `elf_iemesh_compile`)",
                 "material and region labels",
                 "element-family labels mapped to ELF/MAGIC",
-                ".meg export plus paired .mai lint",
+                "compiled .meg plus paired .mai lint",
+            ],
+        },
+        "cubit_to_meg": {
+            "strength": "supported route for CAD-driven, curved and high-order geometry meshed in Cubit",
+            "minimum_contract": [
+                "Cubit mesh (external Python that imports cubit)",
+                "block ids mapped to ELF labels (elf_mcp_server.cubit_to_meg)",
+                "SPACE nodesets for evaluation nodes",
+                ".meg written by cubit_to_meg plus paired .mai lint",
             ],
         },
         "netgen_2d": {
