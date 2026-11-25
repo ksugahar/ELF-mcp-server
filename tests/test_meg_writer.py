@@ -370,3 +370,18 @@ def test_element_shared_by_two_blocks_is_rejected():
 
     with pytest.raises(mw.MegError, match="belongs to blocks 1 and 2"):
         c2m.mesh_from_cubit(Shared(), "K", labels={1: "MMB", 2: "MMB"})
+
+
+def test_explicit_faces_outside_the_surfaces_are_refused_in_2d():
+    from elf_mcp_server import cubit_to_meg as c2m
+
+    class Faces(_SurfBlocks):
+        def get_block_faces(self, b): return [1, 5] if b == 1 else []   # 5 is not on surfaces 1..3
+
+    with pytest.raises(mw.MegError, match=r"block 1: get_block_faces lists elements \[5\]"):
+        c2m.mesh_from_cubit(Faces(), "K", labels={2: None, 3: None})
+
+    class FacesCovered(_SurfBlocks):
+        def get_block_faces(self, b): return [1, 2, 3] if b == 1 else []
+
+    assert len(c2m.mesh_from_cubit(FacesCovered(), "K", labels={2: None, 3: None}).elements) == 3

@@ -1671,8 +1671,11 @@ volumes/surfaces (`get_volume_hexes` ...) and, if the block is still empty,
 raises instead of dropping it. Direct and geometry members are united; a failing
 per-volume/surface query raises (no partial block), and an element listed under
 two blocks is rejected. Verified live: one-element hex and quad cases and
-volume-defined blocks; not yet: mixed direct+geometry membership, a block over
-several surfaces, tri/quad mixes, DIM R.
+volume-defined blocks; verified live too: a block over two surfaces (8 quads, shared nodes once).
+Not supported: 2D blocks with elements added one by one (`block N add face F`;
+Cubit 2026.8 has no `get_block_quads`, only `get_block_faces`), which are
+refused instead of exported incomplete; define 2D blocks from surfaces. Not yet
+verified: tri/quad mixes, DIM R.
 
 From plain node/block data (no Cubit), call the `elf_meg_write` MCP tool or
 `meg_writer.blocks_to_mesh` + `write_meg`.
