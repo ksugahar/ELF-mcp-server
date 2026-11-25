@@ -53,7 +53,7 @@ def test_electrostatic_contract_accepts_converged_same_identity_replay():
 
 def test_electrostatic_contract_rejects_eddy_current_misrouting():
     payload = _summary()
-    payload["replacement_route"]["lane_id"] = "hcurl_eddy_bubble_cln"
+    payload["replacement_route"]["lane_id"] = "unlisted_replacement_lane"
     result = electrostatic_replay_contract_gate(json.dumps(payload))
     assert result["status"] == "needs_attention"
     assert result["checks"]["replacement_is_executed_same_identity"] is False

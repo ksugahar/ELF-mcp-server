@@ -126,7 +126,6 @@ def test_corpus_contract_rejects_electrostatics_misrouted_as_eddy_current():
     payload = _summary()
     routes = payload["inventory"]["successor_route_counts"]
     routes.pop("ngsolve_electrostatics_bem")
-    routes["hcurl_eddy_bubble_cln"] = 1
 
     result = corpus_replay_contract_gate(json.dumps(payload))
 

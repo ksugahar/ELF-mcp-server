@@ -18,7 +18,7 @@ FEATURE_ROUTES: dict[str, tuple[str, ...]] = {
     "force_torque_motor_and_maglev": ("magic",),
     "harmonic_balance": ("magic",),
     "vector_hysteresis": ("magic",),
-    "model_order_reduction_and_cln": ("postprocess",),
+    "model_order_reduction": ("postprocess",),
     "bem_acceleration_and_mesh_research": ("magic",),
     "benchmark_and_validation_projects": ("validation",),
     "charged_particle_tracking": ("beam",),

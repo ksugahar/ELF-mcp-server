@@ -97,8 +97,7 @@ def corpus_replay_contract_gate(summary_json: str) -> dict:
         "electrostatic_successor_route_is_not_eddy_current": int(
             route_counts.get("ngsolve_electrostatics_bem") or 0
         )
-        == int(role_counts.get("electrostatic_charge_and_field") or -1)
-        and "hcurl_eddy_bubble_cln" not in route_counts,
+        == int(role_counts.get("electrostatic_charge_and_field") or -1),
         "all_runnable_cases_pass": runnable_count > 0
         and pass_count == runnable_count
         and fail_count == 0

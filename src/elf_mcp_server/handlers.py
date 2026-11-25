@@ -253,10 +253,10 @@ _TOOL_CATALOG = [
     ("elf_search(query, source, top_k)", "Canonical typed search response"),
     ("elf_read(identifier, source, max_chars)", "Canonical typed read response"),
     ("elf_contract_gate(gate, summary_json)", "Canonical typed metadata-gate response"),
-    ("elf_usage(topic)", "Curated documentation across 32 topics: "
+    ("elf_usage(topic)", "Curated documentation across 31 topics: "
                           ".mai/.mei/.meg formats, MAGIC/ELFIN/BEAM "
                           "solvers, element conventions, B-H, IPM motor, "
-                          "radia motor bridge, SOL MOMC AC, cln_extraction, "
+                          "radia motor bridge, SOL MOMC AC, "
                           "licensing (dongle)"),
     ("elf_help_index / search / get", "Compatibility access to original public summaries"),
     ("elf_examples_index / search / get / playbook", "Compatibility access to original public patterns"),
@@ -681,7 +681,7 @@ def elf_overview() -> dict:
         "next_step_hint":
             "Call elf_product_detect() then elf_product_case_check(...) before "
             "elf_product_run(..., confirm_product_execution=True) for a local "
-            "product solve; call elf_usage(topic='all') for the 32 curated topic "
+            "product solve; call elf_usage(topic='all') for the 31 curated topic "
             "catalogue, elf_plan_workflow('goal') for a workflow plan, "
             "elf_mcp_readiness() for release-quality gates, "
             "elf_motor_readiness() for motor-specific coverage and validation gaps, "
@@ -1080,11 +1080,6 @@ def elf_usage(topic: str = "all") -> str:
             "errors"           - Error messages (ELF-Q/E/W, 160+ codes)
             "iemesh"           - IEmesh tool overview and command families
             "tools"            - Wmap3, MagFilter2, MaiEditor3, ELF/Bench
-            "cln_extraction"   - ELF MAGIC -> Cauer Ladder Network synthesis
-                                 workflow (6-step Foster + Cauer-I/II + 3-way
-                                 cross-validation against step response /
-                                 Joule loss / Lorentz force). Distilled from
-                                 a 21-script rectangular-CLN reference suite.
             "licensing"        - Sentinel HL USB dongle (HASP): run-time,
                                  Admin Control Center (localhost:1947), and
                                  "dongle not recognized" troubleshooting
@@ -4749,7 +4744,7 @@ def main():
             "magnetization", "examples", "meg_export",
             "treasure_box", "sinusoidal", "anisotropy", "sted",
             "meshing", "convergence", "force_methods", "errors",
-            "iemesh", "tools", "cln_extraction", "licensing", "python_api",
+            "iemesh", "tools", "licensing", "python_api",
             "live_drive", "force_gap_contract",
             "multiport_inductance_comparison",
         ]

@@ -38,7 +38,7 @@ See [docs/python_usage.md](docs/python_usage.md) (or call `elf_usage("python_cli
 
 | Tool family | Purpose | Files |
 |---|---|---|
-| `elf_usage(topic)` | 32 curated topics — high-level recipes | (knowledge.py) |
+| `elf_usage(topic)` | 31 curated topics — high-level recipes | (knowledge.py) |
 | `elf_product_detect / elf_product_case_check / elf_product_run` | Detect, validate, and execute an installed MAGIC/ELFIN DLL through guarded Python `ctypes` | user-local product installation; raw outputs stay local |
 | `elf_catalog_page / elf_search / elf_read / elf_contract_gate` | Canonical typed MCP interface | bounded structured responses |
 | `elf://guides/* / elf://corpus/* / elf://topics/{topic}` | Stable MCP Resources | original public summaries |
@@ -577,14 +577,9 @@ magic, elfin, beam, element_types, bh_curves,
 sol_commands, mei_commands, ipm_motor, motor_radia_bridge, inductance,
 magnetization, examples, meg_export, treasure_box,
 sinusoidal, anisotropy, sted, meshing, convergence,
-force_methods, errors, iemesh, tools, cln_extraction,
+force_methods, errors, iemesh, tools,
 licensing, python_api, live_drive, force_gap_contract
 ```
-
-The `cln_extraction` topic documents the 6-step ELF MAGIC -> Cauer Ladder
-Network synthesis workflow (Foster fit + Cauer-I/II + 3-way validation
-against step response / Joule loss / Lorentz force). Distilled from a
-21-script rectangular-CLN reference analysis suite.
 
 ---
 
