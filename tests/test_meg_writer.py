@@ -86,3 +86,24 @@ def test_public_sample_decks_round_trip():
     for f in files:
         mesh = mw.read_meg(f)
         assert mw.parse_meg(mw.format_meg(mesh)) == mesh, f
+
+
+def test_mcp_tool_writes_and_reports_errors(tmp_path):
+    import json
+
+    from elf_mcp_server.handlers import elf_meg_write
+
+    nodes = {str(k): list(v) for k, v in CUBE.items()}
+    blocks = [{"prefix": "mmb", "shape": "hex8",
+               "connectivity": [[1, 2, 3, 4, 5, 6, 7, 8]]}]
+    dry = json.loads(elf_meg_write(nodes, blocks))
+    assert dry["ok"] and dry["labels"] == ["MMB8T"] and dry["written"] is None
+    out = tmp_path / "m.meg"
+    res = json.loads(elf_meg_write(nodes, blocks, out_path=str(out)))
+    assert res["written"] and out.is_file()
+    again = json.loads(elf_meg_write(nodes, blocks, out_path=str(out)))
+    assert not again["ok"] and "exists" in again["error"]
+    bad = json.loads(elf_meg_write(nodes, [{"prefix": "ZZZ", "shape": "hex8",
+                                            "connectivity": []}]))
+    assert not bad["ok"]
+    assert not json.loads(elf_meg_write(nodes, blocks, out_path=str(tmp_path / "x.txt")))["ok"]

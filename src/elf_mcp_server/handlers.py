@@ -4181,6 +4181,67 @@ def elf_iemesh_compile(
 
 
 @mcp.tool(
+    name="elf_meg_write",
+    title="ELF MEG Write",
+)
+def elf_meg_write(
+    nodes: dict[str, list[float]],
+    blocks: list[dict],
+    dim: str = "T",
+    out_path: str = "",
+    scale: float = 0.001,
+    symmetry: list[str] | None = None,
+    space_nodes: list[list[float]] | None = None,
+    overwrite: bool = False,
+) -> str:
+    """Write an ELF/MAGIC .meg deck from a neutral mesh (pure Python, no Cubit).
+
+    nodes: {"<id>": [x, y, z]}. blocks: [{"prefix": "MMB", "shape": "hex8",
+    "connectivity": [[...]], "group_id": 1}]; shapes line2 tri3 quad4 tet4
+    wedge6 hex8 pyramid5 (pyramid becomes a degenerate 8-node hex in 3D).
+    dim: T (3D), K (2D, z=0), R (axisymmetric, y=0, XZ plane). Without
+    out_path nothing is written and only a summary is returned. An existing
+    file is never replaced unless overwrite is true.
+    """
+    from . import meg_writer as mw
+
+    try:
+        mesh = mw.blocks_to_mesh(
+            {int(k): v for k, v in nodes.items()},
+            [
+                mw.MegBlock(
+                    str(b["prefix"]).upper(),
+                    str(b["shape"]),
+                    b["connectivity"],
+                    int(b.get("group_id", 1)),
+                )
+                for b in blocks
+            ],
+            dim.upper(),
+            scale=scale,
+            symmetry=symmetry or (),
+            space_nodes=space_nodes or (),
+        )
+        written = None
+        if out_path:
+            if not out_path.lower().endswith(".meg"):
+                raise mw.MegError("out_path must end with .meg")
+            written = str(mw.write_meg(mesh, out_path, overwrite=overwrite))
+    except (mw.MegError, KeyError, TypeError, ValueError) as exc:
+        return json.dumps({"ok": False, "error": f"{type(exc).__name__}: {exc}"},
+                          ensure_ascii=False)
+    return json.dumps({
+        "ok": True,
+        "dim": mesh.dim,
+        "nodes": len(mesh.nodes),
+        "elements": len(mesh.elements),
+        "space_nodes": len(mesh.space_nodes),
+        "labels": sorted({e.label for e in mesh.elements}),
+        "written": written,
+    }, ensure_ascii=False)
+
+
+@mcp.tool(
     name="elf_suggest_example",
     title="ELF Suggest .mei/.mai Example",
 )
