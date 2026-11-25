@@ -2352,6 +2352,31 @@ ELFIN does not have `GET_FORT`, `GET_FLUM`, or `GET_EMFM`.
   `__exit__` does **not** call `STOP_DLL()` for this reason.
 - **`from magtypes import *`**: This also imports `numpy as np` into the calling
   namespace (magtypes.py imports numpy at module level).
+- **A completed run is not a result**: the guarded `elf_product_run` workflows
+  `mome` and `mome_fiel` stop after the moment solution and `GET_FIEL`. The
+  `SOL FIXA` / `FLUM` block of a sample deck is not executed, so no flux
+  linkage, inductance, force or torque is produced even when the worker
+  reports exit 0 and `ok: true`. Read the output file and name the quantity
+  actually returned. A run with `DOF = 0` or no output table is a
+  pipeline-only run; report the missing quantity and mark the sample's own
+  validation laws as not exercised.
+- **Sample decks are proxies**: a deck that lists B-H tables and `NONL` may
+  stay on the linear part of the table (the nonlinear iteration ends at
+  iteration 1 with a small B). Do not cite such a sample as a saturation
+  example, and do not call it a numeric anchor until the checked quantity is
+  extracted.
+- **Write `.meg` directly from Python**: `elf_mcp_server.meg_writer` writes
+  and reads ELF/MAGIC `.meg` decks with no Cubit plugin, compiled module or
+  Nastran step. Build a neutral mesh with `blocks_to_mesh(nodes, blocks, dim,
+  scale=..., symmetry=..., space_nodes=...)`, where each `MegBlock` carries a
+  label prefix (`MMB`, `MCO`, ...), a shape (`line2`, `tri3`, `quad4`, `tet4`,
+  ...), connectivity and a group id; then `write_meg(mesh, path)`. `dim` is
+  `T` (3D), `K` (2D planar, z = 0) or `R` (axisymmetric, y = 0). Coordinates
+  are written as `%.13E`; unknown labels, missing nodes, off-plane 2D points
+  and unlabeled blocks raise `MegError`, and an existing file is not replaced
+  unless `overwrite=True`. Converting a mesher's output (for example Exodus)
+  into nodes and blocks is the caller's job; do not route through Nastran.
+  `read_meg` returns the same structure for a round-trip check.
 
 ## See also
 - `elf_usage("magic")` — MAGIC solver details, .mai keywords, element types
@@ -2502,6 +2527,20 @@ That gate checks:
 - any symmetry factor is positive, and
 - artifact statuses are `ok` / `pass` / `verified`.
 
+## Comparing torque methods over an angle sweep
+
+Compare signed torque on the same angle grid and current basis. Record the
+angle convention, torque axis and sign, and the integration contour or
+region used by each method. Report the signed difference and its magnitude
+in N m at each angle. At physical zero-torque points and when the reference
+torque is too small to support a meaningful ratio, report the absolute
+difference and leave relative error undefined.
+
+If a single tolerance is unsuitable, define angle-dependent absolute limits
+before judging the sweep. Report node and element counts, with air-gap
+resolution where available. If method agreement has only been checked on
+one mesh, mark mesh convergence as unverified.
+
 ## Negative controls worth keeping
 
 - Mark the stress surface as open; the package must fail before force values
@@ -2625,7 +2664,13 @@ e = -omega_m * d(lambda)/d(theta_m), or use omega_e = p * omega_m with
 electrical angle. A terminal voltage drop convention uses the positive
 derivative. Record the polarity, and distinguish raw solver voltage from
 a voltage that has been differentiated, shifted in time, or made periodic.
-Line voltage e_AB = e_A - e_B requires both signed phase traces.
+If a solver uses a backward difference on a uniform grid, its estimate
+belongs at the midpoint of the two linkage samples, half a step before
+the later sample. Align that time basis before interpreting phase error.
+Record how each trace handles the periodic boundary and keep the original
+samples. Compare native voltage separately from voltage reconstructed
+using a common differentiation rule. Line voltage e_AB = e_A - e_B
+requires both signed phase traces.
 Report flux-linkage amplitude and phase, phase EMF peak and RMS, and
 harmonics with the same normalization. Refine the angle step and air-gap
 mesh separately before drawing a conclusion.
