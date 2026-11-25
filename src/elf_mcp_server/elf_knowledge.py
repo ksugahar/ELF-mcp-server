@@ -1779,8 +1779,10 @@ MAGIC has no tetrahedral solid element: `MMB4T` is rejected (ELF-Q(540)) and a
 tetrahedron written as a degenerate `MMB8T`/`MMB6T` is rejected too (ELF-Q(692),
 checked live); solid blocks (MMB, EMB, MCL, MBB, MWL, MWV, MMS) accept hex (8T) and
 wedge (6T) only, so the exporter refuses tets for them. Hex plus wedge (a swept
-triangle mesh) solved cleanly. Whether a pyramid, written as a degenerate hex,
-is accepted has not been run.
+triangle mesh) solved cleanly. A pyramid written as a degenerate hex (or as a
+collapsed wedge, six encodings tried) is rejected as well (ELF-Q(692)), so pyramids
+are refused for these labels too. A Cubit hex+tet interface mesh (which inserts
+pyramids and tets) therefore cannot be solved by MAGIC.
 
 ## Available Labels by DIM
 

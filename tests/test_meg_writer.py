@@ -49,6 +49,9 @@ def test_tetrahedra_are_refused_for_hex_wedge_only_labels():
     mw.blocks_to_mesh(tet, [mw.MegBlock("MCO", "tet4", [(1, 2, 3, 4)])], "T")   # MCO4T exists
     wedge = dict(tet) | {5: (1, 0, 1), 6: (0, 1, 1)}
     mw.blocks_to_mesh(wedge, [mw.MegBlock("MMB", "wedge6", [(1, 2, 3, 4, 5, 6)])], "T")
+    pyr = {1: (0, 0, 0), 2: (1, 0, 0), 3: (1, 1, 0), 4: (0, 1, 0), 5: (0.5, 0.5, 1)}
+    with pytest.raises(mw.MegError, match="MMB has no pyramid element"):
+        mw.blocks_to_mesh(pyr, [mw.MegBlock("MMB", "pyramid5", [(1, 2, 3, 4, 5)])], "T")
 
 
 def test_plane_noise_is_snapped_to_exact_zero():

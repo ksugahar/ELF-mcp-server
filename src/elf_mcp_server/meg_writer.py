@@ -46,7 +46,9 @@ _COORD_TOL = 1.0e-12
 # (xxx6T); the reference lists no tetrahedron for them, and no 4T label of these
 # prefixes occurs in the shipped examples.  Checked live: MMB4T is rejected
 # (ELF-Q(540)), and a tetrahedron written as a degenerate MMB8T or MMB6T is
-# rejected too (ELF-Q(692) "element shape is inappropriate").
+# rejected too (ELF-Q(692) "element shape is inappropriate").  A pyramid written
+# as a degenerate hex (apex repeated, six orientations/encodings, plus wedge
+# collapses) is rejected the same way, so pyramids are refused for these labels.
 _NO_TET_PREFIXES = frozenset({"MMB", "EMB", "MCL", "MBB", "MWL", "MWV", "MMS"})
 
 
@@ -167,9 +169,11 @@ def blocks_to_mesh(
             if len(conn) != n:
                 raise MegError(
                     f"{blk.shape} element needs {n} nodes, got {len(conn)}")
-            if dim == "T" and blk.shape == "tet4" and blk.prefix in _NO_TET_PREFIXES:
+            if (dim == "T" and blk.shape in ("tet4", "pyramid5")
+                    and blk.prefix in _NO_TET_PREFIXES):
+                kind = "tetrahedral" if blk.shape == "tet4" else "pyramid"
                 raise MegError(
-                    f"{blk.prefix} has no tetrahedral element in MAGIC (only "
+                    f"{blk.prefix} has no {kind} element in MAGIC (only "
                     f"{blk.prefix}8T hex and {blk.prefix}6T wedge); mesh this block "
                     f"with hexes or wedges")
             if blk.shape == "pyramid5":
