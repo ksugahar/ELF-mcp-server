@@ -256,7 +256,8 @@ def coil_directions(mesh: MegMesh) -> list[dict]:
         edges = [_sub(p[j], p[i]) for i, j in ((0, 4), (1, 5), (2, 6), (3, 7))]
         mean = tuple(sum(v[k] for v in edges) / 4 for k in range(3))
         d = _unit(mean, f"MCL8T element {e.id} current direction")
-        out.append({"id": e.id, "mid": e.mid, "direction": d,
+        out.append({"id": e.id, "mid": e.mid, "n1": e.nodes[0], "n5": e.nodes[4],
+                    "direction": d,
                     "spread_deg": max(_angle_deg(v, mean) for v in edges)})
     return out
 
@@ -277,12 +278,31 @@ def coil_report(mesh: MegMesh) -> dict[int, dict]:
     return rep
 
 
+_SIGNED_AXES = {"+x": (1.0, 0.0, 0.0), "-x": (-1.0, 0.0, 0.0),
+                "+y": (0.0, 1.0, 0.0), "-y": (0.0, -1.0, 0.0),
+                "+z": (0.0, 0.0, 1.0), "-z": (0.0, 0.0, -1.0)}
+
+
+def _as_axis(mid, v) -> tuple[float, float, float]:
+    if isinstance(v, str):
+        key = v.strip().lower()
+        if key not in _SIGNED_AXES:
+            raise MegError(f"block {mid}: expected a signed coil axis such as '+z' "
+                           f"or an (x, y, z) vector, got {v!r}")
+        return _SIGNED_AXES[key]
+    vec = tuple(float(x) for x in v)
+    if len(vec) != 3 or _norm(vec) <= 0.0:
+        raise MegError(f"block {mid}: coil axis must be a non-zero (x, y, z) vector")
+    return vec
+
+
 def _as_axes(expected) -> dict[int, tuple[float, float, float]]:
+    """``{mid: "+z" | (x, y, z)}`` -> ``{mid: (x, y, z)}``."""
     if expected is None:
         return {}
     if isinstance(expected, Mapping):
-        return {int(k): tuple(float(x) for x in v) for k, v in expected.items()}
-    raise MegError("coil axes must be a {mid: (x, y, z)} mapping")
+        return {int(k): _as_axis(k, v) for k, v in expected.items()}
+    raise MegError("coil axes must be a {mid: '+z' or (x, y, z)} mapping")
 
 
 def check_coil_directions(mesh: MegMesh, expected=None, *, tol_deg: float = 5.0,
@@ -309,8 +329,10 @@ def check_coil_directions(mesh: MegMesh, expected=None, *, tol_deg: float = 5.0,
         if ang > tol_deg:
             kind = "reversed" if ang > 180.0 - tol_deg else "not along the requested axis"
             raise MegError(
-                f"MCL8T element {c['id']} (MID {c['mid']}): current (node 1 -> 5) is "
-                f"{kind}, {ang:.1f} deg from {tuple(want)}; reorder the nodes with "
+                f"block {c['mid']}: MCL8T nodes {c['n1']} -> {c['n5']} (element "
+                f"{c['id']}) give current direction "
+                f"{tuple(round(x, 6) for x in c['direction'])}, which is {kind} "
+                f"({ang:.1f} deg from {tuple(want)}); reorder the nodes with "
                 f"orient_coil_current")
     unknown = sorted(set(axes) - {c["mid"] for c in coil_directions(mesh)})
     if unknown:

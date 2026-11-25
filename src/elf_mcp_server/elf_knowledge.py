@@ -1684,15 +1684,17 @@ State the direction you need and let the exporter check or set it:
 ```python
 export_meg_from_file("coil.cub5", "coil.meg", dim="T",
                      labels={1: "MCL", 2: None},
-                     coil_axes={1: (0, 0, 1)},   # block id (= MID) -> current direction
+                     coil_axes={1: "+z"},   # block id (= MID) -> current direction
                      orient_coils=True)          # rotate node order to it; False = error on mismatch
 ```
-CLI: `--coil-axis 1:0,0,1 [--orient-coils]` (prints each coil MID's direction).
+CLI: `--coil-axis 1:+z [--orient-coils]` (also `1:0,0,1`) (prints each coil MID's direction).
 Without `coil_axes` only a twist check runs (the four 1-5/2-6/3-7/4-8 edges
 must agree within 20 deg) and `coil_report(mesh)` / the `elf_meg_write`
 result `coil_directions` show the direction you got. Orientation only
 rotates a hex's own local frame (no mirroring), coordinates are untouched.
-`MCL6T` and the 2D coils are not checked yet; check their node order against
+`coil_axes` takes a signed axis (`"+z"`) or an (x, y, z) vector; for curved or
+oblique coils read `coil_report` against the intended winding direction. `MCL6T`
+and the 2D coils are not checked yet; check their node order against
 the reference page yourself.
 
 ## DIM Selection

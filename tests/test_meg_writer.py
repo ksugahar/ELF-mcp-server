@@ -252,3 +252,21 @@ def test_mcp_tool_reports_and_orients_coils(tmp_path):
                                   coil_axes={"10": [0, 0, 1]}, orient_coils=True))
     assert ok["ok"] and ok["coil_directions"]["10"]["direction"] == pytest.approx([0, 0, 1])
     assert sorted(_corners(mw.read_meg(out))) == sorted(_corners(_coil_mesh(_PUBLIC_ORDER)))
+
+
+def test_cubit_coil_axis_preserves_connectivity_and_rejects_wrong_direction(tmp_path):
+    from elf_mcp_server import cubit_to_meg as c2m
+
+    labels = {1: "MCL", 2: None}
+    mesh = c2m.mesh_from_cubit(_StubCubit(), labels=labels)
+    assert c2m.mesh_from_cubit(_StubCubit(), labels=labels, coil_axes={1: "+z"}) == mesh
+
+    target = tmp_path / "wrong-axis.meg"
+    for axis in ("+x", "-z"):
+        with pytest.raises(mw.MegError, match=r"block 1: MCL8T nodes 1 -> 5"):
+            c2m.export_meg_from_cubit(
+                _StubCubit(), target, labels=labels, coil_axes={1: axis}
+            )
+    assert not target.exists()
+    with pytest.raises(mw.MegError, match="signed coil axis"):
+        c2m.mesh_from_cubit(_StubCubit(), labels=labels, coil_axes={1: "up"})
