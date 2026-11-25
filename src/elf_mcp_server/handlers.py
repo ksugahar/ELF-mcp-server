@@ -1814,7 +1814,7 @@ def elf_motor_dual_solver_review_packet(
         "family_filter": family,
         "observable_id": str(observable or "").strip(),
         "selected_decks": selected,
-        "required_lanes": ["ngsolve_age", "hdiv_mmm_hcurl_eddy_bubble"],
+        "required_lanes": ["ngsolve_age"],
         "required_result_fields": [
             "observable_id",
             "observable_unit",

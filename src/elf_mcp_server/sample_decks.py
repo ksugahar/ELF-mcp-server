@@ -4833,38 +4833,13 @@ def _motor_hybrid_family(goal: str) -> dict[str, Any]:
     }
 
 
-def _motor_coupled_targets(family: str) -> list[str]:
-    """Public-safe HDiv-MMM / HCurl eddy-bubble targets by motor family."""
-
-    targets = {
-        "induction": ["source_field", "reduced_fem_response", "force_or_torque_trend"],
-        "locked_rotor_induction": ["source_field", "reduced_fem_response", "force_or_torque_trend"],
-        "line_start_induction": ["source_field", "reduced_fem_response", "force_or_torque_trend"],
-        "dfig": ["source_field", "reduced_fem_response", "pickup_flux"],
-        "srm": ["pickup_flux", "force_or_torque_trend", "coenergy"],
-        "synrm": ["pickup_flux", "coenergy", "reduced_fem_response"],
-        "bldc": ["demag_field", "pickup_flux", "source_field"],
-        "outer_rotor_bldc": ["demag_field", "source_field", "pickup_flux"],
-        "afpm": ["demag_field", "pickup_flux", "source_field"],
-        "linear_pm": ["source_field", "force_or_torque_trend", "pickup_flux"],
-        "stepper": ["demag_field", "force_or_torque_trend", "pickup_flux"],
-        "wound_field_sync": ["source_field", "pickup_flux", "coenergy"],
-        "ipm": ["demag_field", "pickup_flux", "flux_linkage"],
-        "vipm": ["demag_field", "source_field", "pickup_flux"],
-        "hysteresis": ["demag_field", "source_field", "coenergy"],
-        "spm": ["demag_field", "pickup_flux", "source_field"],
-    }
-    return targets.get(family, targets["spm"])
-
-
 def build_motor_hybrid_router(goal: str) -> dict[str, Any]:
     """Route a motor prompt across ELF decks and both radia motor lanes."""
     plan = _motor_hybrid_family(goal)
     routes = route_sample_decks(plan["elf_query"], limit=3)
     readiness = build_motor_readiness(family=plan["family"])
-    coupled_targets = _motor_coupled_targets(plan["family"])
     return {
-        "schema_version": "elf-motor-hybrid-router/v2",
+        "schema_version": "elf-motor-hybrid-router/v3",
         "goal": goal,
         "inferred_family": plan["family"],
         "public_boundary": (
@@ -4894,19 +4869,6 @@ def build_motor_hybrid_router(goal: str) -> dict[str, Any]:
             "lane": "ngsolve_age",
             "role": "independent 2D AGE / dq / eddy-current validation anchor",
         },
-        "coupled_validation": {
-            "server": "mcp-server-motor",
-            "calls": [
-                'motor_validation_lane_template("hdiv_mmm_hcurl_eddy_bubble")',
-                'motor_validation_artifact_gate(..., "hdiv_mmm_hcurl_eddy_bubble")',
-            ],
-            "lane": "hdiv_mmm_hcurl_eddy_bubble",
-            "targets": coupled_targets,
-            "role": (
-                "HDiv-MMM plus HCurl eddy-bubble lane for source field, demag, "
-                "pickup flux, conducting-region response, and force/torque trends"
-            ),
-        },
         "local_elf_runner": {
             "call": f'elf_local_simulation_handoff("{goal}")',
             "role": "prepare a user-local ELF/MAGIC product run without exposing outputs",
@@ -4922,7 +4884,6 @@ def build_motor_hybrid_router(goal: str) -> dict[str, Any]:
             "Select an ELF public deck route and inspect the representative .mai/.meg inputs.",
             "Run the radia-motor MMM quick check for sign and scale before spending solver time.",
             "Use ngsolve_age for the independent FE air-gap, torque, dq, and eddy validation target.",
-            "Use hdiv_mmm_hcurl_eddy_bubble for source-field, pickup-flux, demag, conducting-region response, and force/torque trends.",
             "Run ELF/MAGIC locally only after the deck and reduced physics checks are coherent.",
             "Promote only reduced, public-safe validation labels; keep raw solver outputs private.",
         ],
@@ -4966,14 +4927,6 @@ def format_motor_hybrid_router(route: dict[str, Any]) -> str:
     lines.append(f"- lane: `{age['lane']}`")
     lines.append(f"- role: {age['role']}")
     lines.extend(f"- `{call}`" for call in age["calls"])
-
-    lines.extend(["", "## HDiv-MMM / HCurl Eddy-Bubble Validation"])
-    coupled = route["coupled_validation"]
-    lines.append(f"- server: `{coupled['server']}`")
-    lines.append(f"- lane: `{coupled['lane']}`")
-    lines.append(f"- targets: {', '.join(f'`{target}`' for target in coupled['targets'])}")
-    lines.append(f"- role: {coupled['role']}")
-    lines.extend(f"- `{call}`" for call in coupled["calls"])
 
     lines.extend(["", "## Local ELF/MAGIC Runner"])
     lines.append(f"- `{route['local_elf_runner']['call']}`")

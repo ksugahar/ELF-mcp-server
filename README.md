@@ -107,8 +107,7 @@ from validation-depth gaps, and lists radia-motor / radia-ngsolve targets such
 as back-EMF, cogging torque, Ld/Lq, MTPA, induction slip loss, and reluctance
 torque. `elf_motor_hybrid_router(goal)` dispatches motor prompts across public
 ELF deck routes, radia-motor 2D MMM/BEM-like quick checks, the canonical
-`ngsolve_age` and `hdiv_mmm_hcurl_eddy_bubble` validation lanes, and the
-user-local ELF/MAGIC runner contract.
+`ngsolve_age` validation lane, and the user-local ELF/MAGIC runner contract.
 `elf_motor_mmm_quick_check()` provides the public-safe first-order magnetic
 circuit / MMM-like sign-and-scale check directly in this MCP server.
 `elf_public_promotion()` returns public-safe Japanese/English
@@ -186,8 +185,7 @@ public boundary. The most useful calls while authoring ELF/MAGIC inputs are:
   gaps, and radia-motor strengthening targets
 - `elf_motor_hybrid_router("IPM hairpin motor flux linkage and MTPA")` to
   route a motor prompt across ELF deck authoring, radia-motor MMM quick checks,
-  the `ngsolve_age` and `hdiv_mmm_hcurl_eddy_bubble` validation lanes, and a
-  user-local ELF/MAGIC product run
+  the `ngsolve_age` validation lane, and a user-local ELF/MAGIC product run
 - `elf_nonlinear_magnetic_conductor_validation_gate(summary_json)` to gate
   mean-B and Joule convergence independently for a same-region nonlinear
   magnetic conductor; a converged mean field cannot certify unconverged loss
