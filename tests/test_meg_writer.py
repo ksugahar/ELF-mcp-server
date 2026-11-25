@@ -372,16 +372,20 @@ def test_element_shared_by_two_blocks_is_rejected():
         c2m.mesh_from_cubit(Shared(), "K", labels={1: "MMB", 2: "MMB"})
 
 
-def test_explicit_faces_outside_the_surfaces_are_refused_in_2d():
+def test_explicit_faces_are_quads_and_tris_keep_their_own_id_space():
     from elf_mcp_server import cubit_to_meg as c2m
 
-    class Faces(_SurfBlocks):
-        def get_block_faces(self, b): return [1, 5] if b == 1 else []   # 5 is not on surfaces 1..3
+    class Mixed(_SurfBlocks):
+        """Real 2026.8 shape: no get_block_quads; 'add face 5' -> get_block_faces; id 5 also exists as a tri."""
+        def __getattribute__(self, n):
+            if n == "get_block_quads":
+                raise AttributeError(n)
+            return super().__getattribute__(n)
+        def get_block_faces(self, b): return [5] if b == 1 else []
+        def get_block_tris(self, b): return [5] if b == 1 else []
+        def get_connectivity(self, t, i):
+            return {"quad": (1, 2, 3, 4), "tri": (4, 5, 6)}[t]
 
-    with pytest.raises(mw.MegError, match=r"block 1: get_block_faces lists elements \[5\]"):
-        c2m.mesh_from_cubit(Faces(), "K", labels={2: None, 3: None})
-
-    class FacesCovered(_SurfBlocks):
-        def get_block_faces(self, b): return [1, 2, 3] if b == 1 else []
-
-    assert len(c2m.mesh_from_cubit(FacesCovered(), "K", labels={2: None, 3: None}).elements) == 3
+    mesh = c2m.mesh_from_cubit(Mixed(), "K", labels={2: None, 3: None})
+    kinds = sorted(len(e.nodes) for e in mesh.elements)
+    assert kinds == [3, 4, 4, 4, 4]          # surfaces 1..3 quads + explicit quad 5 + tri 5 (same number, two elements)

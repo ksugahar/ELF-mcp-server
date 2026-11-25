@@ -43,6 +43,13 @@ _ELEMENTS = (
 _OWNERS = (("get_block_volumes", "get_volume_"), ("get_block_surfaces", "get_surface_"))
 
 
+# Extra direct getters per element type.  On Cubit 2026.8 there is no
+# ``get_block_quads``: quads added one by one ("block N add face F") are listed
+# by ``get_block_faces`` (live probe 4bb002c: face 5 -> quad connectivity, while
+# the same number as a tri is a different element), tris by ``get_block_tris``.
+_DIRECT_ALIASES = {"quads": ("get_block_quads", "get_block_faces")}
+
+
 def _block_element_ids(cubit, bid, suffix: str) -> list[int]:
     """Element ids of one type in a block: direct members plus geometry members.
 
@@ -54,8 +61,11 @@ def _block_element_ids(cubit, bid, suffix: str) -> list[int]:
     block; but a failing per-entity query raises ``MegError`` (block, owner,
     element type) so a block is never exported partially.
     """
-    getter = getattr(cubit, f"get_block_{suffix}", None)
-    ids = {int(i) for i in (getter(bid) if getter else ())}
+    ids: set[int] = set()
+    for name in _DIRECT_ALIASES.get(suffix, (f"get_block_{suffix}",)):
+        getter = getattr(cubit, name, None)
+        if getter:
+            ids.update(int(i) for i in getter(bid))
     for owners, per in _OWNERS:
         lister = getattr(cubit, owners, None)
         get = getattr(cubit, f"{per}{suffix}", None)
@@ -73,23 +83,6 @@ def _block_element_ids(cubit, bid, suffix: str) -> list[int]:
                     f"block {bid}: {per}{suffix}({ent}) failed "
                     f"({type(exc).__name__}: {exc}); refusing a partial block") from exc
     return sorted(ids)
-
-
-def _refuse_untyped_faces(cubit, bid, typed_ids: set[int]) -> None:
-    """2D blocks: Cubit 2026.8 has no ``get_block_quads``/``get_block_tris``;
-    elements added one by one ("block N add face F") are only listed by
-    ``get_block_faces``.  Those are not typed here, so refuse the block rather
-    than export it without them (observed live on f03b29c: 4 of 5 elements)."""
-    getter = getattr(cubit, "get_block_faces", None)
-    if getter is None:
-        return
-    missing = sorted({int(i) for i in getter(bid)} - typed_ids)
-    if missing:
-        raise MegError(
-            f"block {bid}: get_block_faces lists elements {missing} that are not "
-            f"part of the block's surfaces; explicit face membership cannot be "
-            f"typed (quad or tri) yet, so the block would be exported incomplete. "
-            f"Define the block from surfaces only ('block {bid} add surface ...')")
 
 
 def _nodeset_name(cubit, nsid) -> str:
@@ -152,14 +145,11 @@ def mesh_from_cubit(
         if prefix is None:
             continue
         found = 0
-        planar_ids: set[int] = set()
         for suffix, ctype, shape, dims in _ELEMENTS:
             ids = _block_element_ids(cubit, bid, suffix)
             if not ids:
                 continue
             found += len(ids)
-            if suffix in ("quads", "tris"):
-                planar_ids.update(ids)
             for i in ids:
                 other = owner.setdefault((ctype, i), bid)
                 if other != bid:
@@ -172,8 +162,6 @@ def mesh_from_cubit(
             conn = [tuple(cubit.get_connectivity(ctype, i)) for i in ids]
             used.extend(n for c in conn for n in c)
             blocks.append(MegBlock(prefix.upper(), shape, conn, int(bid)))
-        if dim in "KR":
-            _refuse_untyped_faces(cubit, bid, planar_ids)
         if not found:
             raise MegError(
                 f"block {bid} ({prefix}) returned no elements; a block made with "
