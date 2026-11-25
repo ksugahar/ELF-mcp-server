@@ -177,6 +177,15 @@ TOOL_CONTRACTS["elf_iemesh_compile"] = ToolContract(
     open_world=True,
 )
 
+TOOL_CONTRACTS["elf_meg_write"] = ToolContract(
+    name="elf_meg_write",
+    title="ELF MEG Write",
+    read_only=False,
+    destructive=False,
+    idempotent=False,
+    open_world=False,
+)
 
-if len(TOOL_CONTRACTS) != len(READ_ONLY_TOOL_NAMES) + 2:
+
+if len(TOOL_CONTRACTS) != len(READ_ONLY_TOOL_NAMES) + 3:
     raise RuntimeError("duplicate public tool name in explicit contract registry")
