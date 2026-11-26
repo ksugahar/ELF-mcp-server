@@ -114,6 +114,18 @@ END
 | `OHM2` | Volume resistivity (eddy current elements) | `OHM2 3 0 2.7e-8` |
 | `OHM3` / `OHM3I` | Impedance real/imag (sinusoidal calc) | `OHM3 1 0 0.1` |
 
+**Coil current per element (checked against an independent 2D solver).** `AMP1 x turn`
+is the current through the cross-section of *each* coil element, and `FLUM` is the sum
+over the elements of that MID. A 2D coil side (or any coil) built from n elements side
+by side across the cross-section therefore carries n times the intended current and
+reports n times the flux linkage: give `AMP1 = I / n` and read `FLUM / n`. Elements
+lined up in series along the current (the 24 hex elements of a ring coil in 3D) need no
+such division. The current direction follows the element node order, so a mesh written
+clockwise reverses the sign of `AMP1`; confirm the direction with a one-coil test before
+trusting torque or flux linkage. In the 2D check (SPM, 6 elements per side) the wrong
+handling gave a flux linkage 6x too large and a reversed iron field; with it the open-circuit
+phase flux agreed with NGSolve to 0.3 % (1.5 mm mesh).
+
 ### Anisotropy / Lamination
 | Keyword | Description | Example |
 |---------|-------------|---------|
