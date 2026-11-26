@@ -754,6 +754,21 @@ HBCU  1  -700000.0  0.0
 HBCU  1       0.0   0.90
 ```
 Direction set by VEC1/VEC3 for MWV elements, or by element node order for MWL.
+
+## Thin back iron: use a saturating curve (checked against an independent solver)
+A linear curve (two points, for example `HBCU 1 0 0` / `HBCU 1 1 500` in Oe/G,
+mu_r = 500) is extrapolated along its last slope, so a thin yoke that carries the
+flux of several magnets is driven to several tesla. In a coreless axial-flux PM
+model (2 mm yoke, 0.93 T magnets, magh1600) this made the result depend on the
+mesh: with 1/2/4 axial hex layers across the yoke the open-circuit phase flux
+rose 2.41 -> 2.46 -> 2.51 mWb-turn and the reported yoke BMAX rose
+1.7 -> 3.1 -> 9.6 T. With a saturating curve (initial mu_r 500, saturation
+polarisation 2 T, about 20 points up to 4e5 A/m) the same runs gave 2.349 / 2.375 /
+2.352 mWb-turn (yoke BMAX 1.2 -> 1.9 T) and agreed within 1 % with an independent
+NGSolve scalar-potential model using the same curve. So for sheet-like iron:
+give a saturating B-H curve, read BMAX per MID in the .mao, and repeat with more
+elements across the thickness before trusting a number; MMT thin-plate elements
+are the documented alternative for sheets (not tested on this model).
 """
 
 # ============================================================
