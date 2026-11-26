@@ -1796,6 +1796,13 @@ oblique coils read `coil_report` against the intended winding direction. `MCL6T`
 and the 2D coils are not checked yet; check their node order against
 the reference page yourself.
 
+Ring coils: a fixed axis cannot describe the turns of a coil that wraps around a core,
+because the direction changes from element to element. State the circulation instead:
+`coil_axes={10: {"circulate": {"axis": "+z", "center": [0, 0, 0]}}}` (or
+`--coil-axis 10:ring+z[@x,y,z]`) means positive current runs counter-clockwise about that
+axis (right-hand rule) at every element; `orient_coils` reorders each element's nodes
+accordingly and the check reports the first element that disagrees.
+
 ## DIM Selection
 | Argument | DIM suffix | Symmetry |
 |----------|-----------|----------|

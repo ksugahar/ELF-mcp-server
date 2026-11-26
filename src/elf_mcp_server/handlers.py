@@ -4202,7 +4202,7 @@ def elf_meg_write(
     symmetry: list[str] | None = None,
     space_nodes: list[list[float]] | None = None,
     overwrite: bool = False,
-    coil_axes: dict[str, list[float]] | None = None,
+    coil_axes: dict[str, object] | None = None,
     orient_coils: bool = False,
 ) -> str:
     """Write an ELF/MAGIC .meg deck from a neutral mesh (pure Python, no Cubit).
@@ -4217,6 +4217,8 @@ def elf_meg_write(
     order is the current direction. coil_axes {"<MID>": [x, y, z]} states the
     required direction (a mismatch is an error, or with orient_coils the nodes
     are rotated to it); the result lists each coil MID's actual direction.
+    A ring coil's turns need a direction per element: {"<MID>": {"circulate":
+    {"axis": "+z", "center": [x, y, z]}}} means counter-clockwise about that axis.
     """
     from . import meg_writer as mw
 
@@ -4237,7 +4239,7 @@ def elf_meg_write(
             symmetry=symmetry or (),
             space_nodes=space_nodes or (),
         )
-        axes = {int(k): tuple(v) for k, v in (coil_axes or {}).items()}
+        axes = {int(k): (v if isinstance(v, (dict, str)) else tuple(v)) for k, v in (coil_axes or {}).items()}
         if axes and orient_coils:
             mesh = mw.orient_coil_current(mesh, axes)
         coils = mw.check_coil_directions(mesh, axes)

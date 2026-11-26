@@ -436,3 +436,43 @@ def test_plate_labels_accept_quads_and_tris_in_3d_only_for_mmt():
     assert sorted(e.label for e in mesh.elements) == ["MMT3T", "MMT4T", "MMT4T", "MMT4T"]
     with pytest.raises(mw.MegError, match="not allowed in DIM T"):
         c2m.mesh_from_cubit(Plate(), "T", labels={1: "MMB", 2: None, 3: None})
+
+
+def _ring_mesh(order_ccw=True, n=12, r0=10.0, r1=12.0):
+    """A ring coil of n hexes around the z axis; node 1 -> 5 runs along the tangent (ccw when order_ccw)."""
+    import math
+    nodes, conn = {}, []
+    nid = 0
+    def pt(i, r, z):
+        a = 2 * math.pi * i / n
+        return (r * math.cos(a), r * math.sin(a), z)
+    ids = {}
+    for i in range(n):
+        for r in (r0, r1):
+            for z in (0.0, 1.0):
+                nid += 1; nodes[nid] = pt(i, r, z); ids[(i, r, z)] = nid
+    for i in range(n):
+        j = (i + 1) % n
+        a0, a1 = (i, j) if order_ccw else (j, i)
+        # hex with node1->node5 along the tangent from section a0 to a1
+        bottom = [ids[(a0, r0, 0.0)], ids[(a0, r1, 0.0)], ids[(a0, r1, 1.0)], ids[(a0, r0, 1.0)]]
+        top = [ids[(a1, r0, 0.0)], ids[(a1, r1, 0.0)], ids[(a1, r1, 1.0)], ids[(a1, r0, 1.0)]]
+        conn.append(tuple(bottom + top))
+    return nodes, conn
+
+
+def test_ring_coil_circulation_is_checked_and_oriented_per_element():
+    nodes, conn = _ring_mesh(order_ccw=True)
+    # element signs may be inside-out for this hand-built hex; only the 1->5 direction is under test here
+    mesh = mw.blocks_to_mesh(nodes, [mw.MegBlock("MCL", "hex8", conn, 10)], "T", scale=1.0)
+    spec = {10: {"circulate": {"axis": "+z", "center": (0, 0, 0)}}}
+    rep = mw.check_coil_directions(mesh, spec)                      # ccw ring passes
+    assert rep[10]["elements"] == 12
+    cw_nodes, cw_conn = _ring_mesh(order_ccw=False)
+    cw = mw.blocks_to_mesh(cw_nodes, [mw.MegBlock("MCL", "hex8", cw_conn, 10)], "T", scale=1.0)
+    with pytest.raises(mw.MegError, match="reversed"):
+        mw.check_coil_directions(cw, spec)
+    fixed = mw.orient_coil_current(cw, spec)
+    mw.check_coil_directions(fixed, spec)                             # orient_coil_current reverses every element
+    flipped = mw.check_coil_directions(cw, {10: {"circulate": {"axis": "-z", "center": (0, 0, 0)}}})
+    assert flipped[10]["elements"] == 12                              # clockwise is correct about -z

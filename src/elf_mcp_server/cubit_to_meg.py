@@ -247,7 +247,7 @@ def main(argv=None) -> int:
     ap.add_argument("--dim", default="T", choices=("T", "K", "R"))
     ap.add_argument("--labels", default="", help="1:MMB,2:none,...")
     ap.add_argument("--coil-axis", action="append", default=[],
-                    help="BLOCK:AXIS required MCL8T current direction (node 1->5), e.g. 10:+z or 10:0,0,1")
+                    help="BLOCK:AXIS required MCL8T current direction (node 1->5), e.g. 10:+z or 10:0,0,1; for a ring coil BLOCK:ring+z[@x,y,z] = counter-clockwise about that axis through the centre")
     ap.add_argument("--orient-coils", action="store_true",
                     help="reorder MCL8T nodes to the --coil-axis directions")
     ap.add_argument("--overwrite", action="store_true")
@@ -257,7 +257,15 @@ def main(argv=None) -> int:
         mid, sep, vec = item.partition(":")
         if not (sep and mid.isdecimal() and int(mid) not in axes):
             ap.error(f"expected a unique BLOCK:AXIS for --coil-axis, got {item!r}")
-        axes[int(mid)] = vec.strip() if vec.strip().lower() in ("+x", "-x", "+y", "-y", "+z", "-z")             else tuple(float(x) for x in vec.split(","))
+        v = vec.strip()
+        if v.lower().startswith("ring"):
+            ax, _, ctr = v[4:].partition("@")
+            axes[int(mid)] = {"circulate": {"axis": ax.strip() or "+z",
+                                            "center": tuple(float(x) for x in ctr.split(",")) if ctr else (0.0, 0.0, 0.0)}}
+        elif v.lower() in ("+x", "-x", "+y", "-y", "+z", "-z"):
+            axes[int(mid)] = v
+        else:
+            axes[int(mid)] = tuple(float(x) for x in v.split(","))
     path = export_meg_from_file(a.model, a.out, a.dim, _parse_labels(a.labels),
                                 overwrite=a.overwrite, coil_axes=axes or None,
                                 orient_coils=a.orient_coils)

@@ -265,6 +265,18 @@ def _hex_axes(mesh: MegMesh, e: MegElement):
             mean(((0, 4), (1, 5), (2, 6), (3, 7))))
 
 
+def _centroid(mesh: MegMesh, e: MegElement):
+    p = [mesh.nodes[n] for n in e.nodes]
+    return tuple(sum(q[k] for q in p) / len(p) for k in range(3))
+
+
+def _wanted(mesh, e, want):
+    """Expected current direction for element ``e`` (fixed axis or circulation spec)."""
+    if isinstance(want, _Circulate):
+        return want.direction_at(_centroid(mesh, e))
+    return want
+
+
 def coil_directions(mesh: MegMesh) -> list[dict]:
     """Current direction (node 1 -> node 5) of every MCL8T element.
 
@@ -307,7 +319,37 @@ _SIGNED_AXES = {"+x": (1.0, 0.0, 0.0), "-x": (-1.0, 0.0, 0.0),
                 "+z": (0.0, 0.0, 1.0), "-z": (0.0, 0.0, -1.0)}
 
 
-def _as_axis(mid, v) -> tuple[float, float, float]:
+class _Circulate:
+    """Positive current circulates counter-clockwise about ``axis`` through ``center``
+    (right-hand rule), e.g. the turns of a ring coil.  Direction per element."""
+
+    def __init__(self, axis, center):
+        self.axis = _unit(tuple(float(x) for x in axis), "circulation axis")
+        self.center = tuple(float(x) for x in center)
+
+    def direction_at(self, point):
+        r = _sub(point, self.center)
+        radial = tuple(r[k] - _dot(r, self.axis) * self.axis[k] for k in range(3))
+        d = _cross(self.axis, radial)
+        return _unit(d, "ring coil element lies on the circulation axis")
+
+
+def _cross(a, b):
+    return (a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0])
+
+
+def _as_axis(mid, v):
+    if isinstance(v, Mapping):
+        spec = v.get("circulate", v)
+        if "axis" not in spec:
+            raise MegError(f"block {mid}: circulation spec needs an 'axis'")
+        axis = spec["axis"]
+        if isinstance(axis, str):
+            key = axis.strip().lower()
+            if key not in _SIGNED_AXES:
+                raise MegError(f"block {mid}: circulation axis {axis!r} is not a signed axis or vector")
+            axis = _SIGNED_AXES[key]
+        return _Circulate(axis, spec.get("center", (0.0, 0.0, 0.0)))
     if isinstance(v, str):
         key = v.strip().lower()
         if key not in _SIGNED_AXES:
@@ -320,8 +362,8 @@ def _as_axis(mid, v) -> tuple[float, float, float]:
     return vec
 
 
-def _as_axes(expected) -> dict[int, tuple[float, float, float]]:
-    """``{mid: "+z" | (x, y, z)}`` -> ``{mid: (x, y, z)}``."""
+def _as_axes(expected) -> dict:
+    """``{mid: "+z" | (x, y, z) | {"circulate": {"axis": ..., "center": ...}}}`` -> axes or circulation specs."""
     if expected is None:
         return {}
     if isinstance(expected, Mapping):
@@ -349,6 +391,9 @@ def check_coil_directions(mesh: MegMesh, expected=None, *, tol_deg: float = 5.0,
         want = axes.get(c["mid"])
         if want is None:
             continue
+        if isinstance(want, _Circulate):
+            el = next(x for x in mesh.elements if x.id == c["id"])
+            want = _wanted(mesh, el, want)
         ang = _angle_deg(c["direction"], want)
         if ang > tol_deg:
             kind = "reversed" if ang > 180.0 - tol_deg else "not along the requested axis"
@@ -381,6 +426,7 @@ def orient_coil_current(mesh: MegMesh, axes, *, mids=None) -> MegMesh:
         d = want.get(e.mid)
         if d is None or e.label[:4] != "MCL8" or len(e.nodes) != 8:
             continue
+        d = _wanted(mesh, e, d)
         frame = _hex_axes(mesh, e)
         best = max(((abs(_dot(_unit(frame[k]), _unit(d))), k,
                      1 if _dot(frame[k], d) >= 0 else -1) for k in range(3)))
