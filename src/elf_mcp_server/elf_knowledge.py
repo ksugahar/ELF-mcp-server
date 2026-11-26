@@ -1568,6 +1568,13 @@ MESHING_GUIDELINES = """\
 - Adjacent poly elements need boundary pieces from each
 - Poly center must be inside the closed region; subdivide if not
 - Ideal shape: sphere
+
+## Air-gapped cores: refine the iron at the gap (checked against two other solvers)
+For an axisymmetric pot core with a 1 mm centre-leg gap (mu_r 1000, MMB4R/MCL4R,
+Cubit mesh) the inductance depended on the element size of the iron next to the gap:
+gap-side size 1.5 mm (larger than the gap) gave -4.2 % against an independent NGSolve
+model, 1.0 mm -1.8 %, 0.5 mm +0.2 %. Make the elements beside a gap clearly smaller than
+the gap (about half or less) and confirm with one finer mesh before quoting an inductance.
 """
 
 # ============================================================
