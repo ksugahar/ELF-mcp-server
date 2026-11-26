@@ -124,7 +124,9 @@ such division. The current direction follows the element node order, so a mesh w
 clockwise reverses the sign of `AMP1`; confirm the direction with a one-coil test before
 trusting torque or flux linkage. In the 2D check (SPM, 6 elements per side) the wrong
 handling gave a flux linkage 6x too large and a reversed iron field; with it the open-circuit
-phase flux agreed with NGSolve to 0.3 % (1.5 mm mesh).
+phase flux agreed with NGSolve to 0.3 % (1.5 mm mesh). The same rule held for a 3D ring coil
+meshed with hexes across a 7 x 4 section (check: flux linkage 0.4 % from an axisymmetric NGSolve
+model with 880 elements) and for an axisymmetric (DIM R) iron-core solenoid (0.1 to 0.7 % for mu_r 100 to 10000).
 
 ### Anisotropy / Lamination
 | Keyword | Description | Example |
